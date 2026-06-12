@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body { font-family: Arial; font-size: 12px; }
+h2 { text-align: center; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 6px;
+}
+
+th { background: #f4f4f4; }
+</style>
+</head>
+
+<body>
+
+<h2>Order {{ order.order_ref }}</h2>
+
+<p>
+Farm: {{ order.farm.name }} <br>
+Date: {{ order.date_ordered }}
+</p>
+
+<p>
+Total: KES {{ "{:,.2f}".format(summary.total) }} |
+Paid: KES {{ "{:,.2f}".format(summary.paid) }} |
+Balance: KES {{ "{:,.2f}".format(summary.balance) }}
+</p>
+
+<table>
+<tr>
+<th>Feed</th>
+<th>Qty</th>
+<th>Price</th>
+<th>Total</th>
+<th>Delivered</th>
+<th>Remaining</th>
+<th>Status</th>
+</tr>
+
+{% for i in items %}
+<tr>
+<td>{{ i.name }}</td>
+<td>{{ "{:,.2f}".format(i.quantity) }}</td>
+<td>KES {{ "{:,.2f}".format(i.price) }}</td>
+<td>KES {{ "{:,.2f}".format(i.total) }}</td>
+<td>{{ "{:,.2f}".format(i.delivered) }}</td>
+<td>{{ "{:,.2f}".format(i.remaining) }}</td>
+<td>{{ i.status }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

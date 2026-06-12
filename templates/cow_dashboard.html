@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cow Dashboard</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f4f6f9;
+    padding:20px;
+}
+
+.container{
+    max-width:1300px;
+    margin:auto;
+}
+
+/* HEADER */
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+.title{
+    font-size:30px;
+    font-weight:bold;
+    color:#1b5e20;
+}
+
+/* GRID */
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+}
+
+/* CARD */
+
+.card{
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+    text-align:center;
+    transition:0.2s;
+}
+
+.card:hover{
+    transform:translateY(-3px);
+}
+
+.card h4{
+    font-size:14px;
+    color:#777;
+    margin-bottom:10px;
+}
+
+.card h2{
+    font-size:30px;
+    color:#1b5e20;
+}
+
+/* BUTTON */
+
+.btn{
+    display:inline-block;
+    margin-top:12px;
+    padding:10px 14px;
+    background:#1b5e20;
+    color:white;
+    text-decoration:none;
+    border-radius:8px;
+    font-size:13px;
+    transition:0.3s;
+}
+
+.btn:hover{
+    background:#2e7d32;
+}
+
+/* TOP BAR */
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+}
+
+.back-btn{
+    padding:10px 14px;
+    background:#1565c0;
+    color:white;
+    text-decoration:none;
+    border-radius:8px;
+}
+
+.back-btn:hover{
+    background:#1976d2;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    .title{
+        font-size:24px;
+        margin-bottom:10px;
+    }
+
+    .top-bar{
+        flex-direction:column;
+        gap:10px;
+    }
+
+    .btn{
+        width:100%;
+        text-align:center;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+
+    <div class="top-bar">
+
+        <div class="title">🐄 Cow Dashboard</div>
+
+        <a href="/" class="back-btn">
+            Back Main Dashboard
+        </a>
+
+        <a href="/cow_registry" class="back-btn">
+            Add cow
+        </a>
+        <a href="/calf_registry" class="back-btn">
+            Add calf
+        </a>
+        <a href="/insemination" class="back-btn">
+            Insemination
+        </a>
+        <a href="/treatment" class="back-btn">
+            Treatment
+        </a>
+        <a href="/sheds" class="back-btn">
+            house managemet
+        </a>
+        <a href="/shed_report" class="back-btn">
+            shed reports
+        </a>
+    </div>
+
+    <!-- GRID -->
+
+    <div class="grid">
+
+        <!-- TOTALRECORDS  -->
+        <div class="card">
+            <h4>Total animal records</h4>
+            <h2>{{ total_animals }}</h2>
+            <a href="{{ url_for('animals') }}" class="btn">View All</a>
+        </div>
+        <div class="card">
+            <h4>molonger_exist</h4>
+            <h2>{{ nolonger_exist }}</h2>
+            <a href="{{ url_for('animals', category='nolonger_exist') }}" class="btn">
+                View
+            </a>
+        </div>
+        <!-- TOTAL -->
+        <div class="card">
+            <h4>Total Available animals</h4>
+            <h2>{{ existing_animals }}</h2>
+        </div>
+
+        <!-- MILKERS -->
+        <div class="card">
+            <h4>Milkers</h4>
+            <h2>{{ milkers }}</h2>
+            <a href="{{ url_for('animals', category='Milker') }}" class="btn">
+                View
+            </a>
+        </div>
+
+        <!-- DRY -->
+        <div class="card">
+            <h4>Dry Cows</h4>
+            <h2>{{ dry_cows }}</h2>
+            <a href="{{ url_for('animals', category='Dry') }}" class="btn">
+                View
+            </a>
+        </div>
+
+        <!-- CALVES -->
+        <div class="card">
+            <h4>Calves</h4>
+            <h2>{{ calves }}</h2>
+            <a href="{{ url_for('animals', category='CALF') }}" class="btn">
+                View
+            </a>
+        </div>
+
+        <!-- BULLS -->
+        <div class="card">
+            <h4>Bulls</h4>
+            <h2>{{ bulls }}</h2>
+            <a href="{{ url_for('animals', category='bull') }}" class="btn">
+                View
+            </a>
+        </div>
+
+        <!-- INCALF -->
+        <div class="card">
+            <h4>Incalf Heifers</h4>
+            <h2>{{ incalf_heifers }}</h2>
+            <a href="{{ url_for('animals', category='incalf-Heifer') }}" class="btn">
+                View
+            </a>
+        </div>
+        <!-- BULLYING-heifers -->
+        <div class="card">
+            <h4>Bullying Heifers</h4>
+            <h2>{{ Bullying_heifer }}</h2>
+            <a href="{{ url_for('animals', category='Bullying_Heifer') }}" class="btn">
+                View
+            </a>
+        </div>
+
+        <!-- YEARLINGS -->
+        <div class="card">
+            <h4>Yearlings</h4>
+            <h2>{{ yearlings }}</h2>
+            <a href="{{ url_for('animals', category='YEARING') }}" class="btn">
+                View
+            </a>
+        </div>
+
+        <!-- WEANERS -->
+        <div class="card">
+            <h4>Weaners</h4>
+            <h2>{{ weaners }}</h2>
+            <a href="{{ url_for('animals', category='WEANER') }}" class="btn">
+                View
+            </a>
+        </div>
+
+        <!-- STEAMERS -->
+        <div class="card">
+            <h4>Steamers</h4>
+            <h2>{{ steamers }}</h2>
+            <a href="{{ url_for('animals', category='steamer') }}" class="btn">
+                View
+            </a>
+        </div>
+        <!-- NOLONGER EXIST -->
+
+
+    </div>
+
+</div>
+
+</body>
+</html>

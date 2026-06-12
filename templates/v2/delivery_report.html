@@ -1,0 +1,352 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<style>
+
+.header-box{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.filter-box{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:15px;
+}
+
+.filter-box input{
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+.table-container{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:1100px;
+}
+
+th{
+    background:#101111;
+    padding:12px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+
+td{
+    padding:10px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+
+.actions{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+.btn{
+    padding:7px 12px;
+    border:none;
+    border-radius:6px;
+    text-decoration:none;
+    color:white;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.btn-blue{
+    background:#1565c0;
+}
+
+.btn-green{
+    background:#2e7d32;
+}
+
+.btn-red{
+    background:#c62828;
+}
+
+.summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.summary-box{
+    background:#f4f6f9;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.summary-box b{
+    display:block;
+    margin-bottom:5px;
+    color:#666;
+}
+
+.summary-box .value{
+    font-size:18px;
+    font-weight:bold;
+}
+
+.email-box{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:15px;
+}
+
+.email-box input{
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    min-width:220px;
+}
+
+@media(max-width:768px){
+
+    .filter-box{
+        flex-direction:column;
+    }
+
+    .filter-box input{
+        width:100%;
+    }
+
+    .email-box{
+        flex-direction:column;
+    }
+
+    .email-box input{
+        width:100%;
+    }
+
+}
+
+</style>
+
+<div class="card">
+
+<!-- ================================= -->
+<!-- 🔝 HEADER -->
+<!-- ================================= -->
+
+<div class="header-box">
+
+    <h2>Delivery Report</h2>
+
+    <a href="/feeds_v2/view/{{ request.args.get('order_id') }}"
+       class="btn btn-blue">
+        ⬅ Back to Order
+    </a>
+
+</div>
+
+<!-- ================================= -->
+<!-- 🔍 FILTER -->
+<!-- ================================= -->
+
+<form method="get" class="filter-box">
+
+    <input type="date"
+           name="date"
+           value="{{ selected_date if selected_date else '' }}">
+
+    <input type="month"
+           name="month"
+           value="{{ selected_month or '' }}">
+
+    {% if request.args.get('order_id') %}
+        <input type="hidden"
+               name="order_id"
+               value="{{ request.args.get('order_id') }}">
+    {% endif %}
+
+    <button class="btn btn-blue">
+        Filter
+    </button>
+
+    <a href="/feeds_v2/delivery_report?order_id={{ request.args.get('order_id') }}"
+       class="btn btn-red">
+       Reset
+    </a>
+
+</form>
+
+<!-- ================================= -->
+<!-- 📊 SUMMARY -->
+<!-- ================================= -->
+
+<div class="summary">
+
+    <div class="summary-box">
+        <b>Total Records</b>
+        <div class="value">
+            {{ deliveries|length }}
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <b>Total Pieces</b>
+        <div class="value">
+            {{ "{:,}".format(total_pieces) or 0 }}
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <b>Total Delivered (kg)</b>
+        <div class="value">
+            {{ "{:,.2f}".format(total_delivered) or 0 }}
+        </div>
+    </div>
+
+</div>
+
+<!-- ================================= -->
+<!-- 📧 SEND PDF -->
+<!-- ================================= -->
+
+<form method="GET"
+      action="/send_report/feeds_delivery">
+
+    <input type="hidden"
+           name="date"
+           value="{{ request.args.get('date','') }}">
+
+    <input type="hidden"
+           name="month"
+           value="{{ request.args.get('month','') }}">
+
+    <input type="hidden"
+           name="order_id"
+           value="{{ request.args.get('order_id','') }}">
+
+    <div class="email-box">
+
+        <input type="text"
+               name="emails"
+               placeholder="Enter email">
+
+        <button type="button"
+                onclick="addEmail(this)"
+                class="btn btn-blue">
+            +
+        </button>
+
+        <button class="btn btn-green">
+            📄 Send PDF
+        </button>
+
+    </div>
+
+</form>
+
+<!-- ================================= -->
+<!-- 📋 TABLE -->
+<!-- ================================= -->
+
+<div class="table-container">
+
+<table>
+
+<tr>
+    <th>No</th>
+    <th>Date</th>
+    <th>Order Ref</th>
+    <th>Feed</th>
+    <th>Pieces</th>
+    <th>Unit Weight (kg)</th>
+    <th>Total Delivered (kg)</th>
+    <th>Actions</th>
+</tr>
+
+{% for d in deliveries %}
+
+<tr>
+
+<td>{{ loop.index }}</td>
+
+<td>{{ d.date_delivered }}</td>
+
+<td>
+    {{ d.order.order_ref if d.order else "-" }}
+</td>
+
+<td>
+    {{ d.item.feed_name if d.item else "— Not Found —" }}
+</td>
+
+<td>{{ d.pieces or 0 }}</td>
+
+<td>
+    {{ "{:,.2f}".format(d.unit_weight or 0) }}
+</td>
+
+<td>
+    {{ "{:,.2f}".format(d.quantity_delivered or 0) }}
+</td>
+
+<td>
+
+<div class="actions">
+
+    <a href="/feeds_v2/delivery/edit/{{ d.id }}"
+       class="btn btn-green">
+       Edit
+    </a>
+
+    <form method="POST"
+          action="/feeds_v2/delivery/delete/{{ d.id }}"
+          onsubmit="return confirm('Delete this delivery record?')">
+
+        <button class="btn btn-red">
+            Delete
+        </button>
+
+    </form>
+
+</div>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+</div>
+
+<script>
+
+function addEmail(btn){
+
+    let input = document.createElement("input");
+
+    input.type = "text";
+    input.name = "emails";
+    input.placeholder = "Another email";
+
+    btn.parentNode.insertBefore(input, btn);
+
+}
+
+</script>
+
+{% endblock %}

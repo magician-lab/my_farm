@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Car Sale</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        form {
+            max-width: 450px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+
+        button:hover {
+            background: #1e7e34;
+        }
+
+
+.flash{
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    color: white;
+    font-size: 14px;
+}
+
+.success{
+    background: green;
+}
+
+.error{
+    background: red;
+}
+
+.warning{
+    background: orange;
+    color: black;
+}
+
+.info{
+    background: blue;
+}
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+    </style>
+</head>
+<body>
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+
+        {% for category, message in messages %}
+
+            <div class="flash {{ category }}">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+{% endwith %}
+
+
+<h2>Add Car Sale</h2>
+     <a href="/car_sales_report" class="action-btn">
+        back
+    </a>
+<form method="POST">
+
+    <select name="car_id" required>
+        <option value="">Select Car</option>
+        {% for car in cars %}
+        <option value="{{ car.id }}">
+            {{ car.plate_number }} - {{ car.model }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <input type="date" name="date" required>
+
+    <select name="day_length">
+        <option value="FULL">Full Day</option>
+        <option value="HALF">Half Day</option>
+    </select>
+
+    <input type="number" name="amount" placeholder="Amount (auto-calculated optional)">
+
+    <button type="submit">Save Sale</button>
+
+</form>
+
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<title>Manage Milking Herd</title>
+
+<style>
+
+body{
+font-family:Arial, sans-serif;
+background:#f4f6f9;
+padding:30px;
+}
+
+h1{
+text-align:center;
+margin-bottom:30px;
+color:#2c3e50;
+}
+
+.container{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:25px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.card h2{
+margin-bottom:15px;
+color:#2c3e50;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
+}
+
+th, td{
+padding:10px;
+text-align:center;
+border-bottom:1px solid #ddd;
+}
+
+th{
+background:#2c3e50;
+color:white;
+}
+
+tr:hover{
+background:#f1f1f1;
+}
+
+button{
+padding:10px 18px;
+border:none;
+border-radius:6px;
+font-size:14px;
+cursor:pointer;
+margin-top:15px;
+}
+
+.add-btn{
+background:#27ae60;
+color:white;
+}
+
+.add-btn:hover{
+background:#219150;
+}
+
+.remove-btn{
+background:#e74c3c;
+color:white;
+}
+
+.remove-btn:hover{
+background:#c0392b;
+}
+
+.search-box{
+width:100%;
+padding:8px;
+margin-bottom:10px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+.header-bar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:10px;
+}
+
+.count{
+font-size:14px;
+color:#777;
+}
+
+@media (max-width:900px){
+
+.container{
+grid-template-columns:1fr;
+}
+
+}
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:25px;
+    background:white;
+    padding:18px;
+    border-radius:14px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:140px;
+}
+
+.action-btn:hover{
+    background:#2e7d32;
+    transform:translateY(-2px);
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    .top-actions{
+        padding:14px;
+    }
+
+    .action-btn{
+        width:100%;
+        min-width:100%;
+        text-align:center;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<h1>🥛 Manage Milking Herd</h1>
+<div class="top-actions">
+
+    <!-- <a href="/manage_milking" class="action-btn">
+        manage milking
+    </a> -->
+
+    <a href="/milk_registry" class="action-btn">
+        Back
+    </a>
+
+
+    <!-- <a href="/animals" class="action-btn">
+        main_dashboard
+    </a> -->
+
+</div>
+<form method="POST">
+
+<div class="container">
+
+<!-- AVAILABLE ANIMALS -->
+
+<div class="card">
+
+<div class="header-bar">
+<h2>Available Animals</h2>
+<div class="count">{{ animals|length }} animals</div>
+</div>
+
+<input type="text" class="search-box" placeholder="Search animal..." onkeyup="searchAnimals(this,'animalsTable')">
+
+<table id="animalsTable">
+
+<tr>
+<th>Select</th>
+<th>Name</th>
+<th>Breed</th>
+<th>Category</th>
+</tr>
+
+{% for animal in animals %}
+
+<tr>
+
+<td>
+<input type="checkbox" name="animal_ids" value="{{ animal.id }}">
+</td>
+
+<td>{{ animal.name }}</td>
+<td>{{ animal.breed }}</td>
+<td>{{ animal.category }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<button class="add-btn" type="submit" name="add_selected">
+Add to Milking Herd
+</button>
+
+</div>
+
+
+
+<!-- CURRENT MILKING HERD -->
+
+<div class="card">
+
+<div class="header-bar">
+<h2>Current Milking Herd</h2>
+<div class="count">{{ milking_cows|length }} cows</div>
+</div>
+
+<input type="text" class="search-box" placeholder="Search milking cow..." onkeyup="searchAnimals(this,'milkingTable')">
+
+<table id="milkingTable">
+
+<tr>
+<th>Select</th>
+<th>Name</th>
+<th>Breed</th>
+<th>Category</th>
+</tr>
+
+{% for cow in milking_cows %}
+
+<tr>
+
+<td>
+<input type="checkbox" name="animal_ids" value="{{ cow.animal.id }}">
+</td>
+
+<td>{{ cow.animal.name }}</td>
+<td>{{ cow.animal.breed }}</td>
+<td>{{ cow.animal.category }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<button class="remove-btn" type="submit" name="remove_selected">
+Remove from Milking Herd
+</button>
+
+</div>
+
+</div>
+
+</form>
+
+
+<script>
+
+function searchAnimals(input,tableID){
+
+let filter = input.value.toLowerCase();
+let table = document.getElementById(tableID);
+let rows = table.getElementsByTagName("tr");
+
+for(let i=1;i<rows.length;i++){
+
+let text = rows[i].innerText.toLowerCase();
+
+if(text.includes(filter)){
+rows[i].style.display="";
+}
+else{
+rows[i].style.display="none";
+}
+
+}
+
+}
+
+</script>
+
+
+</body>
+
+</html>

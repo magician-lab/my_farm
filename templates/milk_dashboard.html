@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Milk Dashboard</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f4f6f9;
+    padding:20px;
+    color:#333;
+}
+
+/* HEADER */
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:15px;
+    margin-bottom:25px;
+}
+
+.title{
+    font-size:30px;
+    font-weight:bold;
+    color:#1b5e20;
+}
+
+/* FILTER */
+
+.filter-form{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.filter-form input{
+    padding:10px 14px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:15px;
+    background:white;
+}
+
+.filter-form button{
+    padding:10px 18px;
+    border:none;
+    background:#1b5e20;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.3s;
+}
+.button{
+    padding:10px 18px;
+    border:none;
+    background:#4334cc;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+.filter-form button:hover{
+    background:#2e7d32;
+}
+
+/* CARDS */
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:white;
+    border-radius:14px;
+    padding:24px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+    transition:0.3s;
+}
+
+.card:hover{
+    transform:translateY(-4px);
+}
+
+.card h3{
+    font-size:15px;
+    color:#777;
+    margin-bottom:12px;
+}
+
+.card h1{
+    color:#1b5e20;
+    font-size:32px;
+    margin-bottom:5px;
+}
+
+.card small{
+    color:#888;
+    font-size:13px;
+}
+
+/* SPECIAL COLORS */
+
+.green h1{
+    color:#1b5e20;
+}
+
+.blue h1{
+    color:#1565c0;
+}
+
+.orange h1{
+    color:#ef6c00;
+}
+
+.purple h1{
+    color:#6a1b9a;
+}
+
+.red h1{
+    color:#c62828;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:768px){
+
+    body{
+        padding:15px;
+    }
+
+    .title{
+        font-size:24px;
+    }
+
+    .card{
+        padding:20px;
+    }
+
+    .card h1{
+        font-size:26px;
+    }
+
+}
+/* TOP ACTION BUTTONS */
+
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:25px;
+    background:white;
+    padding:18px;
+    border-radius:14px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:140px;
+}
+
+.action-btn:hover{
+    background:#2e7d32;
+    transform:translateY(-2px);
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    .top-actions{
+        padding:14px;
+    }
+
+    .action-btn{
+        width:100%;
+        min-width:100%;
+        text-align:center;
+    }
+
+}
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+
+<div class="top-bar">
+<!-- TOP ACTION BUTTONS -->
+
+<div class="top-actions">
+    <a href="/" class="action-btn">
+        back to main dashboard
+    </a>
+
+    <a href="/milk_registry" class="action-btn">
+        Add Milk
+    </a>
+
+    <a href="/milk_sales_entry" class="action-btn">
+        Add Sales
+    </a>
+    <a href="/milk" class="action-btn">
+        Daily_milk_records
+    </a>
+    <a href="/milk_sales_report" class="action-btn">
+        daily_sales
+    </a>
+    <a href="/cow-analysis" class="action-btn">
+        Cow_analysis
+    </a>
+    <a href="/milk_sales_monthly" class="action-btn">
+        Monthly_sales
+    </a>
+
+</div>
+    <div class="title">
+        Milk Production Dashboard
+        
+    </div>
+    <form method="GET" class="filter-form">
+
+        <input
+            type="date"
+            name="filter_date"
+            value="{{ selected_date }}"
+        >
+
+        <button type="submit">
+            Filter
+        </button>
+
+    </form>
+
+</div>
+
+<!-- SUMMARY CARDS -->
+
+<div class="cards">
+
+
+    <!-- MORNING -->
+
+    <div class="card green">
+
+        <h3>Morning Production</h3>
+
+        <h1>
+            {{ "{:,.2f}".format(total_morning) }} L
+        </h1>
+
+        <small>Selected Date</small>
+
+    </div>
+
+    <!-- NOON -->
+
+    <div class="card blue">
+
+        <h3>Noon Production</h3>
+
+        <h1>
+            {{ "{:,.2f}".format(total_noon) }} L
+        </h1>
+
+        <small>Selected Date</small>
+
+    </div>
+
+    <!-- EVENING -->
+
+    <div class="card orange">
+
+        <h3>Evening Production</h3>
+
+        <h1>
+            {{ "{:,.2f}".format(total_evening) }} L
+        </h1>
+
+        <small>Selected Date</small>
+
+    </div>
+
+    <!-- DAILY TOTAL -->
+
+    <div class="card purple">
+
+        <h3>Daily Total</h3>
+
+        <h1>
+            {{ "{:,.2f}".format(grand_total) }} L
+        </h1>
+
+        <small>Total Milk Produced</small>
+
+    </div>
+
+    <!-- MONTHLY TOTAL -->
+
+    <div class="card red">
+
+        <h3>Monthly Total</h3>
+
+        <h1>
+            {{ "{:,.2f}".format(monthly_total) }} L
+        </h1>
+
+        <small>
+            {{ selected_date.strftime('%B %Y') }}
+        </small>
+
+    </div>
+
+    <!-- MILKED COWS -->
+
+    <div class="card green">
+
+        <h3>Milked Cows</h3>
+
+        <h1>
+            {{ cow_count }}
+        </h1>
+
+        <small>Cows Milked Today</small>
+
+    </div>
+
+    <!-- AVERAGE -->
+
+    <div class="card blue">
+
+        <h3>Average Per Cow</h3>
+
+        <h1>
+            {{ "{:,.2f}".format(average_production) }} L
+        </h1>
+
+        <small>Average Production</small>
+
+    </div>
+
+</div>
+
+</body>
+</html>

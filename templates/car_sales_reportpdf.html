@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Car Sales Report</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            padding: 8px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #007bff;
+            color: white;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+
+        .total {
+            text-align: right;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .edit-btn {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>Car Sales Report</h2>
+
+<h3 style="text-align:center;">
+    {% if selected_date %}
+        Report for {{ selected_date }}
+    {% else %}
+        Full Report (All Dates)
+    {% endif %}
+</h3>
+<div class="total">
+    Total SALES: KES <strong>{{ "{:,}".format(total_sales) }}</strong>
+</div>
+
+<table>
+    <tr>
+        <th>Car</th>
+        <th>Date</th>
+        <th>Length</th>
+        <th>Amount</th>
+        
+    </tr>
+
+    {% for sale in sales %}
+    <tr>
+        <td>{{ sale.car.plate_number }}</td>
+        <td>{{ sale.date }}</td>
+        <td>{{ sale.length }}</td>
+        <td>{{ "{:,}".format(sale.amount) }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</div>
+
+</body>
+</html>

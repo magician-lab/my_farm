@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Car sales module</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* ================= BASE ================= */
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#eef2f7;
+    padding:20px;
+    color:#333;
+}
+
+/* ================= CONTAINER ================= */
+.container{
+    max-width:1200px;
+    margin:auto;
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.08);
+}
+
+/* ================= HEADER ================= */
+h2{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+/* ================= FILTER ================= */
+.filter-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.filter-bar input{
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+.filter-bar button{
+    padding:10px 14px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#007bff;
+    color:white;
+    font-weight:bold;
+}
+
+/* ================= EMAIL SECTION ================= */
+.email-box{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+/* each email row */
+.email-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.email-row input{
+    flex:1;
+    min-width:220px;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+/* buttons */
+.btn{
+    padding:10px 14px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.btn-add{
+    background:#ff9800;
+    color:white;
+}
+
+.btn-send{
+    background:#28a745;
+    color:white;
+}
+
+.btn-remove{
+    background:#dc3545;
+    color:white;
+}
+
+/* ================= TABLE ================= */
+.table-wrapper{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:700px;
+}
+
+th{
+    background:#007bff;
+    color:white;
+    padding:12px;
+}
+
+td{
+    padding:10px;
+    text-align:center;
+    border-bottom:1px solid #ddd;
+}
+
+tr:nth-child(even){
+    background:#f7f9fc;
+}
+
+/* ================= TOTAL ================= */
+.total{
+    text-align:right;
+    font-weight:bold;
+    margin:10px 0;
+}
+
+/* ================= REPORT TITLE ================= */
+.report-title{
+    text-align:center;
+    margin:10px 0 20px;
+    font-weight:bold;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:768px){
+    .total{
+        text-align:left;
+    }
+}
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Car Sales Report</h2>
+
+<!-- ================= FILTER ================= -->
+
+<form class="filter-bar" method="GET">
+    <input type="date" name="date" value="{{ selected_date }}">
+    <button type="submit">Filter</button>
+</form>
+
+<!-- ================= EMAIL FORM (UNLIMITED EMAILS) ================= -->
+<form method="GET" action="{{ url_for('send_report', report_type='car_sales') }}">
+
+    <div class="email-box" id="emailBox">
+
+        <!-- first email row -->
+        <div class="email-row">
+            <input type="email" name="emails" placeholder="Enter email address" required>
+            <button type="button" class="btn btn-add" onclick="addEmail()">+</button>
+        </div>
+
+    </div>
+     <a href="/financial_dashboard" class="action-btn">
+        BACK TO DASHBOARD
+    </a>
+     <a href="/car_sales/add" class="action-btn">
+        ADD SALE
+    </a>
+     <a href="/car_expense_report" class="action-btn">
+        EXPENSES
+    </a>
+    <button type="submit" class="btn btn-send">📄 Send PDF</button>
+
+    <input type="hidden" name="date" value="{{ selected_date }}">
+
+</form>
+
+<!-- ================= TITLE ================= -->
+<div class="report-title">
+    {% if selected_date %}
+        Report for {{ selected_date }}
+    {% else %}
+        Full Report (All Dates)
+    {% endif %}
+</div>
+
+<!-- ================= TOTAL ================= -->
+<div class="total">
+    Total Sales: KES <strong>{{ "{:,}".format(total_sales) }}</strong>
+</div>
+
+<!-- ================= TABLE ================= -->
+<div class="table-wrapper">
+<table>
+
+<thead>
+<tr>
+    <th>Car</th>
+    <th>Date</th>
+    <th>Length</th>
+    <th>Amount</th>
+    <th>Actions</th>
+</tr>
+</thead>
+
+<tbody>
+{% for sale in sales %}
+<tr>
+    <td>{{ sale.car.plate_number }}</td>
+    <td>{{ sale.date }}</td>
+    <td>{{ sale.length }}</td>
+    <td>{{ "{:,}".format(sale.amount) }}</td>
+    <td>
+        <a href="{{ url_for('edit_car_sale', id=sale.id) }}" class="btn btn-add">Edit</a>
+
+        <a href="{{ url_for('delete_car_sale', id=sale.id) }}"
+           class="btn btn-remove"
+           onclick="return confirm('Delete this record?')">
+           Delete
+        </a>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+</div>
+
+</div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+
+function addEmail() {
+    const emailBox = document.getElementById("emailBox");
+
+    const row = document.createElement("div");
+    row.className = "email-row";
+
+    row.innerHTML = `
+        <input type="email" name="emails" placeholder="Enter email address">
+        <button type="button" class="btn btn-remove" onclick="removeEmail(this)">-</button>
+    `;
+
+    emailBox.appendChild(row);
+}
+
+function removeEmail(btn) {
+    btn.parentElement.remove();
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Milk Sales Entry</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #2e7d32;
+        }
+
+        input {
+            width: 100%;
+            padding: 6px;
+            margin: 5px 0 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .card {
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            background: #fff3e0;
+            padding: 10px;
+            border-left: 5px solid #f57c00;
+            margin-top: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1b5e20;
+        }
+
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:25px;
+    background:white;
+    padding:18px;
+    border-radius:14px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:140px;
+}
+
+.action-btn:hover{
+    background:#2e7d32;
+    transform:translateY(-2px);
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    .top-actions{
+        padding:14px;
+    }
+
+    .action-btn{
+        width:100%;
+        min-width:100%;
+        text-align:center;
+    }
+
+}
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="top-actions">
+<!-- 
+    <a href="/manage_milking" class="action-btn">
+        manage milking
+    </a> -->
+
+    <a href="/milk_dashboard" class="action-btn">
+        Back
+    </a>
+
+
+    <!-- <a href="/animals" class="action-btn">
+        main_dashboard
+    </a> -->
+
+</div>
+
+<h2>Milk Sales Entry</h2>
+
+<form method="POST">
+
+    <label>Date:</label>
+    <input type="date" name="date" required>
+
+    <div class="grid">
+
+        <!-- MORNING -->
+        <div class="card">
+            <div class="title">Morning</div>
+
+            <input type="number" step="0.01" name="morning_shop1" placeholder="Shop 1">
+            <input type="number" step="0.01" name="morning_shop2" placeholder="Shop 2">
+            <input type="number" step="0.01" name="morning_shop3" placeholder="Shop 3">
+            <input type="number" step="0.01" name="morning_home" placeholder="Home">
+            <input type="number" step="0.01" name="morning_calf" placeholder="Calf">
+            <input type="number" step="0.01" name="morning_price" placeholder="Price">
+        </div>
+
+        <!-- NOON -->
+        <div class="card">
+            <div class="title">Noon</div>
+
+            <input type="number" step="0.01" name="noon_shop1" placeholder="Shop 1">
+            <input type="number" step="0.01" name="noon_shop2" placeholder="Shop 2">
+            <input type="number" step="0.01" name="noon_shop3" placeholder="Shop 3">
+            <input type="number" step="0.01" name="noon_home" placeholder="Home">
+            <input type="number" step="0.01" name="noon_calf" placeholder="Calf">
+            <input type="number" step="0.01" name="noon_price" placeholder="Price">
+        </div>
+
+        <!-- EVENING -->
+        <div class="card">
+            <div class="title">Evening</div>
+
+            <input type="number" step="0.01" name="evening_shop1" placeholder="Shop 1">
+            <input type="number" step="0.01" name="evening_shop2" placeholder="Shop 2">
+            <input type="number" step="0.01" name="evening_shop3" placeholder="Shop 3">
+            <input type="number" step="0.01" name="evening_home" placeholder="Home">
+            <input type="number" step="0.01" name="evening_calf" placeholder="Calf">
+            <input type="number" step="0.01" name="evening_price" placeholder="Price">
+        </div>
+
+    </div>
+
+    <!-- ACTUAL REMAINING -->
+    <div class="highlight">
+        <label><strong>Actual Remaining Milk (End of Day)</strong></label>
+        <input type="number" step="0.01" name="actual_remaining" placeholder="Enter measured remaining milk">
+    </div>
+
+    <br>
+    <button type="submit">Save Data</button>
+
+</form>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Expense</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f4f6f9; }
+        .form-box {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-box">
+    <h2>Edit Expense</h2>
+
+    <form method="POST">
+
+        <label>Car</label>
+        <select name="car_id">
+            {% for car in cars %}
+                <option value="{{ car.id }}" {% if car.id == expense.car_id %}selected{% endif %}>
+                    {{ car.plate_number }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Date</label>
+        <input type="date" name="date" value="{{ expense.date }}">
+
+        <label>Expense Type</label>
+        <input type="text" name="expense_type" value="{{ expense.expense_type }}">
+
+        <label>Description</label>
+        <input type="text" name="description" value="{{ expense.description }}">
+
+        <label>Amount</label>
+        <input type="number" step="0.01" name="amount" value="{{ expense.amount }}">
+
+        <button type="submit">Update Expense</button>
+
+    </form>
+</div>
+
+</body>
+</html>

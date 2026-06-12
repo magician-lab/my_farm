@@ -1,0 +1,11 @@
+<h2>Delivery - {{ order.order_ref }}</h2>
+
+<p>Ordered: {{ order.quantity_ordered }}</p>
+<p>Delivered: {{ delivered }}</p>
+<p>Remaining: {{ remaining }}</p>
+
+<form method="post">
+    <input type="number" step="0.01" name="quantity" placeholder="Quantity">
+    <input type="number" name="pieces" placeholder="Pieces">
+    <button>Add Delivery</button>
+</form>

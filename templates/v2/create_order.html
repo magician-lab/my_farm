@@ -1,0 +1,210 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<style>
+.card { padding: 15px; }
+
+/* 🔹 FORM */
+form label {
+    display:block;
+    margin-top:10px;
+    font-weight:bold;
+}
+
+/* 🔹 INPUT ROW */
+.input-row {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+}
+
+.input-row input {
+    padding:8px;
+    flex:1;
+    min-width:120px;
+}
+
+/* 🔹 TABLE */
+.table-container {
+    margin-top:20px;
+    overflow-x:auto;
+}
+
+table {
+    width:100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border:1px solid #ddd;
+    padding:6px;
+    text-align:center;
+}
+
+th { background:#0a0a0a; }
+
+/* 🔹 BUTTONS */
+.btn-add { margin-top:10px; }
+.btn-remove {
+    background:red;
+    color:white;
+    border:none;
+    padding:4px 8px;
+    cursor:pointer;
+}
+
+/* 🔹 MOBILE */
+@media(max-width:600px){
+    .input-row {
+        flex-direction:column;
+    }
+}
+</style>
+
+<div class="card">
+
+<h2>Create Order</h2>
+
+<a href="/feeds_v2/orders" class="btn btn-blue">
+    ⬅ Back to Orders
+</a>
+
+<form method="post" id="orderForm">
+
+<label>Date</label>
+<input type="date" name="date" required>
+
+<label>Farm</label>
+<select name="farm_id">
+{% for f in farms %}
+<option value="{{ f.id }}">{{ f.name }}</option>
+{% endfor %}
+</select>
+
+<hr>
+
+<h3>Add Item</h3>
+
+<!-- 🔹 INPUT ROW -->
+<div class="input-row">
+    <input id="feed_name" placeholder="Feed name">
+    <input id="quantity" placeholder="Quantity (kg)">
+    <input id="price" placeholder="Price per kg">
+</div>
+
+<button type="button" onclick="addItem()" class="btn btn-green btn-add">
+    + Add Item
+</button>
+
+<!-- 🔹 HIDDEN REAL INPUTS -->
+<div id="hidden-inputs"></div>
+
+<!-- 🔹 TABLE VIEW -->
+<div class="table-container">
+<table id="itemsTable">
+<tr>
+    <th>Feed</th>
+    <th>Qty</th>
+    <th>Price</th>
+    <th>Total</th>
+    <th>Action</th>
+</tr>
+</table>
+</div>
+
+<br>
+
+<button type="submit" class="btn btn-green">
+    Create Order
+</button>
+
+</form>
+
+</div>
+
+<script>
+let items = [];
+
+function addItem(){
+
+    let name = document.getElementById("feed_name").value.trim();
+    let qty = parseFloat(document.getElementById("quantity").value);
+    let price = parseFloat(document.getElementById("price").value);
+
+    if(!name || !qty || !price){
+        alert("Fill all fields");
+        return;
+    }
+
+    let total = qty * price;
+
+    let item = {name, qty, price, total};
+    items.push(item);
+
+    renderTable();
+    renderHiddenInputs();
+
+    // 🔹 CLEAR INPUTS
+    document.getElementById("feed_name").value = "";
+    document.getElementById("quantity").value = "";
+    document.getElementById("price").value = "";
+}
+
+function renderTable(){
+
+    let table = document.getElementById("itemsTable");
+
+    // remove old rows
+    table.innerHTML = `
+        <tr>
+            <th>Feed</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+            <th>Action</th>
+        </tr>
+    `;
+
+    items.forEach((item, index) => {
+
+        let row = table.insertRow();
+
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.qty.toLocaleString()}</td>
+            <td>KES ${item.price.toLocaleString()}</td>
+            <td>KES ${item.total.toLocaleString()}</td>
+            <td>
+                <button type="button" class="btn-remove"
+                    onclick="removeItem(${index})">
+                    X
+                </button>
+            </td>
+        `;
+    });
+}
+
+function removeItem(index){
+    items.splice(index,1);
+    renderTable();
+    renderHiddenInputs();
+}
+
+function renderHiddenInputs(){
+
+    let container = document.getElementById("hidden-inputs");
+    container.innerHTML = "";
+
+    items.forEach(item => {
+
+        container.innerHTML += `
+            <input type="hidden" name="feed_name[]" value="${item.name}">
+            <input type="hidden" name="quantity[]" value="${item.qty}">
+            <input type="hidden" name="price[]" value="${item.price}">
+        `;
+    });
+}
+</script>
+
+{% endblock %}

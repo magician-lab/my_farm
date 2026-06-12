@@ -1,0 +1,26 @@
+<h2>Car Registration</h2>
+
+<form method="POST">
+    <input type="text" name="plate_number" placeholder="Plate Number" required>
+    <input type="text" name="model" placeholder="Car Model">
+    <input type="text" name="driver" placeholder="Driver Name">
+    <button type="submit">Register Car</button>
+</form>
+
+<hr>
+
+<h3>Registered Cars</h3>
+<table border="1">
+    <tr>
+        <th>Plate</th>
+        <th>Model</th>
+        <th>Driver</th>
+    </tr>
+    {% for car in cars %}
+    <tr>
+        <td>{{ car.plate_number }}</td>
+        <td>{{ car.model }}</td>
+        <td>{{ car.driver }}</td>
+    </tr>
+    {% endfor %}
+</table>

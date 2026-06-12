@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Shed Occupancy Report</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Segoe UI',sans-serif;
+    background:#f3f6fb;
+    color:#1f2937;
+}
+
+.container{
+    width:95%;
+    max-width:1700px;
+    margin:auto;
+    padding:20px 0;
+}
+
+/* ===================================
+HEADER
+=================================== */
+
+.page-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:15px;
+    margin-bottom:25px;
+}
+
+.page-title{
+    font-size:32px;
+    font-weight:700;
+    color:#111827;
+}
+
+.header-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.btn{
+    border:none;
+    border-radius:10px;
+    padding:12px 18px;
+    text-decoration:none;
+    cursor:pointer;
+    font-weight:600;
+    color:white;
+}
+
+.btn-dashboard{
+    background:#16a34a;
+}
+
+.btn-send{
+    background:#2563eb;
+}
+
+.btn-add{
+    background:#f59e0b;
+}
+
+/* ===================================
+EMAIL SECTION
+=================================== */
+
+.email-section{
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:25px;
+    box-shadow:0 3px 12px rgba(0,0,0,.08);
+}
+
+.email-title{
+    margin-bottom:15px;
+    font-size:18px;
+    font-weight:600;
+}
+
+#email-container{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.email-input{
+    width:100%;
+    padding:12px;
+    border:1px solid #d1d5db;
+    border-radius:10px;
+}
+
+/* ===================================
+SUMMARY CARDS
+=================================== */
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    margin-bottom:25px;
+}
+
+.summary-card{
+    background:white;
+    padding:25px;
+    border-radius:16px;
+    box-shadow:0 3px 12px rgba(0,0,0,.08);
+    text-align:center;
+}
+
+.summary-card h4{
+    color:#6b7280;
+    margin-bottom:10px;
+}
+
+.summary-card h1{
+    color:#2563eb;
+    font-size:32px;
+}
+
+/* ===================================
+TABLE
+=================================== */
+
+.table-card{
+    background:white;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 3px 12px rgba(0,0,0,.08);
+}
+
+.table-wrapper{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:900px;
+}
+
+th{
+    background:#2563eb;
+    color:white;
+    padding:15px;
+    text-align:left;
+}
+
+td{
+    padding:15px;
+    border-bottom:1px solid #e5e7eb;
+}
+
+tr:hover{
+    background:#f9fafb;
+}
+
+/* ===================================
+STATUS
+=================================== */
+
+.full{
+    color:#dc2626;
+    font-weight:bold;
+}
+
+.warning{
+    color:#ea580c;
+    font-weight:bold;
+}
+
+.good{
+    color:#16a34a;
+    font-weight:bold;
+}
+
+/* ===================================
+ANIMAL TAGS
+=================================== */
+
+.animals-container{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.animal-tag{
+    background:#dbeafe;
+    color:#1d4ed8;
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:500;
+}
+
+/* ===================================
+RESPONSIVE
+=================================== */
+
+@media(max-width:768px){
+
+    .page-header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .page-title{
+        font-size:24px;
+    }
+
+    .summary-card h1{
+        font-size:24px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+```
+<div class="page-header">
+
+    <h1 class="page-title">
+        🏠 Shed Occupancy Report
+    </h1>
+
+    <div class="header-actions">
+
+        <a href="/cow_dashboard"
+           class="btn btn-dashboard">
+            Dashboard
+        </a>
+
+    </div>
+
+</div>
+
+<!-- EMAIL SECTION -->
+
+<div class="email-section">
+
+    <div class="email-title">
+        📧 Send Shed Report
+    </div>
+
+    <form
+    action="{{ url_for('send_report', report_type='shed_report') }}"
+    method="GET">
+
+        <div id="email-container">
+
+            <input
+            type="email"
+            name="emails"
+            class="email-input"
+            placeholder="Enter recipient email"
+            required>
+
+        </div>
+
+        <button
+        type="button"
+        onclick="addEmail()"
+        class="btn btn-add">
+
+            + Add Email
+
+        </button>
+
+        <button
+        type="submit"
+        class="btn btn-send">
+
+            Send PDF Report
+
+        </button>
+
+    </form>
+
+</div>
+
+<!-- SUMMARY -->
+
+<div class="summary-grid">
+
+    <div class="summary-card">
+        <h4>Total Sheds</h4>
+        <h1>{{ total_sheds }}</h1>
+    </div>
+
+    <div class="summary-card">
+        <h4>Farm Capacity</h4>
+        <h1>{{ total_capacity }}</h1>
+    </div>
+
+    <div class="summary-card">
+        <h4>Occupied Spaces</h4>
+        <h1>{{ total_occupied }}</h1>
+    </div>
+
+    <div class="summary-card">
+        <h4>Available Spaces</h4>
+        <h1>{{ total_remaining }}</h1>
+    </div>
+
+    <div class="summary-card">
+        <h4>Occupancy Rate</h4>
+        <h1>{{ occupancy_rate }}%</h1>
+    </div>
+
+</div>
+
+<!-- TABLE -->
+
+<div class="table-card">
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Shed</th>
+                    <th>Category</th>
+                    <th>Capacity</th>
+                    <th>Occupied</th>
+                    <th>Remaining</th>
+                    <th>Animals</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for item in report %}
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            {{ item.shed.name }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {{ item.shed.category_allowed }}
+                    </td>
+
+                    <td>
+                        {{ item.shed.capacity }}
+                    </td>
+
+                    <td>
+                        {{ item.occupied }}
+                    </td>
+
+                    <td>
+
+                        {% if item.remaining <= 0 %}
+
+                            <span class="full">
+                                FULL
+                            </span>
+
+                        {% elif item.remaining <= 3 %}
+
+                            <span class="warning">
+                                {{ item.remaining }}
+                            </span>
+
+                        {% else %}
+
+                            <span class="good">
+                                {{ item.remaining }}
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        <div class="animals-container">
+
+                        {% for animal in item.animals %}
+
+                            <span class="animal-tag">
+                                {{ animal.name }}
+                            </span>
+
+                        {% endfor %}
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<script>
+
+function addEmail(){
+
+    let container =
+    document.getElementById(
+        "email-container"
+    );
+
+    let input =
+    document.createElement(
+        "input"
+    );
+
+    input.type = "email";
+    input.name = "emails";
+    input.placeholder = "Enter another email";
+    input.className = "email-input";
+
+    container.appendChild(input);
+}
+
+</script>
+
+</body>
+</html>

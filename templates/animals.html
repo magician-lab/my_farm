@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Livestock List</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+
+/* ================= RESET ================= */
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f4f6f9;
+    padding:20px;
+    color:#333;
+}
+
+.container{
+    max-width:1400px;
+    margin:auto;
+}
+
+/* ================= TITLE ================= */
+
+.page-title{
+    font-size:30px;
+    font-weight:bold;
+    color:#1b5e20;
+    margin-bottom:15px;
+}
+
+/* ================= TOP ACTIONS ================= */
+
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:20px;
+    background:white;
+    padding:16px;
+    border-radius:14px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ================= BUTTONS ================= */
+
+.btn{
+    padding:12px 16px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    color:white;
+    font-weight:bold;
+    font-size:14px;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    transition:0.3s;
+    min-width:140px;
+}
+
+.btn:hover{
+    transform:translateY(-2px);
+}
+
+.back-btn{
+    background:#1565c0;
+}
+.back-btn:hover{
+    background:#1976d2;
+}
+
+.email-btn{
+    background:#1b5e20;
+}
+.email-btn:hover{
+    background:#2e7d32;
+}
+
+.filter-btn{
+    background:#2e7d32;
+}
+.filter-btn:hover{
+    background:#388e3c;
+}
+
+/* ================= ACTION BUTTONS ================= */
+
+.action-buttons{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.edit-btn{
+    background:#fb8c00;
+    color:white;
+    padding:8px 12px;
+    border-radius:8px;
+    text-decoration:none;
+    font-size:13px;
+    font-weight:bold;
+    transition:0.3s;
+    min-width:70px;
+    text-align:center;
+}
+
+.edit-btn:hover{
+    background:#ef6c00;
+}
+
+.delete-btn{
+    background:#d32f2f;
+    color:white;
+    padding:8px 12px;
+    border:none;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+    min-width:70px;
+}
+
+.delete-btn:hover{
+    background:#b71c1c;
+}
+
+/* ================= INPUTS ================= */
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+    min-width:220px;
+    flex:1;
+}
+
+label{
+    font-size:13px;
+    margin-bottom:6px;
+    font-weight:bold;
+    color:#555;
+}
+
+.search-box,
+.email-box,
+.select-box{
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    font-size:14px;
+    outline:none;
+}
+
+.search-box:focus,
+.email-box:focus,
+.select-box:focus{
+    border-color:#1b5e20;
+}
+
+/* ================= FORM ROW ================= */
+
+.form-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:end;
+}
+
+/* ================= CARD ================= */
+
+.card{
+    background:white;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom:20px;
+}
+
+/* ================= TABLE ================= */
+
+.table-container{
+    overflow:auto;
+    border-radius:14px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:1100px;
+    background:white;
+}
+
+th{
+    background:#1b5e20;
+    color:white;
+    padding:14px 10px;
+    font-size:14px;
+    white-space:nowrap;
+}
+
+td{
+    padding:12px 10px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+    font-size:14px;
+    vertical-align:middle;
+}
+
+tr:nth-child(even){
+    background:#fafafa;
+}
+
+tr:hover{
+    background:#f1f8e9;
+}
+
+/* ================= FLASH ================= */
+
+.flash{
+    padding:12px;
+    margin-bottom:12px;
+    border-radius:10px;
+    font-weight:bold;
+    color:white;
+}
+
+.success{ background:#2e7d32; }
+.error{ background:#d32f2f; }
+.info{ background:#1565c0; }
+
+/* ================= MOBILE ================= */
+
+@media(max-width:1024px){
+
+    table{
+        min-width:1000px;
+    }
+
+    .btn{
+        min-width:120px;
+        font-size:13px;
+    }
+
+}
+
+@media(max-width:768px){
+
+    body{
+        padding:12px;
+    }
+
+    .page-title{
+        font-size:22px;
+    }
+
+    .top-actions{
+        flex-direction:column;
+    }
+
+    .btn{
+        width:100%;
+    }
+
+    .form-row{
+        flex-direction:column;
+    }
+
+    table{
+        min-width:950px;
+    }
+
+    th, td{
+        font-size:13px;
+        padding:10px 8px;
+    }
+
+    .action-buttons{
+        flex-direction:column;
+    }
+
+    .edit-btn,
+    .delete-btn{
+        width:100%;
+        font-size:12px;
+        padding:8px;
+    }
+}
+
+@media(max-width:480px){
+
+    .page-title{
+        font-size:20px;
+    }
+
+    th, td{
+        font-size:12px;
+        padding:8px 6px;
+    }
+
+    .card{
+        padding:12px;
+    }
+
+    .search-box,
+    .email-box{
+        padding:10px;
+        font-size:13px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- FLASH -->
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+        <div class="flash {{ category }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- TITLE -->
+
+<div class="page-title">
+    🐄 Livestock Report {% if category %}- {{ category }}{% endif %}
+</div>
+
+<!-- TOP ACTIONS -->
+
+<div class="top-actions">
+
+    <a href="{{ url_for('animals') }}" class="btn back-btn">
+        View All
+    </a>
+
+    <a href="{{ url_for('cow_dashboard') }}" class="btn back-btn">
+        Dashboard
+    </a>
+
+</div>
+
+<!-- FILTER + SEARCH + EMAIL -->
+
+<div class="card">
+
+    <!-- SEND FILTERED PDF FORM -->
+
+    <form method="GET"
+          action="{{ url_for('send_report', report_type='animals') }}">
+
+        <div class="form-row">
+
+            <!-- KEEP CURRENT FILTER -->
+
+            <input type="hidden"
+                   name="category"
+                   value="{{ category }}">
+
+            <!-- EMAIL -->
+
+            <div class="form-group">
+
+                <label>Email Address</label>
+
+                <input type="email"
+                       name="emails"
+                       class="email-box"
+                       placeholder="Enter email address">
+
+            </div>
+
+            <!-- LIVE SEARCH -->
+
+            <div class="form-group">
+
+                <label>Live Search</label>
+
+                <input type="text"
+                       id="searchInput"
+                       class="search-box"
+                       placeholder="Search animal...">
+
+            </div>
+
+            <!-- SEND BUTTON -->
+
+            <div class="form-group">
+
+                <label>&nbsp;</label>
+
+                <button type="submit"
+                        class="btn email-btn">
+
+                    📄 Send Filtered PDF
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+<!-- TABLE -->
+
+<div class="card">
+
+    <div class="table-container">
+
+        <table id="animalsTable">
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Breed</th>
+                    <th>DOB</th>
+                    <th>Category</th>
+                    <th>Sex</th>
+                    <th>Mother</th>
+                    <th>house</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for animal in animals %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>
+                        <strong>{{ animal.name }}</strong>
+                    </td>
+
+                    <td>{{ animal.breed }}</td>
+
+                    <td>{{ animal.dob or "Not Provided" }}</td>
+
+                    <td>{{ animal.category }}</td>
+
+                    <td>{{ animal.sex }}</td>
+
+                    <td>{{ animal.mother or "Unknown" }}</td>
+                    <td>
+    {% if animal.shed %}
+        {{ animal.shed.name }}
+    {% else %}
+        Not Assigned
+    {% endif %}
+</td>
+
+                    <!-- ACTIONS -->
+
+                    <td>
+
+                        <div class="action-buttons">
+
+                            <!-- EDIT -->
+
+                            <a href="{{ url_for('edit_animal_record', id=animal.id) }}"
+                               class="edit-btn">
+
+                                ✏ Edit
+
+                            </a>
+
+                            <!-- DELETE -->
+
+                            <form method="POST"
+                                  action="{{ url_for('delete_animal', id=animal.id) }}"
+                                  onsubmit="return confirm('Delete this animal?');">
+
+                                <button type="submit"
+                                        class="delete-btn">
+
+                                    🗑 Delete
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+                {% if animals|length == 0 %}
+                <tr>
+                    <td colspan="8">No records found</td>
+                </tr>
+                {% endif %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- LIVE SEARCH SCRIPT -->
+
+<script>
+
+document.getElementById("searchInput").addEventListener("keyup", function() {
+
+    let value = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#animalsTable tbody tr");
+
+    rows.forEach(row => {
+        row.style.display =
+            row.innerText.toLowerCase().includes(value)
+            ? ""
+            : "none";
+    });
+
+});
+
+</script>
+
+</body>
+</html>

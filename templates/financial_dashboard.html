@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Financial Dashboard</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f1f5f9;
+    color:#111827;
+}
+
+/* ====================================
+TOP HEADER
+==================================== */
+
+.header{
+    background:white;
+    padding:20px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:20px;
+}
+
+.header h1{
+    font-size:32px;
+    color:#0f172a;
+}
+
+.nav-buttons{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.nav-btn{
+    text-decoration:none;
+    background:#2563eb;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+.nav-btn:hover{
+    background:#1d4ed8;
+}
+
+/* ====================================
+WRAPPER
+==================================== */
+
+.wrapper{
+    padding:25px;
+}
+
+/* ====================================
+SECTION
+==================================== */
+
+.section{
+    margin-top:35px;
+}
+
+.section-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+.section-title{
+    font-size:24px;
+    color:#0f172a;
+}
+
+.filter-form{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.filter-form input{
+    padding:12px;
+    border-radius:10px;
+    border:1px solid #ccc;
+}
+
+.filter-form button{
+    padding:12px 18px;
+    border:none;
+    border-radius:10px;
+    background:#0f172a;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+/* ====================================
+GRID
+==================================== */
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:20px;
+}
+
+/* ====================================
+CARDS
+==================================== */
+
+.card{
+    background:white;
+    border-radius:16px;
+    padding:25px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+    transition:0.3s;
+}
+
+.card:hover{
+    transform:translateY(-4px);
+}
+
+.card h3{
+    font-size:15px;
+    color:#64748b;
+    margin-bottom:12px;
+}
+
+.amount{
+    font-size:30px;
+    font-weight:bold;
+}
+
+/* ====================================
+COLORS
+==================================== */
+
+.blue{
+    border-left:6px solid #2563eb;
+}
+
+.green{
+    border-left:6px solid #16a34a;
+}
+
+.orange{
+    border-left:6px solid #ea580c;
+}
+
+.red{
+    border-left:6px solid #dc2626;
+}
+
+.purple{
+    border-left:6px solid #9333ea;
+}
+
+/* ====================================
+TABLE
+==================================== */
+
+.table-wrapper{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+table th{
+    background:#0f172a;
+    color:white;
+    padding:16px;
+    text-align:left;
+}
+
+table td{
+    padding:16px;
+    border-bottom:1px solid #eee;
+}
+
+table tr:hover{
+    background:#f8fafc;
+}
+
+/* ====================================
+RESPONSIVE
+==================================== */
+
+@media(max-width:768px){
+
+    .header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .header h1{
+        font-size:24px;
+    }
+
+    .amount{
+        font-size:24px;
+    }
+
+    .wrapper{
+        padding:15px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- ====================================
+HEADER
+==================================== -->
+
+<div class="header">
+
+    <div>
+
+        <h1>
+            Financial Dashboard
+        </h1>
+
+    </div>
+
+    <div class="nav-buttons">
+
+        <a href="/" class="nav-btn">
+            Main Dashboard
+        </a>
+
+        <a href="/transactions" class="nav-btn">
+            Transactions
+        </a>
+
+        <a href="/payments" class="nav-btn">
+            Add payment
+        </a>
+
+
+        <a href="/car_sales_report" class="nav-btn">
+            Vehicle management
+        </a>
+
+        <a href="/milk_prices" class="nav-btn">
+            milk price
+        </a>
+    </div>
+
+</div>
+
+<div class="wrapper">
+
+<!-- ====================================
+MILK SALES SECTION
+==================================== -->
+
+<div class="section">
+
+    <div class="section-top">
+
+        <h2 class="section-title">
+            Milk Sales Analytics
+        </h2>
+
+        <form method="GET" class="filter-form">
+
+            <input
+                type="date"
+                name="milk_date"
+                value="{{ milk_date }}"
+            >
+
+            <button type="submit">
+                Filter Milk
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="grid">
+
+        <div class="card green">
+
+            <h3>Today's Milk Sales</h3>
+
+            <div class="amount">
+                Ksh {{ "{:,.2f}".format(total_cash) }}
+            </div>
+
+        </div>
+
+        <div class="card blue">
+
+            <h3>Monthly Milk Sales</h3>
+
+            <div class="amount">
+                Ksh {{ "{:,.2f}".format(monthly_total_sales) }}
+            </div>
+
+        </div>
+
+        <div class="card orange">
+
+            <h3>Quarterly Milk Sales</h3>
+
+            <div class="amount">
+                Ksh {{ "{:,.2f}".format(quarterly_total_sales) }}
+            </div>
+
+        </div>
+
+        <div class="card purple">
+
+            <h3>Yearly Milk Sales</h3>
+
+            <div class="amount">
+                Ksh {{ "{:,.2f}".format(yearly_total_sales) }}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ====================================
+VEHICLE SALES SECTION
+==================================== -->
+
+<div class="section">
+
+    <div class="section-top">
+
+        <h2 class="section-title">
+            Vehicle Sales Analytics
+        </h2>
+
+        <form method="GET" class="filter-form">
+
+            <input
+                type="date"
+                name="vehicle_date"
+                value="{{ vehicle_date }}"
+            >
+
+            <button type="submit">
+                Filter Vehicles
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="grid">
+
+        <div class="card green">
+
+            <h3>Total Vehicle Sales</h3>
+
+            <div class="amount">
+                Ksh {{ "{:,.2f}".format(total_sales) }}
+            </div>
+
+        </div>
+
+        <div class="card red">
+
+            <h3>Total Vehicle Expenses</h3>
+
+            <div class="amount">
+                Ksh {{ "{:,.2f}".format(total_expense) }}
+            </div>
+
+        </div>
+
+        <div class="card blue">
+
+            <h3>Vehicle Profit</h3>
+
+            <div class="amount">
+                Ksh {{
+                    "{:,.2f}".format(
+                        total_sales - total_expense
+                    )
+                }}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ====================================
+EXPENDITURE SECTION
+==================================== -->
+
+<div class="section">
+
+    <div class="section-top">
+
+        <h2 class="section-title">
+            Expenditure Analytics
+        </h2>
+
+        <form method="GET" class="filter-form">
+
+            <input
+                type="date"
+                name="expense_date"
+                value="{{ expense_date }}"
+            >
+
+            <button type="submit">
+                Filter Expenses
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <tr>
+
+                <th>Expense Type</th>
+
+                <th>Selected Date</th>
+
+                <th>Monthly</th>
+
+                <th>Quarterly</th>
+
+                <th>Yearly</th>
+
+            </tr>
+
+            <tr>
+
+                <td>
+                    Feed Expenses
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(feed_daily or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(feed_monthly or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(feed_quarterly or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(feed_yearly or 0) }}
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td>
+                    Other Expenses
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(other_daily or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(other_monthly or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(other_quarterly or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(other_yearly or 0) }}
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td>
+                    Salary Expenses
+                </td>
+
+                <td>
+                    Ksh {{
+                        "{:,.2f}".format(
+                            employees|sum(attribute='salary')
+                        )
+                    }}
+                </td>
+
+                <td>
+                    Ksh {{
+                        "{:,.2f}".format(
+                            employees|sum(attribute='salary')
+                        )
+                    }}
+                </td>
+
+                <td>
+                    Ksh {{
+                        "{:,.2f}".format(
+                            (employees|sum(attribute='salary')) * 3
+                        )
+                    }}
+                </td>
+
+                <td>
+                    Ksh {{
+                        "{:,.2f}".format(
+                            (employees|sum(attribute='salary')) * 12
+                        )
+                    }}
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td>
+                    Car Expenses
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(total_expense or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(car_monthly_expense or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(car_quarterly_expense or 0) }}
+                </td>
+
+                <td>
+                    Ksh {{ "{:,.2f}".format(car_yearly_expense or 0) }}
+                </td>
+
+            </tr>
+
+        </table>
+
+    </div>
+
+</div>
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body { font-family: Arial; font-size: 12px; }
+table { width: 100%; border-collapse: collapse; }
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 6px;
+}
+
+th { background: #f4f4f4; }
+</style>
+</head>
+
+<body>
+
+<h2>Delivery Report</h2>
+
+<table>
+<tr>
+<th>Date</th>
+<th>Feed</th>
+<th>Pieces (Bags)</th>
+<th>Unit Weight (kg)</th>
+<th>Total Qty (kg)</th>
+</tr>
+
+{% for d in deliveries %}
+<tr>
+<td>{{ d.date_delivered }}</td>
+<td>{{ d.item.feed_name }}</td>
+
+<td>{{ "{:,.2f}".format(d.pieces or 0) }}</td>
+
+<td>{{ "{:,.2f}".format(d.unit_weight or 0) }}</td>
+
+<td>{{ "{:,.2f}".format(d.quantity_delivered or 0) }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

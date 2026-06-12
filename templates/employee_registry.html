@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Farm | Employee_registry</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 400px;
+            margin: 80px auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            background: #2c7be5;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1a68d1;
+        }
+         .btn_dashboard {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 8px 14px;
+            background: green;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/Employees" class="btn_dashboard">← Back</a>
+    <h2>Employee Registry</h2>
+{% if message %}
+<p style="color:#1500ff; font-weight:bold;">{{ message }}</p>
+{% endif %}
+
+    <form method="POST" action="/employee_registry">
+        <input type="text" name="name" placeholder="Employee name" required>
+        <input type="text" name="id_number" placeholder="id_number" required>
+        <input type="text" name="phone" placeholder="phone" required>
+        <input type="text" name="salary" placeholder="salary" required>
+        <input type="text" name="role" placeholder="role" required>
+        <button type="submit">Submit</button>
+    </form>
+
+</div>
+
+</body>
+</html>

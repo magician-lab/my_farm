@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Milk Production Registry</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f3f6fb;
+    padding:30px;
+    color:#1f2937;
+}
+
+.container{
+    max-width:1500px;
+    margin:auto;
+}
+
+.page-header{
+    margin-bottom:25px;
+    text-align:center;
+}
+
+.page-header h1{
+    font-size:34px;
+    color:#111827;
+    margin-bottom:8px;
+}
+
+.page-header p{
+    color:#6b7280;
+    font-size:15px;
+}
+
+/* CARD */
+
+.card{
+    background:white;
+    border-radius:14px;
+    padding:25px;
+    margin-bottom:25px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+.section-title{
+    font-size:20px;
+    font-weight:bold;
+    margin-bottom:20px;
+    color:#111827;
+    border-left:5px solid #2563eb;
+    padding-left:12px;
+}
+
+/* ALERTS */
+
+.alert{
+    padding:14px;
+    border-radius:8px;
+    margin-bottom:20px;
+    font-weight:bold;
+}
+
+.alert-success{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.alert-danger{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+/* IMPORT AREA */
+
+.import-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr auto auto;
+    gap:15px;
+    align-items:end;
+}
+
+label{
+    display:block;
+    margin-bottom:7px;
+    font-size:14px;
+    font-weight:bold;
+}
+
+input[type="date"],
+input[type="file"],
+input[type="number"]{
+    width:100%;
+    padding:10px;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    font-size:14px;
+}
+
+input:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,0.15);
+}
+
+/* BUTTONS */
+
+.btn{
+    border:none;
+    border-radius:8px;
+    padding:12px 18px;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:bold;
+    text-decoration:none;
+    display:inline-block;
+    transition:0.3s;
+}
+
+.btn-primary{
+    background:#2563eb;
+    color:white;
+}
+
+.btn-primary:hover{
+    background:#1d4ed8;
+}
+
+.btn-success{
+    background:#16a34a;
+    color:white;
+}
+
+.btn-success:hover{
+    background:#15803d;
+}
+
+.btn-dark{
+    background:#111827;
+    color:white;
+}
+
+.btn-dark:hover{
+    background:black;
+}
+
+/* TABLE */
+
+.table-wrapper{
+    overflow-x:auto;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:900px;
+}
+
+thead{
+    background:#1f2937;
+    color:white;
+}
+
+th{
+    padding:15px;
+    text-align:center;
+    font-size:14px;
+}
+
+td{
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:center;
+    font-size:14px;
+}
+
+tbody tr:nth-child(even){
+    background:#f9fafb;
+}
+
+tbody tr:hover{
+    background:#eef4ff;
+}
+
+.cow-name{
+    font-weight:bold;
+    color:#111827;
+}
+
+.total-cell{
+    font-weight:bold;
+    color:#16a34a;
+}
+
+/* SUMMARY */
+
+.summary-box{
+    margin-top:20px;
+    display:flex;
+    justify-content:flex-end;
+}
+
+.summary-card{
+    background:#ecfdf5;
+    border:1px solid #bbf7d0;
+    border-radius:12px;
+    padding:20px;
+    min-width:280px;
+}
+
+.summary-card h3{
+    margin-bottom:15px;
+    color:#065f46;
+}
+
+.summary-row{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:10px;
+    font-size:15px;
+}
+
+.summary-value{
+    font-weight:bold;
+    color:#047857;
+}
+
+/* ACTIONS */
+
+.action-area{
+    margin-top:25px;
+    text-align:right;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:900px){
+
+    .import-grid{
+        grid-template-columns:1fr;
+    }
+
+    .summary-box{
+        justify-content:center;
+    }
+
+    .action-area{
+        text-align:center;
+    }
+
+}
+
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:25px;
+    background:white;
+    padding:18px;
+    border-radius:14px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:140px;
+}
+
+.action-btn:hover{
+    background:#2e7d32;
+    transform:translateY(-2px);
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    .top-actions{
+        padding:14px;
+    }
+
+    .action-btn{
+        width:100%;
+        min-width:100%;
+        text-align:center;
+    }
+
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+<div class="top-actions">
+
+    <a href="/manage_milking" class="action-btn">
+        manage milking
+    </a>
+
+    <a href="/milk_dashboard" class="action-btn">
+        Back
+    </a>
+
+
+    <!-- <a href="/animals" class="action-btn">
+        main_dashboard
+    </a> -->
+
+</div>
+    <div class="page-header">
+
+        <h1>Milk Production Registry</h1>
+
+        <p>
+            Record milk manually or import milk records using Excel.
+        </p>
+
+    </div>
+
+    <!-- FLASH MESSAGES -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+    {% endwith %}
+
+    <!-- IMPORT SECTION -->
+
+    <div class="card">
+
+        <div class="section-title">
+            Excel Import Section
+        </div>
+
+        <form method="POST"
+              action="{{ url_for('import_milk_registry') }}"
+              enctype="multipart/form-data">
+
+            <div class="import-grid">
+
+                <div>
+
+                    <label>Select Date</label>
+
+                    <input type="date"
+                           name="date"
+                           value="{{ current_date }}"
+                           required>
+
+                </div>
+
+                <div>
+
+                    <label>Select Excel File</label>
+
+                    <input type="file"
+                           name="excel_file"
+                           accept=".xlsx,.xls"
+                           required>
+
+                </div>
+
+                <div>
+
+                    <a href="{{ url_for('export_milk_template') }}"
+                       class="btn btn-dark">
+
+                        Export Template
+
+                    </a>
+
+                </div>
+
+                <div>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        Import Excel
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- MANUAL ENTRY -->
+
+    <div class="card">
+
+        <div class="section-title">
+            Manual Milk Entry
+        </div>
+
+        <form method="POST">
+
+            <div style="margin-bottom:20px;">
+
+                <label>Select Date</label>
+
+                <input type="date"
+                       name="date"
+                       value="{{ current_date }}"
+                       style="max-width:250px;">
+
+            </div>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Cow ID</th>
+                            <th>Cow Name</th>
+                            <th>Morning (L)</th>
+                            <th>Noon (L)</th>
+                            <th>Evening (L)</th>
+                            <th>Total (L)</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for cow in cows %}
+
+                        <tr>
+
+                            <td>
+
+                                {{ cow.animal.id }}
+
+                                <input type="hidden"
+                                       name="cow_id[]"
+                                       value="{{ cow.animal.id }}">
+
+                            </td>
+
+                            <td class="cow-name">
+                                {{ cow.animal.name }}
+                            </td>
+
+                            <td>
+
+                                <input type="number"
+                                       name="morning[]"
+                                       step="0.1"
+                                       min="0"
+                                       oninput="calculateRow(this)">
+
+                            </td>
+
+                            <td>
+
+                                <input type="number"
+                                       name="noon[]"
+                                       step="0.1"
+                                       min="0"
+                                       oninput="calculateRow(this)">
+
+                            </td>
+
+                            <td>
+
+                                <input type="number"
+                                       name="evening[]"
+                                       step="0.1"
+                                       min="0"
+                                       oninput="calculateRow(this)">
+
+                            </td>
+
+                            <td class="total-cell">
+                                0.0
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <!-- SUMMARY -->
+
+            <div class="summary-box">
+
+                <div class="summary-card">
+
+                    <h3>Daily Summary</h3>
+
+                    <div class="summary-row">
+
+                        <span>Total Milk:</span>
+
+                        <span class="summary-value">
+                            <span id="dailyTotal">0.0</span> L
+                        </span>
+
+                    </div>
+
+                    <div class="summary-row">
+
+                        <span>Total Milking Cows:</span>
+
+                        <span class="summary-value">
+                            {{ cows|length }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- SAVE -->
+
+            <div class="action-area">
+
+                <button type="submit"
+                        class="btn btn-success">
+
+                    Save Milk Records
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+function calculateRow(input){
+
+    let row = input.closest("tr");
+
+    let morning =
+        parseFloat(
+            row.children[2].querySelector("input").value
+        ) || 0;
+
+    let noon =
+        parseFloat(
+            row.children[3].querySelector("input").value
+        ) || 0;
+
+    let evening =
+        parseFloat(
+            row.children[4].querySelector("input").value
+        ) || 0;
+
+    let total = morning + noon + evening;
+
+    row.children[5].innerText = total.toFixed(1);
+
+    calculateDailyTotal();
+}
+
+function calculateDailyTotal(){
+
+    let totals =
+        document.querySelectorAll(".total-cell");
+
+    let sum = 0;
+
+    totals.forEach(cell => {
+
+        sum += parseFloat(cell.innerText) || 0;
+
+    });
+
+    document.getElementById("dailyTotal")
+        .innerText = sum.toFixed(1);
+}
+
+</script>
+
+</body>
+</html>

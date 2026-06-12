@@ -1,0 +1,17 @@
+<h2>Create Order</h2>
+
+<form method="post">
+    <input type="date" name="date" required>
+    <input type="text" name="feed_name" placeholder="Feed Name" required>
+
+    <select name="farm_id">
+        {% for f in farms %}
+        <option value="{{ f.id }}">{{ f.name }}</option>
+        {% endfor %}
+    </select>
+
+    <input type="number" step="0.01" name="quantity" placeholder="Quantity">
+    <input type="number" step="0.01" name="price" placeholder="Price per unit">
+
+    <button>Create</button>
+</form>

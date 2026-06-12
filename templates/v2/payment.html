@@ -1,0 +1,93 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<style>
+.payment-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.box {
+    background: #f4f6f9;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.box b {
+    display: block;
+    color: #555;
+}
+
+.form-group {
+    margin-bottom: 10px;
+}
+
+input {
+    width: 100%;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+</style>
+
+<div class="card">
+
+<h2>Payment - {{ order.order_ref }}</h2>
+
+<a href="/feeds_v2/view/{{ order.id }}" class="btn btn-blue">
+    ⬅ Back to Order
+</a>
+
+<!-- 📊 SUMMARY -->
+<div class="payment-summary">
+
+<div class="box">
+<b>Total</b>
+KES {{ "{:,.2f}".format(total) }}
+</div>
+
+<div class="box">
+<b>Paid</b>
+KES {{ "{:,.2f}".format(paid) }}
+</div>
+
+<div class="box">
+<b>Balance</b>
+<span style="color:{% if balance > 0 %}red{% else %}green{% endif %}">
+KES {{ "{:,.2f}".format(balance) }}
+</span>
+</div>
+
+</div>
+
+<hr>
+
+<form method="post">
+
+<div class="form-group">
+<label>Date Paid</label>
+<input type="date" name="date_paid" required value="{{ current_date }}">
+</div>
+
+<div class="form-group">
+<label>Amount</label>
+<input type="number" step="0.01" name="amount" required>
+</div>
+
+<div class="form-group">
+<label>Account</label>
+<input name="account" placeholder="Cash / Bank / M-Pesa">
+</div>
+
+<button class="btn btn-green" style="width:100%; font-weight:bold;">
+💰 Record Payment
+</button>
+
+</form>
+
+</div>
+
+{% endblock %}

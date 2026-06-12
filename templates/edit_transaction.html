@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Edit Transaction</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f4f6f9;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.header h2{
+    margin:0;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:15px;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.form-group label{
+    margin-bottom:6px;
+    font-weight:bold;
+    color:#444;
+}
+
+input,
+select{
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:14px;
+}
+
+button{
+    margin-top:20px;
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#198754;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+.back-btn{
+    text-decoration:none;
+    background:#1565c0;
+    color:white;
+    padding:10px 14px;
+    border-radius:8px;
+}
+
+.summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;
+    margin-bottom:20px;
+}
+
+.summary-box{
+    background:#f4f6f9;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.summary-box b{
+    display:block;
+    margin-bottom:5px;
+    color:#555;
+}
+
+.value{
+    font-size:18px;
+    font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+
+    <h2>✏ Edit Transaction</h2>
+
+    <a class="back-btn"
+       href="{{ url_for(
+            'transactions',
+            filter_date=selected_date,
+            month=selected_month,
+            purpose=purpose,
+            farm_id=farm_filter
+       ) }}">
+       ⬅ Back
+    </a>
+
+</div>
+
+<!-- 🔥 SUMMARY -->
+<div class="summary">
+
+    <div class="summary-box">
+        <b>ID</b>
+
+        <div class="value">
+            #{{ transaction.id }}
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <b>Amount</b>
+
+        <div class="value">
+            KES {{ "{:,.2f}".format(transaction.amount or 0) }}
+        </div>
+    </div>
+
+</div>
+
+<form method="POST">
+
+<!-- 🔹 KEEP FILTERS -->
+
+<input type="hidden"
+       name="filter_date"
+       value="{{ selected_date }}">
+
+<input type="hidden"
+       name="selected_month"
+       value="{{ selected_month }}">
+
+<input type="hidden"
+       name="purpose"
+       value="{{ purpose }}">
+
+<input type="hidden"
+       name="farm_filter"
+       value="{{ farm_filter }}">
+
+<div class="form-grid">
+
+    <div class="form-group">
+        <label>Date Paid</label>
+
+        <input type="date"
+               name="date_paid"
+               required
+               value="{{ transaction.date_paid }}">
+    </div>
+
+    <div class="form-group">
+        <label>Farm</label>
+
+        <select name="farm_id">
+
+            <option value="">No Farm</option>
+
+            {% for farm in farms %}
+
+            <option value="{{ farm.id }}"
+            {% if transaction.farm_id == farm.id %}
+            selected
+            {% endif %}>
+                {{ farm.name }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Account</label>
+
+        <input type="text"
+               name="account"
+               value="{{ transaction.account or '' }}"
+               placeholder="Cash / Bank / M-Pesa">
+    </div>
+
+    <div class="form-group">
+        <label>Purpose Type</label>
+
+        <select name="purpose_type">
+
+            <option value="feeds"
+            {% if transaction.purpose_type == 'feeds' %}
+            selected
+            {% endif %}>
+            Feeds
+            </option>
+
+            <option value="other"
+            {% if transaction.purpose_type == 'other' %}
+            selected
+            {% endif %}>
+            Other
+            </option>
+
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Description</label>
+
+        <input type="text"
+               name="purpose_text"
+               value="{{ transaction.purpose or '' }}">
+    </div>
+
+    <div class="form-group">
+        <label>Amount</label>
+
+        <input type="number"
+               step="0.01"
+               name="amount"
+               required
+               value="{{ transaction.amount }}">
+    </div>
+
+</div>
+
+<button type="submit">
+    💾 Update Transaction
+</button>
+
+</form>
+
+</div>
+
+</body>
+</html>

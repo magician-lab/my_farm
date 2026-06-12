@@ -1,0 +1,31 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<div class="card">
+
+<div style="margin-bottom:10px;">
+    <a href="/feeds_v2/view/{{ order.id }}" class="btn btn-blue">
+        ⬅ Back to Order
+    </a>
+</div>
+
+<h2>Add Item - {{ order.order_ref }}</h2>
+
+<form method="post">
+
+<label>Feed Name</label>
+<input name="feed_name" required>
+
+<label>Quantity (kg)</label>
+<input type="number" step="0.01" name="quantity" required>
+
+<label>Price per unit</label>
+<input type="number" step="0.01" name="price" required>
+
+<button class="btn btn-green">Add Item</button>
+
+</form>
+
+</div>
+
+{% endblock %}

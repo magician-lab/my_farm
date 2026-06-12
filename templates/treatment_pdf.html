@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Treatment Report</title>
+
+    <style>
+
+        body{
+            font-family: Arial, sans-serif;
+            padding:20px;
+            color:#333;
+        }
+
+        h2{
+            text-align:center;
+            margin-bottom:5px;
+        }
+
+        .subtitle{
+            text-align:center;
+            margin-bottom:20px;
+            font-size:14px;
+            color:#555;
+        }
+
+        .filters{
+            text-align:center;
+            margin-bottom:15px;
+            font-size:14px;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:10px;
+        }
+
+        th{
+            background:#2c3e50;
+            color:white;
+            padding:10px;
+            font-size:14px;
+        }
+
+        td{
+            padding:8px;
+            border:1px solid #ddd;
+            text-align:center;
+            font-size:13px;
+        }
+
+        .status-healed{
+            color:green;
+            font-weight:bold;
+        }
+
+        .status-recovering{
+            color:red;
+            font-weight:bold;
+        }
+
+        .summary{
+            margin-top:20px;
+            width:60%;
+        }
+
+        .summary td{
+            text-align:left;
+        }
+
+        .footer{
+            margin-top:30px;
+            font-size:12px;
+            text-align:center;
+            color:#777;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<h2>Treatment Report</h2>
+<p style="text-align:right; font-size:12px;">
+Generated on: {{ now.strftime('%d-%m-%Y %H:%M') }}
+</p>
+
+<div class="subtitle">
+    Generated Report
+</div>
+
+<!-- FILTER INFO -->
+<div class="filters">
+
+    {% if selected_date %}
+        <strong>Date:</strong> {{ selected_date }}
+    {% endif %}
+
+    {% if status %}
+        | <strong>Status:</strong> {{ status|capitalize }}
+    {% endif %}
+
+    {% if not selected_date and not status %}
+        Showing All Records
+    {% endif %}
+
+</div>
+
+<hr>
+
+<!-- DATA TABLE -->
+<table>
+
+<tr>
+    <th>#</th>
+    <th>Cow</th>
+    <th>Breed</th>
+    <th>Date</th>
+    <th>Illness</th>
+    <th>Cost (Ksh)</th>
+    <th>Vet</th>
+    <th>Status</th>
+</tr>
+
+{% for r in records %}
+<tr>
+
+<td>{{ loop.index }}</td>
+<td>{{ r.animal.name }}</td>
+<td>{{ r.animal.breed }}</td>
+<td>{{ r.date_treated }}</td>
+<td>{{ r.illness }}</td>
+<td>{{ "{:,}".format(r.cost) }}</td>
+<td>{{ r.vet }}</td>
+
+<td>
+{% if r.status == "healed" %}
+<span class="status-healed">Healed</span>
+{% else %}
+<span class="status-recovering">Recovering</span>
+{% endif %}
+</td>
+
+</tr>
+{% endfor %}
+
+{% if records|length == 0 %}
+<tr>
+<td colspan="8">No records found.</td>
+</tr>
+{% endif %}
+
+</table>
+
+<hr>
+
+<!-- SUMMARY -->
+<h3>Summary</h3>
+
+<table class="summary">
+
+<tr>
+    <td><strong>Total Healed</strong></td>
+    <td>{{ healed_count }}</td>
+</tr>
+
+<tr>
+    <td><strong>Total Recovering</strong></td>
+    <td>{{ recovering_count }}</td>
+</tr>
+
+<tr>
+    <td><strong>Total Cost (Filtered)</strong></td>
+    <td>Ksh {{ "{:,}".format(daily_total or 0) }}</td>
+</tr>
+
+<tr>
+    <td><strong>Monthly Cost</strong></td>
+    <td>Ksh {{ "{:,}".format(month_total or 0) }}</td>
+</tr>
+
+<tr>
+    <td><strong>Quarter Cost</strong></td>
+    <td>Ksh {{ "{:,}".format(quarter_total or 0) }}</td>
+</tr>
+
+<tr>
+    <td><strong>Year Cost</strong></td>
+    <td>Ksh {{ "{:,}".format(year_total or 0) }}</td>
+</tr>
+
+</table>
+
+<div class="footer">
+    Generated automatically by Farm Management System
+</div>
+
+</body>
+</html>

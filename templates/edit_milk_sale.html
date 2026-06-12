@@ -1,0 +1,35 @@
+<h2>Edit Milk Sale</h2>
+
+<form method="POST">
+
+    <label>Date:</label><br>
+    <input type="date" name="date" value="{{ sale.date }}"><br><br>
+
+    <label>Session:</label><br>
+    <select name="session">
+        <option value="Morning" {% if sale.session=='Morning' %}selected{% endif %}>Morning</option>
+        <option value="Noon" {% if sale.session=='Noon' %}selected{% endif %}>Noon</option>
+        <option value="Evening" {% if sale.session=='Evening' %}selected{% endif %}>Evening</option>
+    </select><br><br>
+
+    <label>Shop1:</label>
+    <input type="number" step="0.01" name="shop1" value="{{ sale.shop1 }}"><br><br>
+
+    <label>Shop2:</label>
+    <input type="number" step="0.01" name="shop2" value="{{ sale.shop2 }}"><br><br>
+
+    <label>Shop3:</label>
+    <input type="number" step="0.01" name="shop3" value="{{ sale.shop3 }}"><br><br>
+
+    <label>Calf:</label>
+    <input type="number" step="0.01" name="calf" value="{{ sale.calf }}"><br><br>
+
+    <label>Home:</label>
+    <input type="number" step="0.01" name="home" value="{{ sale.home }}"><br><br>
+
+    <label>Price:</label>
+    <input type="number" step="0.01" name="price" value="{{ sale.price }}"><br><br>
+
+    <button type="submit">Update</button>
+
+</form>

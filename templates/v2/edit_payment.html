@@ -1,0 +1,160 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<style>
+
+.payment-card{
+    max-width:700px;
+    margin:auto;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:15px;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.form-group label{
+    margin-bottom:5px;
+    font-weight:bold;
+    color:#444;
+}
+
+.form-group input{
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:14px;
+}
+
+.summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+    margin-bottom:20px;
+}
+
+.summary-box{
+    background:#f4f6f9;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.summary-box b{
+    display:block;
+    margin-bottom:5px;
+    color:#555;
+}
+
+.summary-box .value{
+    font-size:18px;
+    font-weight:bold;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+</style>
+
+<div class="card payment-card">
+
+<div class="header">
+
+    <h2>✏ Edit Payment</h2>
+
+
+        <a href="/feeds_v2/payment_report?order_id={{ order.id }}"
+           class="btn btn-blue">
+           ⬅ Back
+        </a>
+</div>
+
+<!-- 🔥 SUMMARY -->
+<div class="summary">
+
+    <div class="summary-box">
+        <b>Payment ID</b>
+
+        <div class="value">
+            #{{ payment.id }}
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <b>Amount</b>
+
+        <div class="value">
+            KES {{ "{:,.2f}".format(payment.amount or 0) }}
+        </div>
+    </div>
+
+</div>
+
+<form method="post">
+
+<div class="form-grid">
+
+    <div class="form-group">
+        <label>Date Paid</label>
+
+        <input type="date"
+               name="date_paid"
+               required
+               value="{{ payment.date_paid }}">
+    </div>
+
+    <div class="form-group">
+        <label>Amount</label>
+
+        <input type="number"
+               step="0.01"
+               name="amount"
+               required
+               value="{{ payment.amount }}">
+    </div>
+
+    <div class="form-group">
+        <label>Account</label>
+
+        <input type="text"
+               name="account"
+               value="{{ payment.account or '' }}"
+               placeholder="Cash / Bank / M-Pesa">
+    </div>
+
+    <div class="form-group">
+        <label>Purpose</label>
+
+        <input type="text"
+               name="purpose"
+               value="{{ payment.purpose or '' }}">
+    </div>
+
+</div>
+
+<br>
+
+<button class="btn btn-green"
+        style="width:100%; font-weight:bold;">
+
+    💾 Update Payment
+
+</button>
+
+</form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<div class="card">
+
+<!-- 🔝 HEADER -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+
+    <h2>Payment Records</h2>
+
+    <!-- ⬅ BACK -->
+    <a href="/feeds_v2/view/{{ order_id }}" class="btn btn-blue">
+        ⬅ Back to Order
+    </a>
+<a class="btn btn-blue"
+   href="/send_report/feeds_payments?order_id={{ order.id }}">
+   📄 Export Payments PDF
+</a>
+</div>
+
+<table>
+
+<tr>
+    <th>Date</th>
+    <th>Amount</th>
+    <th>Account</th>
+    <th>Purpose</th>
+    <th>Actions</th>
+</tr>
+
+{% for p in payments %}
+<tr>
+
+<td>{{ p.date_paid }}</td>
+
+<td>KES {{ "{:,.2f}".format(p.amount) }}</td>
+
+<td>{{ p.account }}</td>
+
+<td>{{ p.purpose }}</td>
+
+<td style="display:flex; gap:5px;">
+
+    <!-- ✏ EDIT -->
+<a href="{{ url_for(
+    'edit_payment',
+    id=p.id,
+    order_id=order_id
+) }}"
+class="btn btn-blue">
+    Edit
+</a>
+
+    <!-- 🗑 DELETE -->
+    <form method="post"
+          action="/feeds_v2/payment/delete/{{ p.id }}"
+          onsubmit="return confirm('Delete this payment?')">
+
+        <button class="btn btn-red">Delete</button>
+    </form>
+
+</td>
+
+</tr>
+{% endfor %}
+
+</table>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Milk Sales Report</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background: #ffffff;
+    color: #222;
+    padding: 20px;
+    font-size: 12.5px;
+}
+
+/* =========================
+   HEADINGS
+========================= */
+h2{
+    text-align:center;
+    color:#1b5e20;
+    margin-bottom: 8px;
+    font-size: 18px;
+}
+
+.subtitle, .date-box{
+    text-align:center;
+    font-size: 12px;
+    color:#444;
+    margin-bottom: 8px;
+}
+
+/* =========================
+   TABLE CONTAINER
+========================= */
+.table-card{
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* =========================
+   TABLE BASE
+========================= */
+table{
+    width:100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+th{
+    background:#f2f2f2;
+    color:#000;
+    padding:8px;
+    border:1px solid #ccc;
+    font-weight: bold;
+    text-align:center;
+}
+
+td{
+    border:1px solid #ddd;
+    padding:7px;
+    text-align:center;
+}
+
+/* =========================
+   FIRST COLUMN (METRICS)
+========================= */
+td:first-child, th:first-child{
+    text-align:left;
+    font-weight:bold;
+    background:#fafafa;
+}
+
+/* =========================
+   SYSTEM / ACTUAL SLIGHT DIFFERENCE ONLY
+========================= */
+.system{
+    background:#f9f9f9;
+}
+
+.actual{
+    background:#fff;
+}
+
+/* =========================
+   DISCREPANCY (MINIMAL BUT CLEAR)
+========================= */
+.pos{
+    color:#1b5e20;
+    font-weight:bold;
+}
+
+.neg{
+    color:#b71c1c;
+    font-weight:bold;
+}
+
+/* =========================
+   SECTION SPACING
+========================= */
+.section-title{
+    margin-top:15px;
+    font-weight:bold;
+    font-size:13px;
+    color:#333;
+}
+
+/* =========================
+   SESSION BOXES (PRINT FRIENDLY)
+========================= */
+.sessions{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.card{
+    border:1px solid #ddd;
+    padding:10px;
+    font-size:12px;
+    border-radius:6px;
+}
+
+.title{
+    font-weight:bold;
+    text-align:center;
+    margin-bottom:5px;
+    color:#1b5e20;
+}
+
+/* =========================
+   FOOTER
+========================= */
+.footer{
+    text-align:center;
+    font-size:10px;
+    margin-top:15px;
+    color:#666;
+}
+
+/* =========================
+   PRINT SAFETY (VERY IMPORTANT)
+========================= */
+@media print {
+    body{
+        background: white;
+    }
+
+    .table-card{
+        page-break-inside: avoid;
+    }
+
+    tr{
+        page-break-inside: avoid;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>🥛 Milk Sales Report</h2>
+
+<div class="subtitle">Farm Management System Report</div>
+
+<div class="date-box">
+📅 Report Date: {{ selected_date }}
+</div>
+
+<!-- MAIN FLOW TABLE -->
+<div class="table-card">
+<table>
+
+<tr>
+<th>Metric</th>
+<th>System Flow</th>
+<th>Actual Flow</th>
+<th>Discrepancy</th>
+</tr>
+
+<tr>
+<td class="metric">Previous Remaining</td>
+<td class="system">{{ previous_system_remaining }}</td>
+<td class="actual">{{ previous_actual_remaining }}</td>
+<td class="{% if prev_variance >= 0 %}pos{% else %}neg{% endif %}">
+{{ prev_variance|round(2) }}
+</td>
+</tr>
+
+<tr>
+<td class="metric">Today's Production</td>
+<td class="system">{{ total_production }}</td>
+<td class="actual">{{ total_production }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Today Available</td>
+<td class="system">{{ system_available_today }}</td>
+<td class="actual">{{ actual_available_today }}</td>
+<td class="{% if avail_variance >= 0 %}pos{% else %}neg{% endif %}">
+{{ avail_variance|round(2) }}
+</td>
+</tr>
+
+<tr>
+<td class="metric">Total Sales (Shops)</td>
+<td class="system">{{ total_sold_shops }}</td>
+<td class="actual">{{ total_sold_shops }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Calf Usage</td>
+<td class="system">{{ total_calf_used }}</td>
+<td class="actual">{{ total_calf_used }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Home Usage</td>
+<td class="system">{{ total_home_used }}</td>
+<td class="actual">{{ total_home_used }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Total Used</td>
+<td class="system">{{ total_used }}</td>
+<td class="actual">{{ total_used }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Expected Remaining</td>
+<td class="system">{{ (system_available_today - total_used)|round(2) }}</td>
+<td class="actual">{{ (actual_available_today - total_used)|round(2) }}</td>
+<td class="neutral">N/A</td>
+</tr>
+
+<tr>
+<td class="metric">Remaining</td>
+<td class="system">{{ system_remaining }}</td>
+<td class="actual">{{ actual_remaining }}</td>
+<td class="{% if variance >= 0 %}pos{% else %}neg{% endif %}">
+{{ variance|round(2) }}
+</td>
+</tr>
+
+<tr>
+<td class="metric">Actual vs Expected</td>
+<td class="system">N/A</td>
+<td class="actual" style="
+    font-weight:bold;
+    color:
+    {% if (actual_remaining - (actual_available_today - total_used)) < 0 %}
+        #c62828
+    {% else %}
+        green
+    {% endif %}
+">
+    {{ (actual_remaining - (actual_available_today - total_used))|round(2) }}
+</td>
+<td class="neutral">N/A</td>
+</tr>
+
+</table>
+</div>
+
+<!-- SESSION BREAKDOWN -->
+<div class="sessions">
+
+<div class="card">
+<div class="title">🌅 Morning</div>
+Shop: {{ morning_shop_total }}<br>
+Calf: {{ morning_calf }}<br>
+Home: {{ morning_home }}
+</div>
+
+<div class="card">
+<div class="title">🌞 Noon</div>
+Shop: {{ noon_shop_total }}<br>
+Calf: {{ noon_calf }}<br>
+Home: {{ noon_home }}
+</div>
+
+<div class="card">
+<div class="title">🌙 Evening</div>
+Shop: {{ evening_shop_total }}<br>
+Calf: {{ evening_calf }}<br>
+Home: {{ evening_home }}
+</div>
+
+</div>
+
+<!-- SALES RECORDS -->
+<div class="table-card">
+<table>
+
+<tr>
+<th>#</th>
+<th>Session</th>
+<th>Shop1</th>
+<th>Shop2</th>
+<th>Shop3</th>
+<th>Calf</th>
+<th>Home</th>
+<th>Price</th>
+</tr>
+
+{% for s in sales_records %}
+<tr>
+<td>{{ loop.index }}</td>
+<td>{{ s.session }}</td>
+<td>{{ s.shop1 }}</td>
+<td>{{ s.shop2 }}</td>
+<td>{{ s.shop3 }}</td>
+<td>{{ s.calf }}</td>
+<td>{{ s.home }}</td>
+<td>{{ s.price }}</td>
+</tr>
+{% endfor %}
+
+</table>
+</div>
+
+<div class="footer">
+Generated automatically by Milk ERP System
+</div>
+
+</body>
+</html>

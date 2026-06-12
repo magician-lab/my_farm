@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+
+<style>
+body {
+    font-family: 'Segoe UI';
+    background: linear-gradient(to right, #eef2f7, #e3e9f0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 350px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.link {
+    display: block;
+    margin-top: 10px;
+    text-decoration: none;
+    color: gray;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Login</h2>
+
+<!-- FLASH MESSAGE -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div style="color:red;">
+      {% for m in messages %}
+        <p>{{ m }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="text" name="username" placeholder="Username" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+</form>
+
+<a href="/forgot" class="link">Forgot Password?</a>
+
+</div>
+
+</body>
+</html>

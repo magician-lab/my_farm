@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+
+<meta charset="utf-8">
+
+<style>
+
+body{
+    font-family:Arial;
+    font-size:11px;
+}
+
+h1{
+    text-align:center;
+    color:#2563eb;
+}
+
+.summary{
+    width:100%;
+    border-collapse:collapse;
+    margin-bottom:20px;
+}
+
+.summary td{
+    border:1px solid #ddd;
+    padding:8px;
+    text-align:center;
+}
+
+.summary-title{
+    font-weight:bold;
+    background:#f3f4f6;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#2563eb;
+    color:white;
+    padding:8px;
+    border:1px solid #ddd;
+}
+
+td{
+    border:1px solid #ddd;
+    padding:8px;
+}
+
+.good{
+    color:green;
+    font-weight:bold;
+}
+
+.warning{
+    color:orange;
+    font-weight:bold;
+}
+
+.danger{
+    color:red;
+    font-weight:bold;
+}
+
+.footer{
+    margin-top:20px;
+    text-align:right;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Shed Occupancy Report</h1>
+
+<table class="summary">
+
+<tr>
+
+<td class="summary-title">
+Total Sheds
+</td>
+
+<td class="summary-title">
+Farm Capacity
+</td>
+
+<td class="summary-title">
+Occupied
+</td>
+
+<td class="summary-title">
+Available
+</td>
+
+<td class="summary-title">
+Occupancy Rate
+</td>
+
+</tr>
+
+<tr>
+
+<td>{{ total_sheds }}</td>
+
+<td>{{ total_capacity }}</td>
+
+<td>{{ total_occupied }}</td>
+
+<td>{{ total_remaining }}</td>
+
+<td>{{ occupancy_rate }}%</td>
+
+</tr>
+
+</table>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Shed</th>
+<th>Category</th>
+<th>Capacity</th>
+<th>Occupied</th>
+<th>Remaining</th>
+<th>Animals</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for item in report %}
+
+<tr>
+
+<td>{{ item.shed.name }}</td>
+
+<td>{{ item.shed.category_allowed }}</td>
+
+<td>{{ item.shed.capacity }}</td>
+
+<td>{{ item.occupied }}</td>
+
+<td>
+
+{% if item.remaining <= 0 %}
+
+<span class="danger">
+FULL
+</span>
+
+{% elif item.remaining <= 3 %}
+
+<span class="warning">
+{{ item.remaining }}
+</span>
+
+{% else %}
+
+<span class="good">
+{{ item.remaining }}
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+{% for animal in item.animals %}
+
+{{ animal.name }}
+
+{% if not loop.last %}
+,
+{% endif %}
+
+{% endfor %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+<div class="footer">
+
+Generated:
+{{ now.strftime('%d-%m-%Y %H:%M') }}
+
+</div>
+
+</body>
+</html>

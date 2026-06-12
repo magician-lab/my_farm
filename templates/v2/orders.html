@@ -1,0 +1,514 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<style>
+
+.card{
+    padding:15px;
+}
+
+/* =========================
+   TOP AREA
+========================= */
+.top-container{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    flex-wrap:wrap;
+    margin-bottom:15px;
+}
+
+.title{
+    font-size:24px;
+    font-weight:700;
+    color:#1f2937;
+}
+
+.actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+/* =========================
+   FILTER BOX
+========================= */
+.filter-box{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px;
+    background:#f4f6f9;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:15px;
+}
+
+.filter-box input{
+    padding:8px 10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    min-width:150px;
+}
+
+/* =========================
+   EMAIL SECTION
+========================= */
+.email-section{
+    background:#eef5ff;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:15px;
+}
+
+.email-title{
+    font-weight:700;
+    margin-bottom:10px;
+    color:#1565c0;
+}
+
+.email-box{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+}
+
+.email-box input{
+    flex:1;
+    min-width:180px;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+
+/* =========================
+   SUMMARY
+========================= */
+.summary-box{
+    background:#f8fafc;
+    border-radius:10px;
+    padding:15px;
+    margin-bottom:15px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    align-items:center;
+}
+
+.summary-item{
+    font-weight:bold;
+    font-size:15px;
+}
+
+.badge-green{
+    background:#d1fae5;
+    color:#065f46;
+    padding:5px 10px;
+    border-radius:20px;
+    font-weight:bold;
+}
+
+.badge-red{
+    background:#fee2e2;
+    color:#991b1b;
+    padding:5px 10px;
+    border-radius:20px;
+    font-weight:bold;
+}
+
+/* =========================
+   TABLE
+========================= */
+.table-wrapper{
+    overflow-x:auto;
+    border-radius:10px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:900px;
+    background:white;
+}
+
+thead{
+    background:#1565c0;
+    color:white;
+}
+
+th{
+    padding:12px 10px;
+    text-align:center;
+    font-size:14px;
+}
+
+td{
+    padding:10px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:center;
+    font-size:14px;
+}
+
+tbody tr:hover{
+    background:#f9fafb;
+}
+
+.num{
+    font-weight:600;
+}
+
+/* =========================
+   STATUS BADGES
+========================= */
+.badge{
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:bold;
+    display:inline-block;
+}
+
+.green{
+    background:#11ca52;
+    color:#ebf1ee;
+}
+
+.red{
+    background:#9e1515;
+    color:#f0e5e5;
+}
+
+.orange{
+    background:#eb6c04;
+    color:#e6e0de;
+}
+
+/* =========================
+   ACTIONS
+========================= */
+.action-box{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+.btn{
+    border:none;
+    padding:8px 12px;
+    border-radius:7px;
+    cursor:pointer;
+    text-decoration:none;
+    font-size:13px;
+    font-weight:600;
+}
+
+.btn-blue{
+    background:#1565c0;
+    color:white;
+}
+
+.btn-green{
+    background:#2e7d32;
+    color:white;
+}
+
+.btn-red{
+    background:#c62828;
+    color:white;
+}
+
+/* =========================
+   MOBILE
+========================= */
+@media(max-width:768px){
+
+    .title{
+        font-size:20px;
+    }
+
+    .summary-box{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+    }
+
+    .filter-box{
+        flex-direction:column;
+        align-items:stretch;
+    }
+
+    .filter-box input,
+    .filter-box button,
+    .filter-box a{
+        width:100%;
+    }
+
+    .actions{
+        width:100%;
+    }
+
+    .actions a{
+        flex:1;
+        text-align:center;
+    }
+
+    .email-box{
+        flex-direction:column;
+        align-items:stretch;
+    }
+
+    .email-box input,
+    .email-box button{
+        width:100%;
+    }
+
+}
+
+</style>
+
+<div class="card">
+
+<!-- =========================
+     TOP HEADER
+========================= -->
+<div class="top-container">
+
+    <div class="title">
+        Feeds Orders
+    </div>
+
+    <div class="actions">
+        <a href="/"
+           class="btn btn-green">
+           back to main dashboard
+        </a>
+        {% if not is_pdf %}
+
+        <a href="/feeds_v2/create"
+           class="btn btn-green">
+           + Create Order
+        </a>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- =========================
+     FILTER
+========================= -->
+<form method="get" class="filter-box">
+
+    <label><b>Filter Month:</b></label>
+
+    <input type="month"
+           name="month"
+           value="{{ selected_month }}">
+
+    <button class="btn btn-blue">
+        Apply
+    </button>
+
+    <a href="/feeds_v2/orders"
+       class="btn btn-red">
+       Reset
+    </a>
+
+</form>
+
+<!-- =========================
+     EMAIL PDF SEND
+========================= -->
+{% if not is_pdf %}
+
+<div class="email-section">
+
+    <div class="email-title">
+        📄 Send Orders Report PDF
+    </div>
+
+    <form method="get"
+          action="/send_report/feeds_orders">
+
+        <input type="hidden"
+               name="month"
+               value="{{ selected_month }}">
+
+        <input type="hidden"
+               name="farm_id"
+               value="{{ selected_farm }}">
+
+        <div class="email-box">
+
+            <input type="email"
+                   name="emails"
+                   placeholder="Enter email address">
+
+            <button type="button"
+                    onclick="addEmail(this)"
+                    class="btn btn-blue">
+                    +
+            </button>
+
+            <button class="btn btn-green">
+                📄 Send PDF
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endif %}
+
+<!-- =========================
+     SUMMARY
+========================= -->
+<div class="summary-box">
+
+    <div class="summary-item">
+        Total Orders:
+        <span>
+            KES {{ "{:,.2f}".format(total_all or 0) }}
+        </span>
+    </div>
+
+    <div class="summary-item">
+        Paid:
+        <span class="badge-green">
+            KES {{ "{:,.2f}".format(total_paid or 0) }}
+        </span>
+    </div>
+
+    <div class="summary-item">
+        Debt:
+        <span class="badge-red">
+            KES {{ "{:,.2f}".format(total_debt or 0) }}
+        </span>
+    </div>
+
+</div>
+
+<!-- =========================
+     TABLE
+========================= -->
+<div class="table-wrapper">
+
+<table>
+
+<thead>
+<tr>
+    <th>Order Ref</th>
+    <th>Date</th>
+    <th>Farm</th>
+    <th>Total</th>
+    <th>Paid</th>
+    <th>Balance</th>
+    <th>Payment</th>
+    <th>Delivery</th>
+    <th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for o in orders %}
+<tr>
+
+<td>
+    {{ o.order.order_ref }}
+</td>
+
+<td>
+    {{ o.order.date_ordered }}
+</td>
+
+<td>
+    {{ o.order.farm.name if o.order.farm else "-" }}
+</td>
+
+<td class="num">
+    KES {{ "{:,.2f}".format(o.total | default(0)) }}
+</td>
+
+<td class="num">
+    KES {{ "{:,.2f}".format(o.paid | default(0)) }}
+</td>
+
+<td class="num">
+    KES {{ "{:,.2f}".format(o.balance | default(0)) }}
+</td>
+
+<td>
+    <span class="badge {{ o.payment_color }}">
+        {{ o.payment_status }}
+    </span>
+</td>
+
+<td>
+    <span class="badge {{ o.delivery_color }}">
+        {{ o.delivery_status }}
+    </span>
+</td>
+
+<td>
+
+    <div class="action-box">
+
+        <a href="/feeds_v2/view/{{ o.order.id }}"
+           class="btn btn-blue">
+           View
+        </a>
+
+        {% if not is_pdf %}
+
+        <form method="post"
+              action="/feeds_v2/delete/{{ o.order.id }}"
+              style="display:inline;"
+              onsubmit="return confirm('Delete this order?')">
+
+            <button class="btn btn-red">
+                Delete
+            </button>
+
+        </form>
+
+        {% endif %}
+
+    </div>
+
+</td>
+
+</tr>
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<script>
+
+function addEmail(btn){
+
+    let input = document.createElement("input");
+
+    input.type = "email";
+    input.name = "emails";
+    input.placeholder = "Another email address";
+
+    btn.parentNode.insertBefore(input, btn);
+
+}
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cow Monthly Analysis</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f4f6f9;
+    padding:20px;
+    color:#333;
+}
+
+.container{
+    max-width:1400px;
+    margin:auto;
+}
+
+/* HEADER */
+
+.page-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.page-title{
+    font-size:30px;
+    font-weight:bold;
+    color:#1b5e20;
+}
+
+/* TOP BUTTONS */
+
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:25px;
+    background:white;
+    padding:18px;
+    border-radius:18px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 20px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:170px;
+}
+
+.action-btn:hover{
+    background:#2e7d32;
+    transform:translateY(-2px);
+}
+
+/* SUMMARY */
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:20px;
+    margin-bottom:25px;
+}
+
+.summary-card{
+    background:white;
+    padding:24px;
+    border-radius:18px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    position:relative;
+    overflow:hidden;
+}
+
+.summary-card::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    width:5px;
+    height:100%;
+    background:#1b5e20;
+}
+
+.summary-title{
+    font-size:14px;
+    color:#777;
+    margin-bottom:12px;
+    font-weight:bold;
+    text-transform:uppercase;
+    letter-spacing:1px;
+}
+
+.summary-value{
+    font-size:30px;
+    font-weight:bold;
+    color:#1b5e20;
+    line-height:1.2;
+}
+
+.summary-sub{
+    margin-top:10px;
+    font-size:15px;
+    color:#666;
+    font-weight:500;
+}
+
+/* FORM CARD */
+
+.top-bar{
+    background:white;
+    padding:25px;
+    border-radius:18px;
+    margin-bottom:25px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+.section-title{
+    font-size:22px;
+    font-weight:bold;
+    color:#2c3e50;
+    margin-bottom:25px;
+}
+
+.form-section{
+    margin-bottom:30px;
+}
+
+.form-section:last-child{
+    margin-bottom:0;
+}
+
+.form-heading{
+    font-size:16px;
+    font-weight:bold;
+    margin-bottom:15px;
+    color:#1b5e20;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:18px;
+    align-items:end;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.form-group label{
+    margin-bottom:8px;
+    font-size:14px;
+    font-weight:bold;
+    color:#444;
+}
+
+.form-control{
+    width:100%;
+    padding:13px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:14px;
+    outline:none;
+    transition:0.3s;
+    background:#fafafa;
+}
+
+.form-control:focus{
+    border-color:#1b5e20;
+    background:white;
+    box-shadow:0 0 0 3px rgba(27,94,32,0.1);
+}
+
+/* BUTTONS */
+
+.btn{
+    border:none;
+    padding:13px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    color:white;
+    font-weight:bold;
+    font-size:14px;
+    transition:0.3s;
+    width:100%;
+}
+
+.btn-filter{
+    background:#1565c0;
+}
+
+.btn-filter:hover{
+    background:#1976d2;
+}
+
+.btn-pdf{
+    background:#c62828;
+}
+
+.btn-pdf:hover{
+    background:#e53935;
+}
+
+/* TABLE */
+
+.table-container{
+    background:white;
+    border-radius:18px;
+    overflow:auto;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:750px;
+}
+
+th{
+    background:#1b5e20;
+    color:white;
+    padding:15px 12px;
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+}
+
+td{
+    padding:15px 12px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+    font-size:14px;
+}
+
+tr:nth-child(even){
+    background:#fafafa;
+}
+
+tr:hover{
+    background:#f1f8e9;
+}
+
+.total-cell{
+    font-weight:bold;
+    color:#1b5e20;
+    font-size:15px;
+}
+
+.cow-name{
+    font-weight:bold;
+    color:#2c3e50;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    body{
+        padding:12px;
+    }
+
+    .page-title{
+        font-size:24px;
+    }
+
+    .top-actions{
+        padding:14px;
+    }
+
+    .action-btn{
+        width:100%;
+        min-width:100%;
+    }
+
+    .summary-grid{
+        grid-template-columns:1fr;
+    }
+
+    .summary-card{
+        padding:20px;
+    }
+
+    .summary-value{
+        font-size:24px;
+    }
+
+    .top-bar{
+        padding:18px;
+    }
+
+    .section-title{
+        font-size:20px;
+    }
+
+    .form-grid{
+        grid-template-columns:1fr;
+    }
+
+    table{
+        min-width:650px;
+    }
+
+    th, td{
+        padding:12px 8px;
+        font-size:13px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- PAGE HEADER -->
+
+    <div class="page-header">
+
+        <div class="page-title">
+            🐄 Cow Monthly Analysis
+        </div>
+
+    </div>
+
+    <!-- TOP ACTIONS -->
+
+    <div class="top-actions">
+
+        <a href="/milk_dashboard" class="action-btn">
+            ⬅ Back Dashboard
+        </a>
+
+    </div>
+
+    <!-- SUMMARY -->
+
+    <div class="summary-grid">
+
+        <!-- TOTAL COWS -->
+
+        <div class="summary-card">
+
+            <div class="summary-title">
+                Total Cows
+            </div>
+
+            <div class="summary-value">
+                {{ cow_report|length }}
+            </div>
+
+            <div class="summary-sub">
+                Active cows in report
+            </div>
+
+        </div>
+
+        <!-- TOP PRODUCER -->
+
+        <div class="summary-card">
+
+            <div class="summary-title">
+                Top Producer
+            </div>
+
+            {% if cow_report %}
+
+                {% set top = cow_report | sort(attribute='total', reverse=True) %}
+
+                <div class="summary-value">
+                    {{ top[0].name }}
+                </div>
+
+                <div class="summary-sub">
+                    {{ top[0].total }} Litres Produced
+                </div>
+
+            {% else %}
+
+                <div class="summary-value">
+                    -
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <!-- FILTERS -->
+
+    <div class="top-bar">
+
+        <div class="section-title">
+            Monthly Cow Production Report
+        </div>
+
+        <!-- FILTER FORM -->
+
+        <div class="form-section">
+
+            <div class="form-heading">
+                🔍 Filter Records
+            </div>
+
+            <form method="GET" action="/cow-analysis">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+
+                        <label>Select Date</label>
+
+                        <input 
+                            type="date"
+                            name="date"
+                            value="{{ date_str }}"
+                            class="form-control"
+                        >
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <button type="submit" class="btn btn-filter">
+                            Filter Records
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+        <!-- EMAIL FORM -->
+
+        <div class="form-section">
+
+            <div class="form-heading">
+                📄 Generate & Send PDF
+            </div>
+
+            <form method="GET" action="/send_report/cow_analysis">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+
+                        <label>Selected Date</label>
+
+                        <input 
+                            type="date"
+                            name="date"
+                            value="{{ date_str }}"
+                            class="form-control"
+                        >
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Recipient Email</label>
+
+                        <input 
+                            type="email"
+                            name="emails"
+                            placeholder="example@gmail.com"
+                            class="form-control"
+                        >
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <button type="submit" class="btn btn-pdf">
+                            Generate & Send PDF
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>#</th>
+                    <th>Cow Name</th>
+                    <th>Total Milk</th>
+                    <th>Average Per Day</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for cow in cow_report %}
+
+                <tr>
+
+                    <td>
+                        {{ loop.index }}
+                    </td>
+
+                    <td class="cow-name">
+                        {{ cow.name }}
+                    </td>
+
+                    <td class="total-cell">
+                        {{ cow.total }} L
+                    </td>
+
+                    <td>
+                        {{ cow.average }} L
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>

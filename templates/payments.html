@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payments</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial;
+            background: #eef2f7;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2c7be5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #1a68d1;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        .msg {
+            text-align: center;
+            color: green;
+            font-weight: bold;
+        }
+        .action-btn{
+        text-decoration:none;
+        background:#1b5e20;
+        color:white;
+        padding:12px 18px;
+        border-radius:10px;
+        font-size:14px;
+        font-weight:bold;
+        transition:0.3s;
+    }
+
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/financial_dashboard" class="action-btn">
+        financial dashboard
+    </a>
+<h2>Record Payment</h2>
+
+{% if message %}
+<p class="msg">{{ message }}</p>
+{% endif %}
+
+<form method="POST">
+
+<div class="form-group">
+<label>Date</label>
+<input type="date" name="date_paid" required>
+</div>
+
+<div class="row">
+<div class="form-group">
+<label>Amount</label>
+<input type="number" step="0.01" name="amount" required>
+</div>
+
+<div class="form-group">
+<label>Account</label>
+<input type="text" name="account" required>
+</div>
+</div>
+
+<div class="row">
+<div class="form-group">
+<label>Type</label>
+<select name="purpose_type" required>
+<option value="">Select</option>
+<option value="feeds">Feeds</option>
+<option value="other">Other</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Farm</label>
+<select name="farm_id">
+<option value="">Optional</option>
+{% for farm in farms %}
+<option value="{{ farm.id }}">{{ farm.name }}</option>
+{% endfor %}
+</select>
+</div>
+</div>
+
+<div class="form-group">
+<label>Purpose</label>
+<input type="text" name="purpose" required>
+</div>
+
+<button type="submit">Add Payment</button>
+
+</form>
+
+<table>
+<tr>
+<th>Date</th>
+<th>Amount</th>
+<th>Farm</th>
+<th>Account</th>
+<th>Type</th>
+<th>Purpose</th>
+</tr>
+
+{% for p in payments %}
+<tr>
+<td>{{ p.date_paid }}</td>
+<td>{{ "{:,}".format(p.amount or 0) }}</td>
+<td>{{ p.farm.name if p.farm else "-" }}</td>
+<td>{{ p.account }}</td>
+<td>{{ p.purpose_type }}</td>
+<td>{{ p.purpose }}</td>
+</tr>
+{% endfor %}
+</table>
+<div style="margin-top:20px;">
+    <p><strong>Total Paid (Day):</strong> KSh {{ "{:,}".format(total_paid or 0) }}</p>
+    <p><strong>Month:</strong> KSh {{ "{:,}".format(month_paid or 0) }}</p>
+    <p><strong>Quarter:</strong> KSh {{ "{:,}".format(quarter_paid or 0) }}</p>
+    <p><strong>Year:</strong> KSh {{ "{:,}".format(year_paid or 0) }}</p>
+</div>
+
+</div>
+
+</body>
+</html>

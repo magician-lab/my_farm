@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monthly Milk Analysis</title>
+
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f4f6f8; }
+
+        h2 { text-align: center; color: #2e7d32; }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #2e7d32;
+            color: white;
+            padding: 8px;
+        }
+
+        td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) { background: #f9f9f9; }
+
+        tfoot {
+            background: #e8f5e9;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            background: #555;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2> Milk Sales Monthly Report - {{ month_name }}</h2>
+
+<table>
+
+<tr>
+    <th>No</th>
+    <th>Date</th>
+    <th>Shop1</th>
+    <th>Shop2</th>
+    <th>Shop3</th>
+    <th>Total Sold</th>
+    <th>Calf</th>
+    <th>Home</th>
+    <th>Total Use</th>
+</tr>
+
+{% for d in monthly_data %}
+<tr>
+    <td>{{ d.no }}</td>
+    <td>{{ d.date }}</td>
+    <td>{{ "{:,}".format(d.shop1) }}</td>
+    <td>{{ "{:,}".format(d.shop2) }}</td>
+    <td>{{ "{:,}".format(d.shop3) }}</td>
+    <td><strong>{{ "{:,}".format(d.total_sold) }}</strong></td>
+    <td>{{ "{:,}".format(d.calf) }}</td>
+    <td>{{ "{:,}".format(d.home) }}</td>
+    <td><strong>{{ "{:,}".format(d.total_use) }}</strong></td>
+</tr>
+{% endfor %}
+
+<tfoot>
+<tr>
+    <td colspan="2">TOTAL</td>
+
+    <td>{{ "{:,}".format(total_shop1) }}</td>
+    <td>{{ "{:,}".format(total_shop2) }}</td>
+    <td>{{ "{:,}".format(total_shop3) }}</td>
+
+    <!-- ✅ IMPORTANT: USE ONLY PRE-CALCULATED TOTAL -->
+    <td><strong>{{ "{:,}".format(total_sold) }}</strong></td>
+
+    <td>{{ "{:,}".format(total_calf) }}</td>
+    <td>{{ "{:,}".format(total_home) }}</td>
+    <td>{{ "{:,}".format(total_use) }}</td>
+</tr>
+</tfoot>
+
+</table>
+
+</body>
+</html>

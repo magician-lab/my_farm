@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Confirm Milk Import</title>
+
+<style>
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f3f6fb;
+    padding:30px;
+}
+
+.container{
+    max-width:1300px;
+    margin:auto;
+}
+
+.card{
+    background:white;
+    border-radius:14px;
+    padding:25px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+h2{
+    margin-bottom:10px;
+    color:#111827;
+}
+
+.subtitle{
+    color:#6b7280;
+    margin-bottom:25px;
+}
+
+.summary{
+    background:#ecfdf5;
+    border:1px solid #bbf7d0;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.table-wrapper{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+thead{
+    background:#1f2937;
+    color:white;
+}
+
+th, td{
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:center;
+}
+
+tbody tr:nth-child(even){
+    background:#f9fafb;
+}
+
+input[type="number"]{
+    width:100%;
+    padding:8px;
+    border:1px solid #d1d5db;
+    border-radius:6px;
+}
+
+.btn{
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    margin-top:20px;
+}
+
+.btn-success{
+    background:#16a34a;
+    color:white;
+}
+
+.btn-success:hover{
+    background:#15803d;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>Confirm Imported Milk Records</h2>
+
+        <div class="subtitle">
+            Review and edit imported records before saving.
+        </div>
+
+        <div class="summary">
+
+            <strong>Total Imported Milk:</strong>
+            {{ "{:,.1f}".format(total_milk) }} Litres
+
+        </div>
+
+        <form method="POST"
+              action="{{ url_for('confirm_import_milk') }}">
+
+            <input type="hidden"
+                   name="date"
+                   value="{{ selected_date }}">
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Cow ID</th>
+                            <th>Cow Name</th>
+                            <th>Morning</th>
+                            <th>Noon</th>
+                            <th>Evening</th>
+                            <th>Total</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for row in records %}
+
+                        <tr>
+
+                            <td>
+
+                                {{ row.cow_id }}
+
+                                <input type="hidden"
+                                       name="cow_id[]"
+                                       value="{{ row.cow_id }}">
+
+                            </td>
+
+                            <td>
+                                {{ row.cow_name }}
+                            </td>
+
+                            <td>
+
+                                <input type="number"
+                                       step="0.1"
+                                       name="morning[]"
+                                       value="{{ row.morning }}">
+
+                            </td>
+
+                            <td>
+
+                                <input type="number"
+                                       step="0.1"
+                                       name="noon[]"
+                                       value="{{ row.noon }}">
+
+                            </td>
+
+                            <td>
+
+                                <input type="number"
+                                       step="0.1"
+                                       name="evening[]"
+                                       value="{{ row.evening }}">
+
+                            </td>
+
+                            <td>
+
+                                {{ row.total }}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <button type="submit"
+                    class="btn btn-success">
+
+                Confirm & Save Records
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

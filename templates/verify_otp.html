@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Verify OTP</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', Arial;
+    background: linear-gradient(to right, #eef2f7, #e3e9f0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 350px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+h2 {
+    margin-bottom: 15px;
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    text-align: center;
+    font-size: 1.2em;
+    letter-spacing: 3px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: green;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: darkgreen;
+}
+
+.note {
+    font-size: 0.8em;
+    color: gray;
+}
+
+.back {
+    margin-top: 10px;
+    display: block;
+    color: gray;
+    text-decoration: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Verify OTP</h2>
+
+    <form method="POST">
+        <input type="text" name="otp" placeholder="Enter 6-digit OTP" required>
+        <button type="submit">Verify</button>
+    </form>
+
+    <p class="note">OTP expires in 10 minutes</p>
+
+    <a href="/forgot" class="back">⬅ Resend OTP</a>
+</div>
+
+</body>
+</html>

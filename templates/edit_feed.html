@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Feed</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 520px;
+            margin: auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 12px;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2c7be5;
+            box-shadow: 0 0 3px rgba(44,123,229,0.3);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            background: #4CAF50;
+            border: none;
+            color: white;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #3e8e41;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 8px 14px;
+            background: #2c7be5;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: #1a68d1;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 🔙 BACK BUTTON WITH FILTERS -->
+    <a href="{{ url_for('feeds', filter_date=selected_date, farm_id=farm_id) }}" class="back-btn">
+        ← Back to Feeds
+    </a>
+
+    <h2>Edit Feed Record</h2>
+
+    <form method="POST">
+
+        <!-- 🔥 HIDDEN FILTER FIELDS (FIX) -->
+        <input type="hidden" name="filter_date" value="{{ selected_date or '' }}">
+        <input type="hidden" name="farm_id" value="{{ farm_id }}">
+
+        <label>Feed Name</label>
+        <input type="text" name="feed_name" value="{{ feed.FeedName }}" required>
+
+        <label>Date Bought</label>
+        <input type="date" name="todate" value="{{ feed.Date_bought }}" required>
+
+        <label>Quantity</label>
+        <input type="number" step="0.01" name="Quantity" value="{{ feed.Quantity }}" required>
+
+        <label>Price</label>
+        <input type="number" step="0.01" name="Price" value="{{ feed.Price }}" required>
+
+        <button type="submit">Update Record</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

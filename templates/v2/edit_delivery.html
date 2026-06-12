@@ -1,0 +1,185 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<style>
+
+.form-container{
+    max-width:650px;
+    margin:auto;
+}
+
+.form-group{
+    margin-bottom:15px;
+}
+
+.form-group label{
+    display:block;
+    margin-bottom:6px;
+    font-weight:bold;
+}
+
+.form-group input{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+.summary{
+    background:#f4f6f9;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.btn{
+    padding:10px 14px;
+    border:none;
+    border-radius:6px;
+    color:white;
+    text-decoration:none;
+    cursor:pointer;
+}
+
+.btn-green{
+    background:#2e7d32;
+}
+
+.btn-blue{
+    background:#1565c0;
+}
+
+.actions{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+    flex-wrap:wrap;
+}
+
+.total-box{
+    background:#eef2f7;
+    padding:12px;
+    border-radius:8px;
+    margin-top:10px;
+    text-align:center;
+    font-size:18px;
+    font-weight:bold;
+}
+
+</style>
+
+<div class="card form-container">
+
+<h2>Edit Delivery</h2>
+
+<div class="summary">
+
+<p>
+<b>Order:</b>
+{{ delivery.order.order_ref }}
+</p>
+
+<p>
+<b>Feed:</b>
+{{ delivery.item.feed_name if delivery.item else "-" }}
+</p>
+
+<p>
+<b>Ordered Quantity:</b>
+{{ "{:,.2f}".format(delivery.item.quantity or 0) }} kg
+</p>
+
+</div>
+
+<form method="POST">
+
+<div class="form-group">
+
+<label>Date Delivered</label>
+
+<input type="date"
+       name="date_delivered"
+       required
+       value="{{ delivery.date_delivered }}">
+
+</div>
+
+<div class="form-group">
+
+<label>Pieces</label>
+
+<input type="number"
+       id="pieces"
+       name="pieces"
+       required
+       value="{{ delivery.pieces or 0 }}"
+       oninput="calculateTotal()">
+
+</div>
+
+<div class="form-group">
+
+<label>Unit Weight (kg)</label>
+
+<input type="number"
+       step="0.01"
+       id="unit_weight"
+       name="unit_weight"
+       required
+       value="{{ delivery.unit_weight or 0 }}"
+       oninput="calculateTotal()">
+
+</div>
+
+<!-- ================================= -->
+<!-- 🔥 AUTO TOTAL -->
+<!-- ================================= -->
+
+<div class="total-box">
+
+Total Delivered:
+<span id="total_display">
+    {{ "{:,.2f}".format(delivery.quantity_delivered or 0) }}
+</span> kg
+
+</div>
+
+<div class="actions">
+
+<button class="btn btn-green">
+    💾 Update Delivery
+</button>
+
+<a href="/feeds_v2/delivery_report?order_id={{ delivery.order_id }}"
+   class="btn btn-blue">
+   ⬅ Back
+</a>
+
+</div>
+
+</form>
+
+</div>
+
+<script>
+
+function calculateTotal(){
+
+    let pieces = parseFloat(
+        document.getElementById("pieces").value
+    ) || 0;
+
+    let unitWeight = parseFloat(
+        document.getElementById("unit_weight").value
+    ) || 0;
+
+    let total = pieces * unitWeight;
+
+    document.getElementById("total_display").innerText =
+        total.toFixed(2);
+
+}
+
+</script>
+
+{% endblock %}

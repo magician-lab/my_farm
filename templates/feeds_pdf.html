@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feeds Report PDF</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial;
+            background: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background: #eee;
+        }
+
+        /* 🔥 DIFFERENCE COLORS */
+        .diff-up {
+            color: red;
+            font-weight: bold;
+        }
+
+        .diff-down {
+            color: green;
+            font-weight: bold;
+        }
+
+        .diff-same {
+            color: black;
+        }
+
+        /* SUMMARY */
+        .summary {
+            margin-top: 30px;
+        }
+
+        .summary table {
+            margin-top: 10px;
+            font-size: 15px;
+        }
+
+        .summary th {
+            background: #333;
+            color: white;
+        }
+
+        .expense {
+            color: red;
+            font-weight: bold;
+        }
+
+        .paid {
+            color: blue;
+            font-weight: bold;
+        }
+
+        .balance-red {
+            color: red;
+            font-weight: bold;
+        }
+
+        .balance-green {
+            color: green;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Feeds Report</h2>
+
+<h4 style="text-align:center;">
+    {% if selected_date %}
+        Report for {{ selected_date.strftime("%d %b %Y") }}
+    {% else %}
+        Full Report
+    {% endif %}
+</h4>
+
+<!-- MAIN TABLE -->
+<table>
+<tr>
+<th>No</th>
+<th>Farm</th>
+<th>Feed</th>
+<th>Date</th>
+<th>Qty</th>
+<th>Price</th>
+<th>Last Price</th> <!-- 🔥 ADDED -->
+<th>Difference</th> <!-- 🔥 ADDED -->
+<th>Total</th>
+</tr>
+
+{% for f in feeds %}
+<tr>
+<td>{{ loop.index }}</td>
+<td>{{ f.farm.name }}</td>
+<td>{{ f.FeedName }}</td>
+<td>{{ f.Date_bought }}</td>
+<td>{{ "{:,}".format(f.Quantity or 0) }}</td>
+
+<td>{{ "{:,}".format(f.Price or 0) }}</td>
+
+<td>{{ "{:,}".format(f.prev_price or 0) }}</td> <!-- 🔥 ADDED -->
+
+<td class="
+    {% if f.price_diff > 0 %}
+        diff-up
+    {% elif f.price_diff < 0 %}
+        diff-down
+    {% else %}
+        diff-same
+    {% endif %}
+">
+{{ "{:,}".format(f.price_diff or 0) }}
+</td> <!-- 🔥 ADDED -->
+
+<td>{{ "{:,}".format(f.Total or 0) }}</td>
+</tr>
+{% endfor %}
+
+<tr>
+<td colspan="8"><strong>Total</strong></td>
+<td><strong>{{ "{:,}".format(grand_total or 0) }}</strong></td>
+</tr>
+
+</table>
+
+<!-- 🔥 FINANCIAL SUMMARY -->
+<div class="summary">
+
+<h3 style="text-align:center;">Financial Summary</h3>
+
+<table>
+<tr>
+<th>Period</th>
+<th>Expenditure</th>
+<th>Paid</th>
+<th>Balance (Exp - Paid)</th>
+<th>Status</th>
+</tr>
+
+<!-- DAILY -->
+<tr>
+<td>{{ selected_date.strftime("%d %b %Y") }}</td>
+
+<td class="expense">KSh {{ "{:,}".format(grand_total or 0) }}</td>
+<td class="paid">KSh {{ "{:,}".format(total_paid or 0) }}</td>
+
+{% set d_balance = grand_total - total_paid %}
+
+<td class="{% if d_balance > 0 %}balance-red{% else %}balance-green{% endif %}">
+KSh {{ "{:,}".format(d_balance) }}
+</td>
+
+<td>
+{% if d_balance > 0 %}
+<span style="color:red;">Debt</span>
+{% else %}
+<span style="color:green;">Cleared / Excess</span>
+{% endif %}
+</td>
+</tr>
+
+<!-- MONTH -->
+<tr>
+<td>Month</td>
+
+<td class="expense">KSh {{ "{:,}".format(month_total or 0) }}</td>
+<td class="paid">KSh {{ "{:,}".format(month_paid or 0) }}</td>
+
+{% set m_balance = month_total - month_paid %}
+
+<td class="{% if m_balance > 0 %}balance-red{% else %}balance-green{% endif %}">
+KSh {{ "{:,}".format(m_balance) }}
+</td>
+
+<td>
+{% if m_balance > 0 %}
+<span style="color:red;">Debt</span>
+{% else %}
+<span style="color:green;">Cleared / Excess</span>
+{% endif %}
+</td>
+</tr>
+
+<!-- QUARTER -->
+<tr>
+<td>Quarter</td>
+
+<td class="expense">KSh {{ "{:,}".format(quarter_total or 0) }}</td>
+<td class="paid">KSh {{ "{:,}".format(quarter_paid or 0) }}</td>
+
+{% set q_balance = quarter_total - quarter_paid %}
+
+<td class="{% if q_balance > 0 %}balance-red{% else %}balance-green{% endif %}">
+KSh {{ "{:,}".format(q_balance) }}
+</td>
+
+<td>
+{% if q_balance > 0 %}
+<span style="color:red;">Debt</span>
+{% else %}
+<span style="color:green;">Cleared / Excess</span>
+{% endif %}
+</td>
+</tr>
+
+<!-- YEAR -->
+<tr>
+<td>Year</td>
+
+<td class="expense">KSh {{ "{:,}".format(year_total or 0) }}</td>
+<td class="paid">KSh {{ "{:,}".format(year_paid or 0) }}</td>
+
+{% set y_balance = year_total - year_paid %}
+
+<td class="{% if y_balance > 0 %}balance-red{% else %}balance-green{% endif %}">
+KSh {{ "{:,}".format(y_balance) }}
+</td>
+
+<td>
+{% if y_balance > 0 %}
+<span style="color:red;">Debt</span>
+{% else %}
+<span style="color:green;">Cleared / Excess</span>
+{% endif %}
+</td>
+</tr>
+
+<!-- TOTAL -->
+<tr style="background:#222; color:white;">
+<td><strong>TOTAL</strong></td>
+
+<td>KSh {{ "{:,}".format(year_total or 0) }}</td>
+<td>KSh {{ "{:,}".format(year_paid or 0) }}</td>
+
+{% set total_balance = year_total - year_paid %}
+
+<td style="color:{% if total_balance > 0 %}red{% else %}lightgreen{% endif %};">
+KSh {{ "{:,}".format(total_balance) }}
+</td>
+
+<td>
+{% if total_balance > 0 %}
+<span style="color:red;">Overall Debt</span>
+{% else %}
+<span style="color:lightgreen;">Balanced / Excess</span>
+{% endif %}
+</td>
+</tr>
+
+</table>
+
+</div>
+
+</div>
+
+</body>
+</html>

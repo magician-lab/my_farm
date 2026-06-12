@@ -1,0 +1,25 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<div class="card">
+
+<h2>Edit Item</h2>
+
+<form method="post">
+
+<label>Feed Name</label>
+<input name="feed_name" value="{{ item.feed_name }}">
+
+<label>Quantity (kg)</label>
+<input name="quantity" value="{{ item.quantity }}">
+
+<label>Price per unit</label>
+<input name="price" value="{{ item.price_per_unit }}">
+
+<button class="btn btn-green">Save Changes</button>
+
+</form>
+
+</div>
+
+{% endblock %}

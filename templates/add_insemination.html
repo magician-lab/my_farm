@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Insemination</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#f5f7fb;
+    margin:0;
+    padding:40px;
+}
+
+.container{
+    width:450px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+}
+
+h2{
+    text-align:center;
+    color:#444;
+}
+
+label{
+    display:block;
+    margin-top:15px;
+    font-weight:bold;
+}
+
+input, select{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+}
+
+/* 🔥 Search box */
+.search-box{
+    position:relative;
+}
+
+#animal_search{
+    width:100%;
+}
+
+/* 🔥 Dropdown results */
+#search_results{
+    position:absolute;
+    width:100%;
+    background:white;
+    border:1px solid #ccc;
+    border-top:none;
+    max-height:200px;
+    overflow-y:auto;
+    z-index:1000;
+    display:none;
+}
+
+.result-item{
+    padding:10px;
+    cursor:pointer;
+}
+
+.result-item:hover{
+    background:#f1f1f1;
+}
+
+button{
+    margin-top:20px;
+    width:100%;
+    padding:12px;
+    background:#4CAF50;
+    border:none;
+    color:white;
+    font-size:16px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#43a047;
+}
+
+
+.flash{
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    color: white;
+    font-size: 14px;
+}
+
+.success{
+    background: green;
+}
+
+.error{
+    background: red;
+}
+
+.warning{
+    background: orange;
+    color: black;
+}
+
+.info{
+    background: blue;
+}
+            .btn_dashboard {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 8px 14px;
+            background: green;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+    <a href="/insemination" class="btn_dashboard">← Back</a>
+<h2>Add Insemination Record</h2>
+
+<form method="POST">
+
+<!-- 🔥 SEARCH FIELD -->
+<label>Search Cow</label>
+<div class="search-box">
+    <input type="text" id="animal_search" placeholder="Type cow name..." autocomplete="off">
+    <div id="search_results"></div>
+</div>
+
+<!-- Hidden field to store selected ID -->
+<input type="hidden" name="animal_id" id="animal_id" required>
+
+
+<label>Date Served</label>
+<input type="date" name="date_served" required>
+
+
+<label>Confirmation Method</label>
+<select name="method">
+    <option value="heat observation">Heat Observation</option>
+    <option value="ultrasound">Ultrasound</option>
+    <option value="manual check">Rectal Palpation</option>
+</select>
+
+<button type="submit">Save Record</button>
+
+</form>
+
+</div>
+
+<script>
+const animals = [
+    {% for animal in animals %}
+        {
+            id: "{{ animal.id }}",
+            name: "{{ animal.name }}",
+            breed: "{{ animal.breed }}"
+        },
+    {% endfor %}
+];
+
+const searchInput = document.getElementById("animal_search");
+const resultsBox = document.getElementById("search_results");
+const animalIdInput = document.getElementById("animal_id");
+
+searchInput.addEventListener("keyup", function(){
+    const query = this.value.toLowerCase();
+
+    resultsBox.innerHTML = "";
+
+    if(query === ""){
+        resultsBox.style.display = "none";
+        return;
+    }
+
+    const filtered = animals.filter(a =>
+        a.name.toLowerCase().includes(query)
+    );
+
+    if(filtered.length === 0){
+        resultsBox.innerHTML = "<div class='result-item'>No results</div>";
+        resultsBox.style.display = "block";
+        return;
+    }
+
+    filtered.forEach(animal => {
+        const div = document.createElement("div");
+        div.classList.add("result-item");
+        div.innerHTML = `${animal.name} (${animal.breed})`;
+
+        div.onclick = function(){
+            searchInput.value = animal.name;
+            animalIdInput.value = animal.id;
+            resultsBox.style.display = "none";
+        };
+
+        resultsBox.appendChild(div);
+    });
+
+    resultsBox.style.display = "block";
+});
+
+/* Hide results when clicking outside */
+document.addEventListener("click", function(e){
+    if(!e.target.closest(".search-box")){
+        resultsBox.style.display = "none";
+    }
+});
+</script>
+
+</body>
+</html>

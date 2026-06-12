@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Car Expense Report</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="date"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 8px 15px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .total-box {
+            margin: 15px 0;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table thead {
+            background-color: #007bff;
+            color: white;
+        }
+
+        table th, table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+        }
+        .edit-btn {
+    padding: 5px 10px;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+
+.edit-btn:hover {
+    background-color: #1e7e34;
+}
+
+.delete-btn {
+    padding: 5px 10px;
+    background-color: #dc3545;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.delete-btn:hover {
+    background-color: #a71d2a;
+}
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>🚗 Car Expense Report</h2>
+
+    <h3 style="text-align:center;">
+    {% if selected_date %}
+        Report for {{ selected_date }}
+    {% else %}
+        Full Report (All Dates)
+    {% endif %}
+</h3>
+    <div class="total-box">
+        Total Expense: KES <strong>{{ "{:,}".format(total_expense) }}</strong>
+    </div>
+
+    <!-- TABLE -->
+    <table>
+        <thead>
+            <tr>
+                <th>Plate Number</th>
+                <th>Date</th>
+                <th>Expense Type</th>
+                <th>Description</th>
+                <th>Amount (KES)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if expenses %}
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.car.plate_number }}</td>
+                    <td>{{ expense.date }}</td>
+                    <td>{{ expense.expense_type }}</td>
+                    <td>{{ expense.description }}</td>
+                    <td>{{ "{:,}".format(expense.amount) }}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5" class="no-data">No records found</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Farm Dashboard</title>
+
+<style>
+
+body{
+font-family: Arial;
+background:#f4f6f9;
+padding:40px;
+}
+
+h1{
+text-align:center;
+color:#2c3e50;
+margin-bottom:40px;
+}
+
+.container{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.1);
+text-align:center;
+}
+
+.card h2{
+margin:10px 0;
+font-size:32px;
+color:#2c3e50;
+}
+
+.label{
+font-size:16px;
+color:#555;
+}
+
+.total{
+background:#2c3e50;
+color:white;
+}
+
+.total h2{
+color:white;
+}
+
+.view-btn{
+display:inline-block;
+margin-top:10px;
+padding:6px 12px;
+background:#3498db;
+color:white;
+text-decoration:none;
+border-radius:5px;
+font-size:14px;
+border:none;
+cursor:pointer;
+}
+
+.view-btn:hover{
+background:#2980b9;
+}
+
+.email-input{
+width:100%;
+padding:6px;
+margin-top:10px;
+border:1px solid #ccc;
+border-radius:5px;
+font-size:13px;
+}
+
+.pdf-form{
+margin-top:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🐄 Livestock Dashboard</h1>
+
+<div class="container">
+
+<!-- TOTAL -->
+<div class="card total">
+<div class="label">Total Livestock</div>
+<h2>{{ total_livestock }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" placeholder="Enter email for PDF" required>
+
+<!-- IMPORTANT: category passed safely here -->
+<input type="hidden" name="category" value="all">
+
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- MILKERS -->
+<div class="card">
+<div class="label">Milking Cows</div>
+<h2>{{ milkers }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='Milker') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="Milker">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- DRY -->
+<div class="card">
+<div class="label">Dry Cows</div>
+<h2>{{ dry }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='Dry') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="Dry">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- INCALF HEIFERS -->
+<div class="card">
+<div class="label">In-Calf Heifers</div>
+<h2>{{ incalf_heifers }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='Incalf-Heifer') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="Incalf-Heifer">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- BULLYING HEIFERS -->
+<div class="card">
+<div class="label">Bullying Heifers</div>
+<h2>{{ bullying_heifers }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='Bullying-Heifer') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="Bullying-Heifer">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- STEAMERS -->
+<div class="card">
+<div class="label">Steamers</div>
+<h2>{{ steamers }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='Steamer') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="Steamer">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- YEARLINGS -->
+<div class="card">
+<div class="label">Yearlings</div>
+<h2>{{ yearing }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='YEARING') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="YEARING">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- WEANERS -->
+<div class="card">
+<div class="label">Weaners</div>
+<h2>{{ weaners }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='WEANER') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="WEANER">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- CALVES -->
+<div class="card">
+<div class="label">Calves</div>
+<h2>{{ calfs }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='CALF') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="CALF">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- BULLS -->
+<div class="card">
+<div class="label">Bulls</div>
+<h2>{{ bulls }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='bull') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="bull">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+<!-- NO LONGER EXIST -->
+<div class="card">
+<div class="label">No Longer Existing</div>
+<h2>{{ nolonger_exist }}</h2>
+
+<a class="view-btn" href="{{ url_for('animals', category='nolonger_exist') }}">View</a>
+
+<form class="pdf-form" method="POST" action="{{ url_for('send_report', report_type='animals') }}">
+<input class="email-input" type="email" name="email" required>
+<input type="hidden" name="category" value="nolonger_exist">
+<button class="view-btn" type="submit">📄 Send PDF</button>
+</form>
+
+</div>
+
+</div>
+
+</body>
+</html>

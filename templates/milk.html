@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Milk Production Records</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f4f6f9;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-box input[type="date"] {
+            padding: 6px;
+        }
+
+        .filter-box button {
+            padding: 6px 12px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .email-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .email-box input {
+            padding: 6px;
+            margin-bottom: 5px;
+            width: 250px;
+        }
+
+        .email-box button {
+            margin-top: 5px;
+            padding: 6px 10px;
+        }
+
+        .send-btn {
+            background: #007bff;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            padding: 8px;
+            width: 250px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #27ae60;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+
+        .actions a {
+            text-decoration: none;
+            margin: 0 5px;
+            font-size: 14px;
+        }
+
+        .edit-btn { color: #2980b9; }
+        .delete-btn { color: #c0392b; }
+
+        .delete-selected {
+            background: #c0392b;
+            color: white;
+            padding: 8px 14px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .summary-box {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .card {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .card strong {
+            display: block;
+            font-size: 18px;
+            margin-top: 5px;
+        }
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:25px;
+    background:white;
+    padding:18px;
+    border-radius:14px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:140px;
+}
+
+.action-btn:hover{
+    background:#2e7d32;
+    transform:translateY(-2px);
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    .top-actions{
+        padding:14px;
+    }
+
+    .action-btn{
+        width:100%;
+        min-width:100%;
+        text-align:center;
+    }
+
+}
+    </style>
+</head>
+
+<body>
+
+<h2>Milk Production Records</h2>
+    <a href="/milk_dashboard" class="action-btn">
+        back
+    </a>
+<!-- 🔥 PRODUCTION TALLY -->
+<div class="summary-box">
+    <h3>Production Tally</h3>
+    <div class="summary-grid">
+
+        {% set below_10 = namespace(count=0) %}
+        {% set between_10_20 = namespace(count=0) %}
+        {% set between_20_30 = namespace(count=0) %}
+        {% set above_30 = namespace(count=0) %}
+
+        {% for record in records %}
+            {% if record.total <= 10 %}
+                {% set below_10.count = below_10.count + 1 %}
+            {% elif record.total <= 20 %}
+                {% set between_10_20.count = between_10_20.count + 1 %}
+            {% elif record.total <= 30 %}
+                {% set between_20_30.count = between_20_30.count + 1 %}
+            {% else %}
+                {% set above_30.count = above_30.count + 1 %}
+            {% endif %}
+        {% endfor %}
+
+        <div class="card">Below 10<strong>{{ below_10.count }}</strong></div>
+        <div class="card">11-20<strong>{{ between_10_20.count }}</strong></div>
+        <div class="card">21-30<strong>{{ between_20_30.count }}</strong></div>
+        <div class="card">Above 30<strong>{{ above_30.count }}</strong></div>
+
+    </div>
+</div>
+
+<!-- 🔥 FILTER -->
+<div class="top-bar">
+    <div><strong>Selected Date:</strong> {{ selected_date }}</div>
+
+    <div class="filter-box">
+        <form method="GET">
+            <input type="date" name="filter_date" value="{{ selected_date }}">
+            <button type="submit">Filter</button>
+        </form>
+    </div>
+</div>
+
+<!-- 🔥 EMAIL -->
+<div class="email-box">
+    <form method="GET" action="{{ url_for('send_report', report_type='milk') }}">
+        <input type="hidden" name="date" value="{{ selected_date }}">
+
+        <strong>📧 Send Report To:</strong><br><br>
+
+        <div id="email-container">
+            <input type="email" name="emails" placeholder="Enter email" required>
+        </div>
+
+        <button type="button" onclick="addEmail()">+ Add Another Email</button>
+        <br><br>
+
+        <button type="submit" class="send-btn">📄 Export & Email PDF</button>
+    </form>
+</div>
+
+<h3 style="text-align:center;">
+    {% if selected_date %}
+        Report for {{ selected_date }}
+    {% else %}
+        Full Report (All Dates)
+    {% endif %}
+</h3>
+
+<!-- 🔍 SEARCH -->
+<div class="search-box">
+    <input type="text" id="searchInput" placeholder="🔍 Search cow name...">
+</div>
+
+<!-- 🔥 TABLE -->
+<form method="POST">
+
+<table id="recordsTable">
+    <tr>
+        <th>Select</th>
+        <th>No</th>
+        <th>Cow Name</th>
+        <th>Morning</th>
+        <th>Noon</th>
+        <th>Evening</th>
+        <th>Total</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for record in records %}
+    <tr>
+        <td><input type="checkbox" name="MilkRegistry_ids" value="{{ record.id }}"></td>
+        <td>{{ loop.index }}</td>
+        <td class="cow-name">{{ record.cow.name }}</td>
+        <td>{{ record.morning }}</td>
+        <td>{{ record.noon }}</td>
+        <td>{{ record.evening }}</td>
+        <td><strong>{{ record.total }}</strong></td>
+        <td class="actions">
+            <a href="{{ url_for('edit_milk', id=record.id) }}" class="edit-btn">Edit</a> |
+            <a href="{{ url_for('delete_milk', id=record.id) }}" onclick="return confirm('Delete this record?')" class="delete-btn">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<button type="submit" name="delete_selected" class="delete-selected"
+        onclick="return confirm('Delete selected records?')">
+    Delete Selected
+</button>
+
+</form>
+
+<!-- 🔥 SUMMARY -->
+<div class="summary-box">
+    <h3>Daily Summary</h3>
+    <div class="summary-grid">
+        <div class="card">Morning<strong>{{ total_morning }}</strong></div>
+        <div class="card">Noon<strong>{{ total_noon }}</strong></div>
+        <div class="card">Evening<strong>{{ total_evening }}</strong></div>
+        <div class="card">Total<strong>{{ grand_total }}</strong></div>
+        <div class="card">Average<strong>{{ average_production }}</strong></div>
+    </div>
+</div>
+
+<!-- 🔥 SCRIPT -->
+<script>
+function addEmail() {
+    let container = document.getElementById("email-container");
+
+    let div = document.createElement("div");
+    div.innerHTML = `
+        <input type="email" name="emails" placeholder="Enter email">
+        <button type="button" onclick="this.parentElement.remove()">X</button>
+    `;
+    container.appendChild(div);
+}
+
+document.getElementById("searchInput").addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#recordsTable tr");
+
+    rows.forEach((row, index) => {
+        if (index === 0) return;
+
+        let name = row.querySelector(".cow-name");
+        if (!name) return;
+
+        row.style.display = name.textContent.toLowerCase().includes(filter) ? "" : "none";
+    });
+});
+</script>
+
+</body>
+</html>

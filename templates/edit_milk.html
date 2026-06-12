@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Milk Record</title>
+</head>
+<body>
+
+<h2>Edit Milk Record</h2>
+
+<form method="POST">
+
+    <p><strong>Cow:</strong> {{ record.cow.CowName }}</p>
+    <p><strong>Date:</strong> {{ record.date }}</p>
+
+    <label>Morning:</label>
+    <input type="number" step="0.01" name="morning"
+           value="{{ record.morning }}"><br><br>
+
+    <label>Noon:</label>
+    <input type="number" step="0.01" name="noon"
+           value="{{ record.noon }}"><br><br>
+
+    <label>Evening:</label>
+    <input type="number" step="0.01" name="evening"
+           value="{{ record.evening }}"><br><br>
+
+    <button type="submit">Update</button>
+
+</form>
+
+</body>
+</html>

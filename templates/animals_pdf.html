@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Livestock List</title>
+
+<style>
+
+body{
+font-family: Arial, sans-serif;
+margin:30px;
+}
+
+h2{
+margin-bottom:10px;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+margin-top:15px;
+}
+
+th, td{
+border:1px solid #ccc;
+padding:8px;
+text-align:center;
+}
+
+th{
+background-color:#f2f2f2;
+}
+
+.btn{
+padding:6px 12px;
+text-decoration:none;
+border-radius:4px;
+font-size:14px;
+}
+
+.edit-btn{
+background-color:#4CAF50;
+color:white;
+}
+
+.delete-btn{
+background-color:#f44336;
+color:white;
+}
+
+.back-btn{
+background-color:#3498db;
+color:white;
+margin-bottom:15px;
+display:inline-block;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<hr>
+
+<!-- ✅ FIXED HEADER -->
+<h2 style="text-align:center;">
+    {% if category %}
+        Livestock Report - {{ category }}
+    {% else %}
+        Livestock Report - All Animals
+    {% endif %}
+</h2>
+
+<!-- ✅ OPTIONAL SUBTITLE -->
+{% if not category %}
+<h3>All Farm Animals</h3>
+{% endif %}
+
+
+<table>
+
+<tr>
+<th>NO</th>
+<th>NAME</th>
+<th>BREED</th>
+<th>DOB</th>
+<th>CATEGORY</th>
+<th>SEX</th>
+<th>MOTHER</th>
+<th>HOUSE</th>
+</tr>
+
+{% for animal in animals %}
+
+<tr>
+<td>{{ loop.index }}</td>
+
+<td>{{ animal.name }}</td>
+
+<td>{{ animal.breed }}</td>
+
+<td>
+{{ animal.dob if animal.dob else "Not Provided" }}
+</td>
+
+<td>{{ animal.category }}</td>
+
+<td>{{ animal.sex }}</td>
+
+<td>
+{{ animal.mother if animal.mother else "Unknown" }}
+</td>
+                    <td>
+    {% if animal.shed %}
+        {{ animal.shed.name }}
+    {% else %}
+        Not Assigned
+    {% endif %}
+</td>
+</tr>
+
+{% endfor %}
+
+{% if animals|length == 0 %}
+
+<tr>
+<td colspan="7">No livestock records found.</td>
+</tr>
+
+{% endif %}
+
+</table>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<style>
+body { font-family: Arial; font-size: 12px; }
+
+h2 { text-align: center; }
+
+.summary {
+    margin-bottom: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: center;
+}
+
+th {
+    background: #f4f4f4;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Transactions Report</h2>
+
+<div class="summary">
+Date: {{ selected_date or '-' }} <br>
+Month: {{ selected_month or '-' }} <br>
+Purpose: {{ purpose or 'All' }} <br>
+</div>
+
+<div class="summary">
+<b>Total:</b> KES {{ "{:,.2f}".format(total_paid) }} |
+<b>Month:</b> KES {{ "{:,.2f}".format(month_paid) }} |
+<b>Quarter:</b> KES {{ "{:,.2f}".format(quarter_paid) }} |
+<b>Year:</b> KES {{ "{:,.2f}".format(year_paid) }}
+</div>
+
+<table>
+
+<tr>
+<th>No</th>
+<th>Date</th>
+<th>Amount</th>
+<th>Farm</th>
+<th>Account</th>
+<th>Type</th>
+<th>Purpose</th>
+</tr>
+
+{% for t in transactions %}
+<tr>
+<td>{{ loop.index }}</td>
+<td>{{ t.date_paid }}</td>
+<td>KES {{ "{:,.2f}".format(t.amount or 0) }}</td>
+<td>{{ t.farm.name if t.farm else "-" }}</td>
+<td>{{ t.account }}</td>
+<td>{{ t.purpose_type }}</td>
+<td>{{ t.purpose }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

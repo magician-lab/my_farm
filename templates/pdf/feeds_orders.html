@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body { font-family: Arial; font-size: 12px; }
+
+h2 { text-align: center; }
+
+.summary {
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.green { color: green; }
+.red { color: red; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 6px;
+    text-align: left;
+}
+
+th {
+    background: #f4f4f4;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Feeds Orders Report</h2>
+
+<div class="summary">
+    Total: KES {{ "{:,.2f}".format(total_all) }} |
+    Paid: <span class="green">KES {{ "{:,.2f}".format(total_paid) }}</span> |
+    Debt: <span class="red">KES {{ "{:,.2f}".format(total_debt) }}</span>
+</div>
+
+<table>
+<tr>
+    <th>Ref</th>
+    <th>Date</th>
+    <th>Farm</th>
+    <th>Total</th>
+    <th>Paid</th>
+    <th>Balance</th>
+    <th>Status</th>
+</tr>
+
+{% for o in orders %}
+<tr>
+<td>{{ o.order.order_ref }}</td>
+<td>{{ o.order.date_ordered }}</td>
+<td>{{ o.order.farm.name }}</td>
+<td>{{ "{:,.2f}".format(o.total) }}</td>
+<td>{{ "{:,.2f}".format(o.paid) }}</td>
+<td>{{ "{:,.2f}".format(o.balance) }}</td>
+<td>{{ o.payment_status }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

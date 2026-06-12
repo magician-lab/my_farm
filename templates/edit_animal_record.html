@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Farm | animal_edit</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 400px;
+            margin: 80px auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            background: #2c7be5;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1a68d1;
+        }
+         .btn_dashboard {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 8px 14px;
+            background: green;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Livestock Registry_edit</h2>
+{% if message %}
+<p style="color:#1500ff; font-weight:bold;">{{ message }}</p>
+{% endif %}
+
+    <form method="POST">
+        <label>Name:</label><br>
+        <input type="text" name="name" placeholder=" name" value="{{ animal.name }}">
+        <label>Breed:</label><br>
+        <input type="text" name="breed" placeholder="breed type"  value="{{ animal.breed }}">
+        <label>DOB:</label><br>
+        <input type="date" name="dob" placeholder="dob" value="{{ animal.dob }}">
+        <label>Sex:</label><br>
+        <input type="text" name="sex" placeholder="sex" value="{{ animal.sex }}">
+    
+    <label>Category:</label><br>
+    <select name="category" required>
+        <option value="Milker" {% if animal.category=='Milker' %}selected{% endif %}>Milker</option>
+        <option value="Steamer" {% if animal.category=='Steamer' %}selected{% endif %}>Steamer</option>
+        <option value="Dry" {% if animal.category=='Dry' %}selected{% endif %}>Dry</option>
+        <option value="Incalf-Heifer" {% if animal.category=='Incalf-Heifer' %}selected{% endif %}>Incalf-Heifer</option>
+        <option value="Bullying-Heifer" {% if animal.category=='Bullying-Heifer' %}selected{% endif %}>Bullying-Heifer</option>
+        <option value="Yearing" {% if animal.category=='Yearing' %}selected{% endif %}>Yearing</option>
+        <option value="Calf" {% if animal.category=='Calf' %}selected{% endif %}>Calf</option>
+        <option value="weaner" {% if animal.category=='Weaner' %}selected{% endif %}>Weaner</option>
+        <option value="nolonger-exist" {% if animal.category=='nolonger_exist' %}selected{% endif %}>nolonger_exist</option>
+        <option value="bull" {% if animal.category=='bull' %}selected{% endif %}>bull</option>
+    </select><br><br>
+        <label>Mother:</label><br>
+        <input type="text" name="mother" placeholder="mother" value="{{ animal.mother }}">
+        <button type="submit">update</button>
+    </form>
+
+</div>
+
+</body>
+</html>

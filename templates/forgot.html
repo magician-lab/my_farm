@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Forgot Password</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', Arial;
+    background: linear-gradient(to right, #eef2f7, #e3e9f0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 350px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+h2 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.back {
+    margin-top: 10px;
+    display: block;
+    color: gray;
+    text-decoration: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Forgot Password</h2>
+
+    <form method="POST">
+        <input type="email" name="email" placeholder="Enter your email" required>
+        <button type="submit">Send OTP</button>
+    </form>
+
+    <a href="/login" class="back">⬅ Back to Login</a>
+</div>
+
+</body>
+</html>

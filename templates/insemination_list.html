@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Insemination Records</title>
+
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6fa;
+    padding: 40px;
+    color: #333;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* FILTER + BUTTONS */
+.filter-box {
+    margin-bottom: 20px;
+}
+
+select, button, input {
+    padding: 6px 10px;
+    margin-right: 10px;
+}
+
+/* SEARCH BAR */
+.search-box {
+    margin-bottom: 15px;
+}
+
+.search-box input {
+    width: 250px;
+}
+
+/* BUTTONS */
+.add-btn, .download-btn {
+    display: inline-block;
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    font-size: 14px;
+}
+
+.add-btn {
+    background: #4CAF50;
+}
+
+.download-btn {
+    background: #673ab7;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th {
+    background: #4CAF50;
+    color: white;
+    padding: 12px;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+tr:hover {
+    background: #f9fbff;
+}
+
+/* ACTION BUTTONS */
+.action-btn {
+    padding: 6px 10px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    color: white;
+}
+
+.edit {
+    background: #2196F3;
+}
+
+.delete {
+    background: #f44336;
+}
+
+/* STATUS COLORS */
+.danger {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.warning {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.safe {
+    color: #4CAF50;
+}
+         .btn_dashboard {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 8px 14px;
+            background: green;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;}
+</style>
+
+</head>
+
+<body>
+<a href="/cow_dashboard" class="btn_dashboard">← Back</a>
+<h2>🐄 Insemination Records</h2>
+
+<form method="GET" class="filter-box">
+
+    <label>Status</label>
+    <select name="status">
+        <option value="">All</option>
+        <option value="confirmed" {% if request.args.get('status') == 'confirmed' %}selected{% endif %}>Confirmed</option>
+        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="aborted" {% if request.args.get('status') == 'aborted' %}selected{% endif %}>Aborted</option>
+        <option value="delivered" {% if request.args.get('status') == 'delivered' %}selected{% endif %}>Delivered</option>
+    </select>
+
+    <label>Month</label>
+    <input type="month" name="month" value="{{ request.args.get('month','') }}">
+
+    <button type="submit">Filter</button>
+
+</form>
+
+<!-- 🔍 SEARCH BAR -->
+<div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search cow name...">
+</div>
+
+<a class="add-btn" href="/insemination/add">+ Add Record</a>
+
+<form method="GET" action="{{ url_for('send_report', report_type='insemination') }}">
+
+    <!-- 🔥 PRESERVE FILTERS -->
+    <input type="hidden" name="status" value="{{ request.args.get('status') }}">
+    <input type="hidden" name="month" value="{{ request.args.get('month') }}">
+    <input type="hidden" name="year" value="{{ request.args.get('year') }}">
+
+    <div style="margin-top: 15px; margin-bottom: 15px;">
+
+        <strong>📧 Send Report To:</strong><br><br>
+
+        <div id="email-container">
+            <input type="email" name="emails" placeholder="Enter email" required>
+        </div>
+
+        <br>
+
+        <button type="button" onclick="addEmail()">+ Add Another Email</button>
+
+    </div>
+
+    <button type="submit" class="download-btn">SEND REPORT</button>
+
+</form>
+
+<br><br>
+
+<table id="recordsTable">
+
+<tr>
+    <th>No</th>
+    <th>Cow Name</th>
+    <th>Breed</th>
+    <th>Date Served</th>
+    <th>Confirmation Method</th>
+    <th>Confirmation Date</th>
+    <th>Status</th>
+    <th>Calving Date</th>
+    <th>Actions</th>
+</tr>
+
+{% for r in records %}
+<tr>
+
+<td>{{ loop.index }}</td>
+
+<td class="cow-name">{{ r.animal.name }}</td>
+<td>{{ r.animal.breed }}</td>
+<td>{{ r.date_served }}</td>
+<td>{{ r.confirmation_method }}</td>
+
+<td>
+{% if r.confirmation_date %}
+    {% set days_diff = (r.confirmation_date - now.date()).days %}
+
+    {% if days_diff < 0 and (r.status or '').lower() == 'pending' %}
+        <span class="danger">{{ r.confirmation_date }}</span>
+    {% elif days_diff <= 7 %}
+        <span class="warning">{{ r.confirmation_date }}</span>
+    {% else %}
+        <span class="safe">{{ r.confirmation_date }}</span>
+    {% endif %}
+{% else %}
+    N/A
+{% endif %}
+</td>
+
+<td>{{ r.status or "Pending" }}</td>
+
+<td>
+{% if r.calving_date %}
+
+    {% set calving_diff = (r.calving_date - now.date()).days %}
+
+    {% if (r.status or '').lower() == 'delivered' %}
+        <span class="safe">{{ r.calving_date }}</span>
+
+    {% elif calving_diff < 0 %}
+        <span class="danger">{{ r.calving_date }}</span>
+
+    {% elif calving_diff <= 7 %}
+        <span class="warning">{{ r.calving_date }}</span>
+
+    {% else %}
+        {{ r.calving_date }}
+    {% endif %}
+
+{% else %}
+
+    {% if r.status == "aborted" %}
+        NA
+    {% else %}
+        Unknown
+    {% endif %}
+
+{% endif %}
+</td>
+
+<td>
+<a class="action-btn edit" href="/insemination/edit/{{ r.id }}">Edit</a>
+
+<a class="action-btn delete"
+   href="/insemination/delete/{{ r.id }}"
+   onclick="return confirm('Delete record?')">
+   Delete
+</a>
+</td>
+
+</tr>
+{% endfor %}
+
+{% if records|length == 0 %}
+<tr>
+    <td colspan="9">No records found</td>
+</tr>
+{% endif %}
+
+</table>
+
+<!-- 🔥 LIVE SEARCH SCRIPT -->
+<script>
+document.getElementById("searchInput").addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#recordsTable tr");
+
+    rows.forEach((row, index) => {
+        if (index === 0) return; // skip header
+
+        let cowNameCell = row.querySelector(".cow-name");
+        if (!cowNameCell) return;
+
+        let cowName = cowNameCell.textContent.toLowerCase();
+
+        if (cowName.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
+</script>
+<script>
+function addEmail() {
+    let container = document.getElementById("email-container");
+
+    let div = document.createElement("div");
+    div.style.marginTop = "5px";
+
+    div.innerHTML = `
+        <input type="email" name="emails" placeholder="Enter email">
+        <button type="button" onclick="removeEmail(this)">X</button>
+    `;
+
+    container.appendChild(div);
+}
+
+function removeEmail(button) {
+    button.parentElement.remove();
+}
+</script>
+
+</body>
+</html>

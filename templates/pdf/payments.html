@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body { font-family: Arial; font-size: 12px; }
+table { width: 100%; border-collapse: collapse; }
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 6px;
+}
+
+th { background: #f4f4f4; }
+</style>
+</head>
+
+<body>
+
+<h2>Payments Report</h2>
+
+<p>Total Paid: {{ total_paid }}</p>
+
+<table>
+<tr>
+<th>Date</th>
+<th>Amount</th>
+</tr>
+
+{% for p in payments %}
+<tr>
+<td>{{ p.date_paid }}</td>
+<td>{{ p.amount }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

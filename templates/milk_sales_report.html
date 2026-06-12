@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Milk Sales Module</title>
+
+<style>
+:root{
+    --green:#1b5e20;
+    --green2:#2e7d32;
+    --red:#c62828;
+    --blue:#1565c0;
+    --bg:#f4f7fb;
+    --card:#ffffff;
+    --soft:#e8f5e9;
+    --warn:#fff8e1;
+}
+
+body{
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    padding: 18px;
+    color:#222;
+}
+
+h2{text-align:center;color:var(--green);}
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    background:white;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    gap:10px;
+}
+
+input{
+    padding:6px;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+button{
+    padding:6px 12px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.btn-primary{background:var(--green2);color:white;}
+.btn-export{background:var(--blue);color:white;}
+.btn-edit{background:#ff9800;color:white;}
+
+.table-card{
+    background:white;
+    padding:10px;
+    border-radius:10px;
+    overflow-x:auto;
+    box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+}
+
+th{
+    background:var(--green);
+    color:white;
+    padding:10px;
+}
+
+td{
+    padding:8px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+
+.metric{
+    font-weight:bold;
+    text-align:left;
+    background:#fafafa;
+}
+
+.system{background:var(--soft);}
+.actual{background:var(--warn);}
+
+.pos{background:#c8e6c9;color:#1b5e20;font-weight:bold;}
+.neg{background:#ffcdd2;color:#b71c1c;font-weight:bold;}
+.neutral{background:#eee;color:#555;}
+
+.actions{
+    display:flex;
+    gap:6px;
+    justify-content:center;
+}
+
+.edit{background:var(--green2);color:white;}
+.delete{background:var(--red);color:white;}
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:25px;
+    background:white;
+    padding:18px;
+    border-radius:14px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:140px;
+}
+
+.action-btn:hover{
+    background:#2e7d32;
+    transform:translateY(-2px);
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    .top-actions{
+        padding:14px;
+    }
+
+    .action-btn{
+        width:100%;
+        min-width:100%;
+        text-align:center;
+    }
+
+}
+</style>
+</head>
+
+<body>
+
+<h2>🥛 MILK SALES MODULE</h2>
+    <a href="/milk_dashboard" class="action-btn">
+        back
+    </a>
+<!-- FILTER + EMAIL SEND -->
+<div class="top-bar">
+
+<form method="GET">
+<input type="date" name="date" value="{{ selected_date }}">
+<button class="btn-primary">Filter</button>
+</form>
+
+<!-- 🔥 EMAIL SEND FORM -->
+<form method="GET" action="{{ url_for('send_report', report_type='milk_sale') }}">
+
+<input type="hidden" name="date" value="{{ selected_date }}">
+
+<div id="email-container">
+    <input type="email" name="emails" placeholder="Enter email" required>
+</div>
+
+<button type="button" onclick="addEmail()">+</button>
+
+<button class="btn-export">Export PDF</button>
+
+</form>
+
+</div>
+
+<!-- ACTUAL ENTRY -->
+<div class="top-bar">
+<form method="POST" action="{{ url_for('update_actual_remaining') }}">
+<input type="hidden" name="date" value="{{ selected_date }}">
+
+<label>Actual Remaining:</label>
+<input type="number" step="0.01" name="actual_remaining" value="{{ actual_remaining }}">
+
+<button class="btn-edit">Save</button>
+</form>
+</div>
+
+<!-- MAIN TABLE -->
+<div class="table-card">
+<table>
+
+<tr>
+<th>Metric</th>
+<th>System Flow</th>
+<th>Actual Flow</th>
+<th>Discrepancy</th>
+</tr>
+
+<tr>
+<td class="metric">Previous Remaining</td>
+<td class="system">{{ previous_system_remaining }}</td>
+<td class="actual">{{ previous_actual_remaining }}</td>
+<td class="{% if prev_variance>=0 %}pos{% else %}neg{% endif %}">
+{{ prev_variance|round(2) }}
+</td>
+</tr>
+
+<tr>
+<td class="metric">Today's Production</td>
+<td class="system">{{ total_production }}</td>
+<td class="actual">{{ total_production }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Today Available</td>
+<td class="system">{{ system_available_today }}</td>
+<td class="actual">{{ actual_available_today }}</td>
+<td class="{% if avail_variance>=0 %}pos{% else %}neg{% endif %}">
+{{ avail_variance|round(2) }}
+</td>
+</tr>
+
+<tr>
+<td class="metric">Total Sales (Shops)</td>
+<td class="system">{{ total_sold_shops }}</td>
+<td class="actual">{{ total_sold_shops }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Total Calf</td>
+<td class="system">{{ total_calf_used }}</td>
+<td class="actual">{{ total_calf_used }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Total Home</td>
+<td class="system">{{ total_home_used }}</td>
+<td class="actual">{{ total_home_used }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Total Used</td>
+<td class="system">{{ total_used }}</td>
+<td class="actual">{{ total_used }}</td>
+<td class="neutral">0</td>
+</tr>
+
+<tr>
+<td class="metric">Expected Remaining</td>
+<td class="system">{{ (system_available_today - total_used)|round(2) }}</td>
+<td class="actual">{{ (actual_available_today - total_used)|round(2) }}</td>
+<td class="neutral">N/A</td>
+</tr>
+
+<tr>
+<td class="metric">Remaining</td>
+<td class="system">{{ (system_available_today - total_used)|round(2) }}</td>
+<td class="actual">{{ actual_remaining }}</td>
+<td class="{% if (actual_remaining - (system_available_today - total_used))>=0 %}pos{% else %}neg{% endif %}">
+{{ (actual_remaining - (system_available_today - total_used))|round(2) }}
+</td>
+</tr>
+
+<tr>
+<td class="metric">Actual vs Expected</td>
+<td class="system" style="color:#c62828; font-weight:bold;">N/A</td>
+
+<td class="actual" style="
+font-weight:bold;
+color:
+{% if (actual_remaining - (actual_available_today - total_used)) < 0 %}
+#c62828
+{% else %}
+green
+{% endif %}
+">
+{{ (actual_remaining - (actual_available_today - total_used))|round(2) }}
+</td>
+
+<td class="neutral">N/A</td>
+</tr>
+
+</table>
+</div>
+
+<!-- SALES RECORDS -->
+<h3>Sales Records</h3>
+
+<div class="table-card">
+<table>
+
+<tr>
+<th>#</th>
+<th>Session</th>
+<th>Shop1</th>
+<th>Shop2</th>
+<th>Shop3</th>
+<th>Calf</th>
+<th>Home</th>
+<th>Price</th>
+<th>Actions</th>
+</tr>
+
+{% for s in sales_records %}
+<tr>
+<td>{{ loop.index }}</td>
+<td>{{ s.session }}</td>
+<td>{{ s.shop1 }}</td>
+<td>{{ s.shop2 }}</td>
+<td>{{ s.shop3 }}</td>
+<td>{{ s.calf }}</td>
+<td>{{ s.home }}</td>
+<td>{{ s.price }}</td>
+
+<td>
+<div class="actions">
+
+<a href="{{ url_for('edit_milk_sale_record', id=s.id) }}">
+<button class="edit">Edit</button>
+</a>
+
+<a href="{{ url_for('delete_milk_sale', id=s.id) }}"
+onclick="return confirm('Delete?')">
+<button class="delete">Delete</button>
+</a>
+
+</div>
+</td>
+</tr>
+{% endfor %}
+
+</table>
+</div>
+
+<!-- 🔥 EMAIL SCRIPT -->
+<script>
+function addEmail() {
+    let container = document.getElementById("email-container");
+
+    let div = document.createElement("div");
+
+    div.innerHTML = `
+        <input type="email" name="emails" placeholder="Enter email">
+        <button type="button" onclick="this.parentElement.remove()">X</button>
+    `;
+
+    container.appendChild(div);
+}
+</script>
+
+</body>
+</html>

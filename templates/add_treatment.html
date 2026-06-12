@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Treatment Record</title>
+
+    <style>
+
+        body{
+            font-family: Arial, sans-serif;
+            background:#f4f6f9;
+            padding:40px;
+        }
+
+        h2{
+            text-align:center;
+            color:#2c3e50;
+            margin-bottom:30px;
+        }
+
+        form{
+            max-width:500px;
+            margin:auto;
+            background:white;
+            padding:25px;
+            border-radius:10px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        label{
+            display:block;
+            margin-top:10px;
+            font-weight:bold;
+        }
+
+        input, select{
+            width:100%;
+            padding:8px;
+            margin-top:5px;
+            border:1px solid #ccc;
+            border-radius:5px;
+        }
+
+        button{
+            margin-top:20px;
+            width:100%;
+            padding:10px;
+            background:#27ae60;
+            color:white;
+            border:none;
+            border-radius:5px;
+            font-size:16px;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background:#219150;
+        }
+
+        .back-btn{
+            display:block;
+            text-align:center;
+            margin-top:15px;
+            text-decoration:none;
+            color:#3498db;
+        }
+
+
+.flash{
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    color: white;
+    font-size: 14px;
+}
+
+.success{
+    background: green;
+}
+
+.error{
+    background: red;
+}
+
+.warning{
+    background: orange;
+    color: black;
+}
+
+.info{
+    background: blue;
+}
+         .btn_dashboard {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 8px 14px;
+            background: green;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;}
+
+
+    </style>
+</head>
+
+<body>
+    
+<h2>➕ Add Treatment Record</h2>
+<a href="/insemination" class="btn_dashboard">← Back</a>
+<form method="POST">
+
+    <!-- SELECT COW -->
+    <label>Cow Name</label>
+    <select name="animal_id" required>
+        <option value="">Select Cow</option>
+        {% for animal in animals %}
+        <option value="{{ animal.id }}">
+            {{ animal.name }} - {{ animal.breed }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <!-- DATE -->
+    <label>Date Treated</label>
+    <input type="date" name="date" required>
+
+    <!-- ILLNESS -->
+    <label>Illness</label>
+    <input type="text" name="illness" placeholder="e.g Mastitis" required>
+
+    <!-- COST -->
+    <label>Treatment Cost (Ksh)</label>
+    <input type="number" step="0.01" name="cost" required>
+
+    <!-- VET -->
+    <label>Veterinary Officer</label>
+    <input type="text" name="vet" placeholder="Vet Name" required>
+
+    <!-- STATUS -->
+    <label>Status</label>
+    <select name="status" required>
+        <option value="recovering">Recovering</option>
+        <option value="healed">Healed</option>
+    </select>
+
+    <button type="submit">💾 Save Treatment</button>
+
+</form>
+
+<a href="{{ url_for('treatment') }}" class="back-btn">
+← Back to Treatment Records
+</a>
+
+</body>
+</html>

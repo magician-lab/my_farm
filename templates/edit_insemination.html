@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Edit Record</title>
+
+<style>
+
+body{
+    font-family: Arial;
+    background:#f5f7fb;
+    padding:40px;
+}
+
+.container{
+    width:420px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+}
+
+h2{
+    text-align:center;
+}
+
+label{
+    display:block;
+    margin-top:15px;
+    font-weight:bold;
+}
+
+select, input{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    border-radius:6px;
+    border:1px solid #ccc;
+}
+
+button{
+    margin-top:20px;
+    width:100%;
+    padding:12px;
+    background:#2196F3;
+    color:white;
+    border:none;
+    border-radius:6px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1e88e5;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Edit Insemination Record</h2>
+
+<form method="POST">
+
+<!-- 🔹 COW -->
+<label>Cow</label>
+<select name="animal_id" required>
+    {% for a in animals %}
+        <option value="{{ a.id }}"
+            {% if a.id == record.animal_id %}selected{% endif %}>
+            {{ a.name }} ({{ a.breed }})
+        </option>
+    {% endfor %}
+</select>
+
+<!-- 🔹 DATE SERVED -->
+<label>Date Served</label>
+<input type="date" name="date_served"
+       value="{{ record.date_served }}">
+
+<!-- 🔹 STATUS -->
+<label>Status</label>
+<select name="status">
+
+    <option value=""
+        {% if not record.status %}selected{% endif %}>
+        Pending
+    </option>
+
+    <option value="confirmed"
+        {% if record.status == "confirmed" %}selected{% endif %}>
+        Confirmed
+    </option>
+
+    <option value="aborted"
+        {% if record.status == "aborted" %}selected{% endif %}>
+        Aborted
+    </option>
+
+    <option value="delivered"
+        {% if record.status == "delivered" %}selected{% endif %}>
+        Delivered
+    </option>
+
+</select>
+
+<button type="submit">Update Record</button>
+
+</form>
+
+</div>
+
+</body>
+</html>

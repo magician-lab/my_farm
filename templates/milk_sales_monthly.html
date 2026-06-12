@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Milk Analysis</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f4f6f8;
+    padding:20px;
+    color:#333;
+}
+
+/* HEADER */
+
+.page-header{
+    margin-bottom:20px;
+}
+
+.page-title{
+    font-size:28px;
+    font-weight:bold;
+    color:#1b5e20;
+}
+
+/* TOP ACTIONS */
+
+.top-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:25px;
+    background:white;
+    padding:18px;
+    border-radius:16px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+.action-btn{
+    text-decoration:none;
+    background:#1b5e20;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+    transition:0.3s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:150px;
+}
+
+.action-btn:hover{
+    background:#2e7d32;
+    transform:translateY(-2px);
+}
+
+/* SUMMARY */
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:18px;
+    margin-bottom:25px;
+}
+
+.summary-card{
+    background:white;
+    padding:20px;
+    border-radius:16px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+.summary-title{
+    font-size:14px;
+    color:#666;
+    margin-bottom:10px;
+}
+
+.summary-value{
+    font-size:28px;
+    font-weight:bold;
+    color:#1b5e20;
+}
+
+/* FILTER CARD */
+
+.filter-card{
+    background:white;
+    padding:20px;
+    border-radius:16px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom:25px;
+}
+
+.filter-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:18px;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.form-group label{
+    margin-bottom:8px;
+    font-size:14px;
+    font-weight:bold;
+    color:#444;
+}
+
+.form-control{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    font-size:14px;
+    outline:none;
+}
+
+.form-control:focus{
+    border-color:#2e7d32;
+}
+
+/* BUTTONS */
+
+.btn{
+    border:none;
+    padding:12px 16px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+    font-size:14px;
+    transition:0.3s;
+    width:100%;
+}
+
+.btn-filter{
+    background:#1565c0;
+    color:white;
+}
+
+.btn-filter:hover{
+    background:#1976d2;
+}
+
+.btn-export{
+    background:#c62828;
+    color:white;
+}
+
+.btn-export:hover{
+    background:#e53935;
+}
+
+/* TABLE */
+
+.table-container{
+    background:white;
+    border-radius:16px;
+    overflow:auto;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:900px;
+}
+
+th{
+    background:#1b5e20;
+    color:white;
+    padding:14px 10px;
+    font-size:14px;
+    position:sticky;
+    top:0;
+}
+
+td{
+    padding:12px 10px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+    font-size:14px;
+}
+
+tr:nth-child(even){
+    background:#fafafa;
+}
+
+tr:hover{
+    background:#f1f8e9;
+}
+
+tfoot{
+    background:#e8f5e9;
+    font-weight:bold;
+}
+
+.total-value{
+    font-weight:bold;
+    color:#1b5e20;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    body{
+        padding:12px;
+    }
+
+    .page-title{
+        font-size:22px;
+    }
+
+    .top-actions{
+        padding:14px;
+    }
+
+    .action-btn{
+        width:100%;
+        min-width:100%;
+    }
+
+    table{
+        min-width:800px;
+    }
+
+    th, td{
+        padding:10px 8px;
+        font-size:13px;
+    }
+
+    .summary-value{
+        font-size:22px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="page-header">
+    <div class="page-title">
+        📊 Monthly Milk Analysis
+    </div>
+</div>
+
+<!-- TOP BUTTONS -->
+
+<div class="top-actions">
+
+    <a href="/milk_dashboard" class="action-btn">
+        ⬅ Back Dashboard
+    </a>
+
+</div>
+
+<!-- SUMMARY -->
+
+<div class="summary-grid">
+
+    <div class="summary-card">
+        <div class="summary-title">Total Milk Sold</div>
+        <div class="summary-value">
+            {{ "{:,}".format(total_sold) }} L
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-title">Total Home Use</div>
+        <div class="summary-value">
+            {{ "{:,}".format(total_home) }} L
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-title">Total Calf Use</div>
+        <div class="summary-value">
+            {{ "{:,}".format(total_calf) }} L
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-title">Total Usage</div>
+        <div class="summary-value">
+            {{ "{:,}".format(total_use) }} L
+        </div>
+    </div>
+
+</div>
+
+<!-- FILTER SECTION -->
+
+<div class="filter-card">
+
+    <!-- FILTER FORM -->
+    <form method="GET">
+
+        <div class="filter-grid">
+
+            <div class="form-group">
+                <label>Select Date</label>
+
+                <input 
+                    type="date" 
+                    name="date" 
+                    value="{{ selected_date }}"
+                    class="form-control"
+                >
+            </div>
+
+            <div class="form-group">
+
+                <label>&nbsp;</label>
+
+                <button type="submit" class="btn btn-filter">
+                    🔍 Filter Records
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+    <br><br>
+
+    <!-- EMAIL EXPORT FORM -->
+    <!-- ✅ SEPARATE FORM -->
+    <!-- ✅ EMAIL ONLY REQUIRED HERE -->
+
+    <form 
+        method="GET" 
+        action="{{ url_for('send_report', report_type='milk_sales_monthly') }}"
+    >
+
+        <div class="filter-grid">
+
+            <!-- KEEP DATE -->
+            <div class="form-group">
+                <label>Selected Date</label>
+
+                <input 
+                    type="date"
+                    name="date"
+                    value="{{ selected_date }}"
+                    class="form-control"
+                >
+            </div>
+
+            <!-- EMAIL -->
+            <div class="form-group">
+                <label>Recipient Email</label>
+
+                <input 
+                    type="email"
+                    name="emails"
+                    placeholder="example@gmail.com"
+                    class="form-control"
+                >
+            </div>
+
+            <!-- SEND BUTTON -->
+            <div class="form-group">
+
+                <label>&nbsp;</label>
+
+                <button type="submit" class="btn btn-export">
+                    📄 Export & Send PDF
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+<!-- TABLE -->
+
+<div class="table-container">
+
+<table>
+
+<thead>
+<tr>
+    <th>No</th>
+    <th>Date</th>
+    <th>Shop1</th>
+    <th>Shop2</th>
+    <th>Shop3</th>
+    <th>Total Sold</th>
+    <th>Calf</th>
+    <th>Home</th>
+    <th>Total Use</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for d in monthly_data %}
+<tr>
+
+    <td>{{ d.no }}</td>
+
+    <td>{{ d.date }}</td>
+
+    <td>{{ "{:,}".format(d.shop1) }}</td>
+
+    <td>{{ "{:,}".format(d.shop2) }}</td>
+
+    <td>{{ "{:,}".format(d.shop3) }}</td>
+
+    <td class="total-value">
+        {{ "{:,}".format(d.total_sold) }}
+    </td>
+
+    <td>{{ "{:,}".format(d.calf) }}</td>
+
+    <td>{{ "{:,}".format(d.home) }}</td>
+
+    <td class="total-value">
+        {{ "{:,}".format(d.total_use) }}
+    </td>
+
+</tr>
+{% endfor %}
+
+</tbody>
+
+<tfoot>
+
+<tr>
+
+    <td colspan="2">TOTAL</td>
+
+    <td>{{ "{:,}".format(total_shop1) }}</td>
+
+    <td>{{ "{:,}".format(total_shop2) }}</td>
+
+    <td>{{ "{:,}".format(total_shop3) }}</td>
+
+    <td class="total-value">
+        {{ "{:,}".format(total_sold) }}
+    </td>
+
+    <td>{{ "{:,}".format(total_calf) }}</td>
+
+    <td>{{ "{:,}".format(total_home) }}</td>
+
+    <td class="total-value">
+        {{ "{:,}".format(total_use) }}
+    </td>
+
+</tr>
+
+</tfoot>s
+
+</table>
+
+</div>
+
+</body>
+</html>

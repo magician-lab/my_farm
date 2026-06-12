@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Insemination Records</title>
+
+<style>
+
+body{
+    font-family: Arial;
+    background:#f4f6fa;
+    padding:40px;
+}
+
+h2{
+    text-align:center;
+    color:#333;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    border-radius:8px;
+    overflow:hidden;
+}
+
+th{
+    background:#4CAF50;
+    color:white;
+    padding:12px;
+}
+
+td{
+    padding:10px;
+    border-bottom:1px solid #eee;
+    text-align:center;
+}
+
+/* STATUS COLORS */
+.danger{
+    color:#f44336;
+    font-weight:bold;
+}
+
+.warning{
+    color:#ff9800;
+    font-weight:bold;
+}
+
+.safe{
+    color:#4CAF50;
+    font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Insemination Records</h2>
+<div style="text-align:center; margin-bottom:20px; font-size:14px; color:#555;">
+
+
+
+    Status:
+    {% if status %}
+        {{ status|capitalize }}
+    {% else %}
+        All
+    {% endif %}
+
+    |
+
+    Month:
+    {% if month %}
+        {{ month }}
+    {% else %}
+        All
+    {% endif %}
+
+    |
+
+    Year:
+    {% if year %}
+        {{ year }}
+    {% else %}
+        All
+    {% endif %}
+
+</div>
+
+<h2>
+    Insemination Report -
+    {% if status %} {{ status|capitalize }} {% else %} All {% endif %}
+    {% if month %} ({{ month }}) {% endif %}
+</h2>
+
+<table>
+
+<tr>
+<th>No</th>
+<th>Cow Name</th>
+<th>Breed</th>
+<th>Date Served</th>
+<th>Confirmation Method</th>
+<th>Confirmation Date</th>
+<th>Status</th>
+<th>Calving Date</th>
+</tr>
+
+{% for r in records %}
+<tr>
+
+<td>{{ loop.index }}</td>
+<td>{{ r.animal.name }}</td>
+<td>{{ r.animal.breed }}</td>
+<td>{{ r.date_served }}</td>
+<td>{{ r.confirmation_method }}</td>
+
+<!-- 🔥 CONFIRMATION DATE LOGIC -->
+<td>
+{% if r.confirmation_date %}
+
+    {% set diff = (r.confirmation_date - now.date()).days %}
+
+    {% if diff < 0 and (r.status or '').lower() == 'pending' %}
+        <span class="danger">{{ r.confirmation_date }}</span>
+
+    {% elif diff <= 7 %}
+        <span class="warning">{{ r.confirmation_date }}</span>
+
+    {% else %}
+        <span class="safe">{{ r.confirmation_date }}</span>
+    {% endif %}
+
+{% else %}
+    N/A
+{% endif %}
+</td>
+
+<!-- 🔥 STATUS -->
+<td>{{ r.status or "Pending" }}</td>
+
+<!-- 🔥 CALVING DATE LOGIC (FULLY FIXED) -->
+<td>
+{% if r.calving_date %}
+
+    {% set calv_diff = (r.calving_date - now.date()).days %}
+
+    {% if (r.status or '').lower() == 'delivered' %}
+        <span class="safe">{{ r.calving_date }}</span>
+
+    {% elif calv_diff < 0 %}
+        <span class="danger">{{ r.calving_date }}</span>
+
+    {% elif calv_diff <= 7 %}
+        <span class="warning">{{ r.calving_date }}</span>
+
+    {% else %}
+        {{ r.calving_date }}
+    {% endif %}
+
+{% else %}
+
+    {% if r.status == "aborted" %}
+        NA
+    {% else %}
+        Unknown
+    {% endif %}
+
+{% endif %}
+</td>
+
+</tr>
+{% endfor %}
+
+{% if records|length == 0 %}
+<tr>
+    <td colspan="8">No records found</td>
+</tr>
+{% endif %}
+
+</table>
+
+</body>
+</html>

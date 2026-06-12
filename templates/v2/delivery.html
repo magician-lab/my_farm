@@ -1,0 +1,65 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<div class="card">
+
+<div style="margin-bottom:10px;">
+    <a href="/feeds_v2/view/{{ order.id }}" class="btn btn-blue">
+        ⬅ Back to Order
+    </a>
+</div>
+
+<h2>Delivery - {{ order.order_ref }}</h2>
+
+<hr>
+
+<h3>Item: {{ item.feed_name }}</h3>
+
+<p><b>Ordered:</b> {{ item.quantity }} kg</p>
+<p><b>Already Delivered:</b> {{ delivered }} kg</p>
+<p><b>Remaining:</b> <span id="remainingDisplay">{{ remaining }}</span> kg</p>
+
+<hr>
+
+<form method="post">
+
+<label>Pieces (bags)</label>
+<input type="number" name="pieces" id="pieces" required>
+
+<label>Weight per bag (kg)</label>
+<input type="number" step="0.01" name="unit_weight" id="unit_weight" required>
+
+<label>Total Quantity (kg)</label>
+<input type="number" step="0.01" name="quantity" id="quantity" readonly>
+
+<button class="btn btn-green">Submit Delivery</button>
+
+</form>
+
+</div>
+
+<!-- 🔥 REAL TIME CALCULATION SCRIPT -->
+<script>
+function calculate() {
+
+    let pieces = parseFloat(document.getElementById("pieces").value) || 0;
+    let unit = parseFloat(document.getElementById("unit_weight").value) || 0;
+
+    let total = pieces * unit;
+
+    document.getElementById("quantity").value = total.toFixed(2);
+
+    // remaining live update
+    let remaining = parseFloat("{{ remaining }}");
+
+    let newRemaining = remaining - total;
+
+    document.getElementById("remainingDisplay").innerText = newRemaining.toFixed(2);
+}
+
+// live listeners
+document.getElementById("pieces").addEventListener("input", calculate);
+document.getElementById("unit_weight").addEventListener("input", calculate);
+</script>
+
+{% endblock %}

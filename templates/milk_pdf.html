@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #333;
+    margin: 20px;
+}
+
+/* HEADER */
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.header p {
+    margin: 5px 0;
+    font-size: 11px;
+}
+
+/* SECTION TITLES */
+.section-title {
+    margin-top: 20px;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #2c3e50;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 6px;
+    text-align: center;
+}
+
+th {
+    background: #27ae60;
+    color: white;
+    font-weight: bold;
+}
+
+/* SUMMARY GRID */
+.summary-grid {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.summary-grid td {
+    width: 20%;
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.summary-label {
+    font-size: 11px;
+    color: #555;
+}
+
+.summary-value {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* FOOTER */
+.footer {
+    margin-top: 30px;
+    font-size: 10px;
+    text-align: center;
+    color: #777;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- 🔥 HEADER -->
+<div class="header">
+    <h1>Milk Production Report</h1>
+    <p>
+        {% if selected_date %}
+            Date: {{ selected_date }}
+        {% else %}
+            All Records
+        {% endif %}
+    </p>
+</div>
+
+<!-- 🔥 PRODUCTION TALLY -->
+<div class="section-title">Production Tally</div>
+
+{% set below_10 = namespace(count=0) %}
+{% set between_10_20 = namespace(count=0) %}
+{% set between_20_30 = namespace(count=0) %}
+{% set above_30 = namespace(count=0) %}
+
+{% for record in records %}
+    {% if record.total <= 10 %}
+        {% set below_10.count = below_10.count + 1 %}
+    {% elif record.total <= 20 %}
+        {% set between_10_20.count = between_10_20.count + 1 %}
+    {% elif record.total <= 30 %}
+        {% set between_20_30.count = between_20_30.count + 1 %}
+    {% else %}
+        {% set above_30.count = above_30.count + 1 %}
+    {% endif %}
+{% endfor %}
+
+<table class="summary-grid">
+<tr>
+    <td>
+        <div class="summary-label">Below 10 Litres</div>
+        <div class="summary-value">{{ below_10.count }}</div>
+    </td>
+    <td>
+        <div class="summary-label">11 - 20 Litres</div>
+        <div class="summary-value">{{ between_10_20.count }}</div>
+    </td>
+    <td>
+        <div class="summary-label">21 - 30 Litres</div>
+        <div class="summary-value">{{ between_20_30.count }}</div>
+    </td>
+    <td>
+        <div class="summary-label">Above 30 Litres</div>
+        <div class="summary-value">{{ above_30.count }}</div>
+    </td>
+</tr>
+</table>
+
+<!-- 🔥 MAIN TABLE -->
+<div class="section-title">Milk Records</div>
+
+<table>
+<tr>
+    <th>No</th>
+    <th>Cow Name</th>
+    <th>Morning</th>
+    <th>Noon</th>
+    <th>Evening</th>
+    <th>Total</th>
+</tr>
+
+{% for record in records %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ record.cow.name }}</td>
+    <td>{{ record.morning }}</td>
+    <td>{{ record.noon }}</td>
+    <td>{{ record.evening }}</td>
+    <td><strong>{{ record.total }}</strong></td>
+</tr>
+{% endfor %}
+
+{% if records|length == 0 %}
+<tr>
+    <td colspan="6">No records found</td>
+</tr>
+{% endif %}
+</table>
+
+<!-- 🔥 DAILY SUMMARY -->
+<div class="section-title">Daily Summary</div>
+
+<table class="summary-grid">
+<tr>
+    <td>
+        <div class="summary-label">Morning Total</div>
+        <div class="summary-value">{{ total_morning }}</div>
+    </td>
+    <td>
+        <div class="summary-label">Noon Total</div>
+        <div class="summary-value">{{ total_noon }}</div>
+    </td>
+    <td>
+        <div class="summary-label">Evening Total</div>
+        <div class="summary-value">{{ total_evening }}</div>
+    </td>
+    <td>
+        <div class="summary-label">Grand Total</div>
+        <div class="summary-value">{{ grand_total }}</div>
+    </td>
+    <td>
+        <div class="summary-label">Average Per Cow</div>
+        <div class="summary-value">{{ average_production }}</div>
+    </td>
+</tr>
+</table>
+
+<!-- 🔥 EXTENDED SUMMARY -->
+<div class="section-title">Extended Totals</div>
+
+<table class="summary-grid">
+<tr>
+    <td>
+        <div class="summary-label">Monthly Total</div>
+        <div class="summary-value">{{ monthly_total }}</div>
+    </td>
+    <td>
+        <div class="summary-label">Quarterly Total</div>
+        <div class="summary-value">{{ quarterly_total }}</div>
+    </td>
+    <td>
+        <div class="summary-label">Yearly Total</div>
+        <div class="summary-value">{{ yearly_total }}</div>
+    </td>
+</tr>
+</table>
+
+<!-- 🔥 FOOTER -->
+<div class="footer">
+    Generated automatically by Farm Management System
+</div>
+
+</body>
+</html>

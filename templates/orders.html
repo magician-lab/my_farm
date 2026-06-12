@@ -1,0 +1,36 @@
+<h2>Feeds Orders</h2>
+
+<a href="/feeds_v2/create">+ New Order</a>
+
+<form method="get">
+    <input type="date" name="date">
+    <button>Filter</button>
+</form>
+
+<table border="1">
+<tr>
+    <th>Ref</th>
+    <th>Feed</th>
+    <th>Ordered</th>
+    <th>Delivered</th>
+    <th>Remaining</th>
+    <th>Balance</th>
+    <th>Actions</th>
+</tr>
+
+{% for item in orders %}
+<tr>
+    <td>{{ item.order.order_ref }}</td>
+    <td>{{ item.order.feed_name }}</td>
+    <td>{{ item.order.quantity_ordered }}</td>
+    <td>{{ item.delivered }}</td>
+    <td>{{ item.remaining }}</td>
+    <td>{{ item.balance }}</td>
+
+    <td>
+        <a href="/feeds_v2/delivery/{{ item.order.id }}">Delivery</a>
+        <a href="/feeds_v2/payment/{{ item.order.id }}">Payment</a>
+    </td>
+</tr>
+{% endfor %}
+</table>

@@ -1,0 +1,655 @@
+{% extends "v2/base.html" %}
+{% block content %}
+
+<style>
+
+/* =========================
+   🔥 RESPONSIVE TOP BAR
+========================= */
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:15px;
+    margin-bottom:15px;
+    flex-wrap:wrap;
+}
+
+.top-left{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+}
+
+.order-ref{
+    font-size:18px;
+    font-weight:bold;
+    color:#1565c0;
+}
+
+/* =========================
+   🔥 ORDER TITLE
+========================= */
+.order-title{
+    text-align:center;
+    margin-bottom:18px;
+}
+
+.order-title h2{
+    margin:0;
+    font-size:24px;
+    color:#1f2937;
+}
+
+.order-title small{
+    color:#666;
+    font-size:14px;
+}
+
+/* =========================
+   🔥 SUMMARY
+========================= */
+.summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+    margin-bottom:20px;
+}
+
+.summary-box{
+    padding:16px;
+    border-radius:12px;
+    text-align:center;
+    color:white;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+.summary-box b{
+    display:block;
+    margin-bottom:8px;
+    font-size:14px;
+    opacity:0.95;
+}
+
+.summary-box .value{
+    font-size:20px;
+    font-weight:bold;
+}
+
+/* 🔥 SUMMARY COLORS */
+.summary-total{
+    background:linear-gradient(135deg,#1565c0,#2964a0);
+}
+
+.summary-paid{
+    background:linear-gradient(135deg,#2e7d32,#1a611a);
+}
+
+.summary-debt{
+    background:linear-gradient(135deg,#c62828,#af3535);
+}
+
+.summary-cleared{
+    background:linear-gradient(135deg,#2e7d32,#328332);
+}
+
+/* =========================
+   🔥 TABLE
+========================= */
+.table-container{
+    overflow-x:auto;
+    border-radius:10px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:950px;
+}
+
+th{
+    background:#1565c0;
+    color:white;
+    padding:12px;
+    text-align:center;
+    font-size:14px;
+}
+
+td{
+    padding:10px;
+    border-bottom:1px solid #ddd;
+    text-align:center;
+    font-size:14px;
+}
+
+tr:hover{
+    background:#f9fbff;
+}
+
+/* =========================
+   🔥 ACTIONS
+========================= */
+.actions{
+    display:flex;
+    gap:5px;
+    justify-content:center;
+    flex-wrap:wrap;
+}
+
+/* =========================
+   🔥 BUTTONS
+========================= */
+.btn{
+    border:none;
+    border-radius:8px;
+    padding:8px 12px;
+    text-decoration:none;
+    color:white;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.btn-blue{
+    background:#1565c0;
+}
+
+.btn-green{
+    background:#2e7d32;
+}
+
+.btn-red{
+    background:#c62828;
+}
+
+.btn-send{
+    background:#00897b;
+}
+
+/* =========================
+   🔥 EMAIL BOX
+========================= */
+.email-box{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+    margin-top:8px;
+}
+
+.email-box input{
+    padding:8px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    min-width:180px;
+}
+
+/* =========================
+   🔥 BADGES
+========================= */
+.badge{
+    padding:6px 12px;
+    border-radius:20px;
+    color:white;
+    font-size:12px;
+    font-weight:bold;
+    display:inline-block;
+}
+
+.badge.red{
+    background:#c62828;
+}
+
+.badge.green{
+    background:#2e7d32;
+}
+
+.badge.orange{
+    background:#ef6c00;
+}
+
+/* =========================
+   🔥 PRICE DIFFERENCE
+========================= */
+.price-up{
+    color:#c62828;
+    font-weight:bold;
+}
+
+.price-down{
+    color:#2e7d32;
+    font-weight:bold;
+}
+
+.price-same{
+    color:#555;
+    font-weight:bold;
+}
+
+/* =========================
+   🔥 MOBILE RESPONSIVE
+========================= */
+@media(max-width:768px){
+
+    .top-bar{
+        flex-direction:column;
+    }
+
+    .top-left{
+        width:100%;
+    }
+
+    .summary{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .summary-box .value{
+        font-size:16px;
+    }
+
+    .email-box{
+        width:100%;
+    }
+
+    .email-box input{
+        width:100%;
+    }
+
+    .btn{
+        font-size:12px;
+        padding:8px 10px;
+    }
+
+}
+
+@media(max-width:480px){
+
+    .summary{
+        grid-template-columns:1fr;
+    }
+
+    .order-title h2{
+        font-size:20px;
+    }
+
+}
+
+</style>
+
+<div class="card">
+
+<!-- =========================
+     🔝 TOP BAR
+========================= -->
+<div class="top-bar">
+
+    <div class="top-left">
+
+        <a href="/feeds_v2/orders" class="btn btn-blue">
+            ⬅ Back
+        </a>
+
+        <a href="/feeds_v2/payment/{{ order.id }}"
+           class="btn btn-green">
+            💰 Pay
+        </a>
+
+        <a href="/feeds_v2/delivery_report?order_id={{ order.id }}"
+           class="btn btn-blue">
+            📊 Delivery
+        </a>
+
+        <a href="/feeds_v2/payment_report?order_id={{ order.id }}"
+           class="btn btn-blue">
+            💳 Payments
+        </a>
+
+    </div>
+
+    <div class="order-ref">
+        {{ order.order_ref }}
+    </div>
+
+</div>
+
+<!-- =========================
+     🧾 ORDER TITLE
+========================= -->
+<div class="order-title">
+
+    <h2>Feeds Order</h2>
+
+    <small>
+        Farm: {{ order.farm.name }}
+        |
+        Date: {{ order.date_ordered }}
+    </small>
+
+</div>
+
+<!-- =========================
+     📄 EMAIL REPORTS
+========================= -->
+
+<!-- 🔹 ORDER REPORT -->
+<form method="get"
+      action="/send_report/feeds_order_detail">
+
+    <input type="hidden"
+           name="order_id"
+           value="{{ order.id }}">
+
+    <div class="email-box">
+
+        <input type="email"
+               name="emails"
+               placeholder="Enter email address">
+
+        <button type="button"
+                onclick="addEmailField(this)"
+                class="btn btn-blue">
+            +
+        </button>
+
+        <button class="btn btn-send">
+            📄 Send Order PDF
+        </button>
+
+    </div>
+
+</form>
+
+<!-- 🔹 DELIVERY REPORT -->
+<form method="get"
+      action="/send_report/feeds_delivery">
+
+    <input type="hidden"
+           name="order_id"
+           value="{{ order.id }}">
+
+    <div class="email-box">
+
+        <input type="email"
+               name="emails"
+               placeholder="Enter email address">
+
+        <button type="button"
+                onclick="addEmailField(this)"
+                class="btn btn-blue">
+            +
+        </button>
+
+        <button class="btn btn-blue">
+            🚚 Send Delivery PDF
+        </button>
+
+    </div>
+
+</form>
+
+<!-- 🔹 PAYMENT REPORT -->
+<form method="get"
+      action="/send_report/feeds_payments">
+
+    <input type="hidden"
+           name="order_id"
+           value="{{ order.id }}">
+
+    <div class="email-box">
+
+        <input type="email"
+               name="emails"
+               placeholder="Enter email address">
+
+        <button type="button"
+                onclick="addEmailField(this)"
+                class="btn btn-blue">
+            +
+        </button>
+
+        <button class="btn btn-green">
+            💰 Send Payment PDF
+        </button>
+
+    </div>
+
+</form>
+
+<br>
+
+<!-- =========================
+     📊 SUMMARY
+========================= -->
+<div class="summary">
+
+    <!-- TOTAL -->
+    <div class="summary-box summary-total">
+
+        <b>Total</b>
+
+        <div class="value">
+            KES {{ "{:,.2f}".format(total or 0) }}
+        </div>
+
+    </div>
+
+    <!-- PAID -->
+    <div class="summary-box summary-paid">
+
+        <b>Paid</b>
+
+        <div class="value">
+            KES {{ "{:,.2f}".format(paid or 0) }}
+        </div>
+
+    </div>
+
+    <!-- BALANCE -->
+    <div class="summary-box
+        {% if balance > 0 %}
+            summary-debt
+        {% else %}
+            summary-cleared
+        {% endif %}
+    ">
+
+        <b>Balance</b>
+
+        <div class="value">
+            KES {{ "{:,.2f}".format(balance or 0) }}
+        </div>
+
+    </div>
+
+    <!-- STATUS -->
+<!-- STATUS -->
+<div class="summary-box
+    {% if balance > 0 %}
+        summary-debt
+    {% else %}
+        summary-cleared
+    {% endif %}
+">
+
+    <b>Status</b>
+
+    <div class="value">
+
+        {% if balance > 0 %}
+
+            <span class="badge red">
+                Debt
+            </span>
+
+        {% else %}
+
+            <span class="badge green">
+                Cleared
+            </span>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</div>
+
+<hr>
+
+<!-- =========================
+     ➕ ADD ITEM
+========================= -->
+<div style="margin-bottom:15px;">
+
+    <a href="/feeds_v2/item/add/{{ order.id }}"
+       class="btn btn-green">
+        + Add Item
+    </a>
+
+</div>
+
+<!-- =========================
+     📦 ITEMS TABLE
+========================= -->
+<div class="table-container">
+
+<table>
+
+<tr>
+    <th>Feed</th>
+    <th>Qty</th>
+    <th>Price</th>
+    <th>Prev Price</th>
+    <th>Deviation</th>
+    <th>Total</th>
+    <th>Delivered</th>
+    <th>Remaining</th>
+    <th>Status</th>
+    <th>Actions</th>
+</tr>
+
+{% for i in items %}
+<tr>
+
+<td>{{ i.item.feed_name }}</td>
+
+<td>
+    {{ "{:,.2f}".format(i.item.quantity or 0) }}
+</td>
+
+<td>
+    KES {{ "{:,.2f}".format(i.item.price_per_unit or 0) }}
+</td>
+
+<td>
+    KES {{ "{:,.2f}".format(i.prev_price or 0) }}
+</td>
+
+<!-- 🔥 PRICE DEVIATION -->
+<td>
+
+{% if i.price_diff > 0 %}
+
+    <span class="price-up">
+        +KES {{ "{:,.2f}".format(i.price_diff or 0) }}
+    </span>
+
+{% elif i.price_diff < 0 %}
+
+    <span class="price-down">
+        -KES {{ "{:,.2f}".format((i.price_diff | abs) or 0) }}
+    </span>
+
+{% else %}
+
+    <span class="price-same">
+        KES 0.00
+    </span>
+
+{% endif %}
+
+</td>
+
+<td>
+    KES {{ "{:,.2f}".format(i.item.total_cost or 0) }}
+</td>
+
+<td>
+    {{ "{:,.2f}".format(i.delivered or 0) }}
+</td>
+
+<td>
+    {{ "{:,.2f}".format(i.remaining or 0) }}
+</td>
+
+<td>
+
+    <span class="badge {{ i.color }}">
+        {{ i.status }}
+    </span>
+
+</td>
+
+<td>
+
+<div class="actions">
+
+    <a href="/feeds_v2/delivery/{{ order.id }}?item_id={{ i.item.id }}"
+       class="btn btn-green">
+        Deliver
+    </a>
+
+    <a href="/feeds_v2/item/edit/{{ i.item.id }}"
+       class="btn btn-blue">
+        Edit
+    </a>
+
+    <form method="post"
+          action="/feeds_v2/item/delete/{{ i.item.id }}"
+          onsubmit="return confirm('Delete this item?')">
+
+        <button class="btn btn-red">
+            Delete
+        </button>
+
+    </form>
+
+</div>
+
+</td>
+
+</tr>
+{% endfor %}
+
+</table>
+
+</div>
+
+</div>
+
+<!-- =========================
+     🔥 SCRIPT
+========================= -->
+<script>
+
+function addEmailField(btn){
+
+    let input = document.createElement("input");
+
+    input.type = "email";
+    input.name = "emails";
+    input.placeholder = "Another email";
+
+    input.style.padding = "8px";
+    input.style.borderRadius = "8px";
+    input.style.border = "1px solid #ccc";
+
+    btn.parentNode.insertBefore(input, btn);
+
+}
+
+</script>
+
+{% endblock %}
