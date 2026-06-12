@@ -2445,9 +2445,9 @@ app.config['MAIL_DEFAULT_SENDER'] = 'MY FARM <magicdevelopers9@gmail.com>'
 mail = Mail(app)
 
 # PDFKit configuration
-config = pdfkit.configuration(
-    wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-)
+# config = pdfkit.configuration(
+#     wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+# )
 
 def get_employees_data():
 
