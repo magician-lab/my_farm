@@ -4474,7 +4474,7 @@ def milk_registry():
                     float(existing.evening or 0)
                 )
 
-                else:
+            else:
 
                     record = MilkRegistry(
                         cow_id=cow_id,
