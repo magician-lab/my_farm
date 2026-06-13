@@ -4459,22 +4459,36 @@ def milk_registry():
 
                 if existing:
 
+                if mornings[i] != "":
                     existing.morning = morning
+            
+                if noons[i] != "":
                     existing.noon = noon
+            
+                if evenings[i] != "":
                     existing.evening = evening
-                    existing.total = total
+            
+                existing.total = (
+                    float(existing.morning or 0) +
+                    float(existing.noon or 0) +
+                    float(existing.evening or 0)
+                )
 
                 else:
 
                     record = MilkRegistry(
                         cow_id=cow_id,
                         date=selected_date,
-                        morning=morning,
-                        noon=noon,
-                        evening=evening,
-                        total=total
+                        morning=morning or 0,
+                        noon=noon or 0,
+                        evening=evening or 0,
+                        total=(
+                            float(morning or 0) +
+                            float(noon or 0) +
+                            float(evening or 0)
+                        )
                     )
-
+                
                     db.session.add(record)
 
         db.session.commit()
