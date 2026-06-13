@@ -4442,15 +4442,31 @@ def milk_registry():
 
         for i in range(len(cow_ids)):
 
-            cow_id = int(cow_ids[i])
+            try:
 
-            morning = float(mornings[i] or 0)
-            noon = float(noons[i] or 0)
-            evening = float(evenings[i] or 0)
+                cow_id = int(cow_ids[i])
 
-            total = morning + noon + evening
+                morning_raw = mornings[i].strip()
+                noon_raw = noons[i].strip()
+                evening_raw = evenings[i].strip()
 
-            if total > 0:
+                morning = (
+                    float(morning_raw)
+                    if morning_raw
+                    else None
+                )
+
+                noon = (
+                    float(noon_raw)
+                    if noon_raw
+                    else None
+                )
+
+                evening = (
+                    float(evening_raw)
+                    if evening_raw
+                    else None
+                )
 
                 existing = MilkRegistry.query.filter_by(
                     cow_id=cow_id,
@@ -4459,43 +4475,55 @@ def milk_registry():
 
                 if existing:
 
-                if mornings[i] != "":
-                    existing.morning = morning
-            
-                if noons[i] != "":
-                    existing.noon = noon
-            
-                if evenings[i] != "":
-                    existing.evening = evening
-            
-                existing.total = (
-                    float(existing.morning or 0) +
-                    float(existing.noon or 0) +
-                    float(existing.evening or 0)
-                )
+                    if morning is not None:
+                        existing.morning = morning
 
-            else:
+                    if noon is not None:
+                        existing.noon = noon
 
-                    record = MilkRegistry(
-                        cow_id=cow_id,
-                        date=selected_date,
-                        morning=morning or 0,
-                        noon=noon or 0,
-                        evening=evening or 0,
-                        total=(
-                            float(morning or 0) +
-                            float(noon or 0) +
-                            float(evening or 0)
-                        )
+                    if evening is not None:
+                        existing.evening = evening
+
+                    existing.total = (
+                        float(existing.morning or 0) +
+                        float(existing.noon or 0) +
+                        float(existing.evening or 0)
                     )
-                
-                    db.session.add(record)
+
+                else:
+
+                    total = (
+                        float(morning or 0) +
+                        float(noon or 0) +
+                        float(evening or 0)
+                    )
+
+                    if total > 0:
+
+                        record = MilkRegistry(
+                            cow_id=cow_id,
+                            date=selected_date,
+                            morning=morning or 0,
+                            noon=noon or 0,
+                            evening=evening or 0,
+                            total=total
+                        )
+
+                        db.session.add(record)
+
+            except Exception:
+                continue
 
         db.session.commit()
 
-        flash("Milk records saved successfully.", "success")
+        flash(
+            "Milk records saved successfully.",
+            "success"
+        )
 
-        return redirect(url_for("milk_registry"))
+        return redirect(
+            url_for("milk_registry")
+        )
 
     cows = MilkingHerd.query.all()
 
