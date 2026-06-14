@@ -14,9 +14,18 @@ from flask_mail import Mail, Message
 import pandas as pd
 import os
 import random
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///database.db"
+)
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'supersecretkey123'
 
@@ -2444,10 +2453,10 @@ app.config['MAIL_DEFAULT_SENDER'] = 'MY FARM <magicdevelopers9@gmail.com>'
 
 mail = Mail(app)
 
-# PDFKit configuration
-# config = pdfkit.configuration(
-#     wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-# )
+#PDFKit configuration
+config = pdfkit.configuration(
+    wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+)
 
 def get_employees_data():
 
@@ -2469,57 +2478,57 @@ def get_employees_data():
 
 # ================= UNIVERSAL REPORT ENGINE ================= #
 
-# def generate_pdf(template_name, context, filename):
-#     """Generate PDF from HTML template"""
-#     rendered_html = render_template(template_name, **context)
-
-#     folder = os.path.join("static", "reports")
-#     os.makedirs(folder, exist_ok=True)
-
-#     file_path = os.path.join(folder, filename)
-
-#     pdfkit.from_string(
-#         rendered_html,
-#         file_path,
-#         configuration=config
-#     )
-    
-#     return file_path
-
-from weasyprint import HTML
-from flask import render_template, current_app
-import os
-
-
 def generate_pdf(template_name, context, filename):
-    """Generate PDF from HTML template using WeasyPrint"""
+    """Generate PDF from HTML template"""
+    rendered_html = render_template(template_name, **context)
 
-    rendered_html = render_template(
-        template_name,
-        **context
+    folder = os.path.join("static", "reports")
+    os.makedirs(folder, exist_ok=True)
+
+    file_path = os.path.join(folder, filename)
+
+    pdfkit.from_string(
+        rendered_html,
+        file_path,
+        configuration=config
     )
-
-    reports_dir = os.path.join(
-        current_app.root_path,
-        "static",
-        "reports"
-    )
-
-    os.makedirs(reports_dir, exist_ok=True)
-
-    file_path = os.path.join(
-        reports_dir,
-        filename
-    )
-
-    HTML(
-        string=rendered_html,
-        base_url=current_app.root_path
-    ).write_pdf(
-        target=file_path
-    )
-
+    
     return file_path
+
+# from weasyprint import HTML
+# from flask import render_template, current_app
+# import os
+
+
+# def generate_pdf(template_name, context, filename):
+#     """Generate PDF from HTML template using WeasyPrint"""
+
+#     rendered_html = render_template(
+#         template_name,
+#         **context
+#     )
+
+#     reports_dir = os.path.join(
+#         current_app.root_path,
+#         "static",
+#         "reports"
+#     )
+
+#     os.makedirs(reports_dir, exist_ok=True)
+
+#     file_path = os.path.join(
+#         reports_dir,
+#         filename
+#     )
+
+#     HTML(
+#         string=rendered_html,
+#         base_url=current_app.root_path
+#     ).write_pdf(
+#         target=file_path
+#     )
+
+#     return file_path
 
 def send_email_with_pdf(subject, recipients, body, pdf_path):
 
@@ -2828,7 +2837,6 @@ def send_report(report_type):
     </script>
     """
 @app.route("/cow_registry", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 
 def cow_registry():
@@ -2888,7 +2896,6 @@ def cow_registry():
 
 
 @app.route("/animals")
-@role_required("admin", "user")
 @login_required
 def animals():
 
@@ -2905,7 +2912,6 @@ def animals():
 
 
 @app.route("/delete_cow/<int:id>", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 def delete_animal(id):
 
@@ -2923,7 +2929,6 @@ def delete_animal(id):
 
     # ================= POST =================
 @app.route("/edit_animal_record/<int:id>", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 def edit_animal_record(id):
 
@@ -2958,7 +2963,6 @@ def edit_animal_record(id):
     return render_template("edit_animal_record.html", animal=animal)
 
 @app.route("/sheds", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 def sheds():
 
@@ -3114,7 +3118,6 @@ def sheds():
         shed_cows=shed_cows
     )
 @app.route("/assign_shed/<int:cow_id>/<int:shed_id>")
-@role_required("admin", "user")
 @login_required
 def assign_shed(cow_id, shed_id):
 
@@ -3137,7 +3140,6 @@ def assign_shed(cow_id, shed_id):
 
 
 @app.route("/remove_from_shed/<int:cow_id>")
-@role_required("admin", "user")
 @login_required
 def remove_from_shed(cow_id):
 
@@ -3151,7 +3153,6 @@ def remove_from_shed(cow_id):
 
     return redirect(request.referrer)
 @app.route("/move_animal/<int:animal_id>", methods=["POST"])
-@role_required("admin", "user")
 @login_required
 def move_animal(animal_id):
 
@@ -3200,7 +3201,6 @@ def move_animal(animal_id):
     return redirect(request.referrer)
 
 @app.route("/shed_report")
-@role_required("admin", "user")
 @login_required
 def shed_report():
 
@@ -3212,7 +3212,6 @@ def shed_report():
 
 
 @app.route("/treatment", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 def treatment():
 
@@ -3238,7 +3237,6 @@ def treatment():
     return render_template("treatment.html", **data)
 
 @app.route("/add_treatment", methods=["GET","POST"])
-@role_required("admin", "user")
 @login_required
 def add_treatment():
 
@@ -3263,7 +3261,6 @@ def add_treatment():
     return render_template("add_treatment.html", animals=animals)
 
 @app.route("/edit_treatment/<int:id>", methods=["GET","POST"])
-@role_required("admin", "user")
 @login_required
 def edit_treatment(id):
 
@@ -3279,7 +3276,6 @@ def edit_treatment(id):
 
 
 @app.route("/delete_treatment/<int:id>")
-@role_required("admin", "user")
 @login_required
 def delete_treatment(id):
 
@@ -3290,7 +3286,6 @@ def delete_treatment(id):
     return redirect(url_for("treatment"))
 
 @app.route("/calf_registry", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 def calf_registry():
     message = None
@@ -3334,7 +3329,6 @@ def calf_registry():
 
 
 @app.route("/insemination/add", methods=["GET","POST"])
-@role_required("admin", "user")
 @login_required
 def add_insemination():
 
@@ -3369,7 +3363,6 @@ def add_insemination():
 from datetime import datetime
 
 @app.route("/insemination")
-@role_required("admin", "user")
 @login_required
 def insemination():
 
@@ -3381,7 +3374,6 @@ def insemination():
 
     return render_template("insemination_list.html", **data)
 @app.route("/insemination/delete/<int:id>")
-@role_required("admin", "user")
 @login_required
 def delete_insemination(id):
 
@@ -3395,7 +3387,6 @@ def delete_insemination(id):
 from datetime import datetime, timedelta
 
 @app.route("/insemination/edit/<int:id>", methods=["GET","POST"])
-@role_required("admin", "user")
 @login_required
 def edit_insemination(id):
 
@@ -3444,7 +3435,6 @@ def edit_insemination(id):
 
    
 @app.route("/asset_registry", methods=["GET", "POST"])
-@role_required("admin")
 @login_required
 def asset_registry():
     message = None
@@ -4371,7 +4361,6 @@ def delete_farm(id):
 
 
 @app.route("/manage_milking", methods=["GET","POST"])
-@role_required("admin", "user")
 @login_required
 def manage_milking():
 
@@ -4422,7 +4411,6 @@ def manage_milking():
 # =========================================================
 
 @app.route("/milk_registry", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 def milk_registry():
 
@@ -4541,7 +4529,6 @@ def milk_registry():
 # =========================================================
 
 @app.route("/milk_registry/export_template")
-@role_required("admin", "user")
 @login_required
 def export_milk_template():
 
@@ -4583,7 +4570,6 @@ def export_milk_template():
 # =========================================================
 
 @app.route("/milk_registry/import", methods=["POST"])
-@role_required("admin", "user")
 @login_required
 def import_milk_registry():
 
@@ -4663,7 +4649,6 @@ def import_milk_registry():
     methods=["POST"]
 )
 @login_required
-@role_required("admin", "user")
 def confirm_import_milk():
 
     date_str = request.form.get("date")
@@ -4730,7 +4715,6 @@ def confirm_import_milk():
 
 @app.route("/milk", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "user")
 def milk():
 
     # DELETE (unchanged)
@@ -4757,7 +4741,6 @@ def milk():
     return render_template("milk.html", **data)
 
 @app.route("/delete_milk/<int:id>")
-@role_required("admin", "user")
 @login_required
 def delete_milk(id):
 
@@ -4771,7 +4754,6 @@ def delete_milk(id):
 from decimal import Decimal
 
 @app.route("/edit_milk/<int:id>", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 def edit_milk(id):
 
@@ -4800,7 +4782,6 @@ from flask import request
 
 @app.route("/cow-analysis")
 @login_required
-@role_required("admin", "user")
 def cow_analysis():
 
     date_str = request.args.get("date")
@@ -4832,7 +4813,6 @@ def cow_analysis():
 
 
 @app.route("/milk_sales_entry", methods=["GET", "POST"])
-@role_required("admin", "user")
 @login_required
 def milk_sales_entry():
 
@@ -4888,7 +4868,6 @@ def milk_sales_entry():
 
 
 @app.route("/milk_sales_report")
-@role_required("admin", "user")
 @login_required
 def milk_sales_report():
 
@@ -4900,7 +4879,6 @@ def milk_sales_report():
 
 @app.route("/delete_milk_sale/<int:id>")
 @login_required
-@role_required("admin", "user")
 def delete_milk_sale(id):
 
     sale = MilkSalesRegistry.query.get_or_404(id)
@@ -4914,7 +4892,6 @@ def delete_milk_sale(id):
 
 @app.route("/edit_milk_sale/<int:id>", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "user")
 def edit_milk_sale_record(id):   # 👈 changed function name
 
     sale = MilkSalesRegistry.query.get_or_404(id)
@@ -4938,7 +4915,6 @@ def edit_milk_sale_record(id):   # 👈 changed function name
 
 @app.route('/update_actual_remaining', methods=['POST'])
 @login_required
-@role_required("admin", "user")
 def update_actual_remaining():
     from datetime import datetime
 
@@ -5046,7 +5022,6 @@ def delete_milk_price(id):
 
 @app.route("/milk_sales_monthly")
 @login_required
-@role_required("admin")
 def milk_sales_monthly():
 
     selected_date = request.args.get("date")
@@ -5435,7 +5410,6 @@ def delete_transaction(id):
 # def list_routes():
 #     return "<br>".join([str(r) for r in app.url_map.iter_rules()])
 @app.route("/milk_dashboard")
-@role_required("admin", "user")
 def milk_dashboard():
 
     date_str = request.args.get("filter_date")
@@ -5455,7 +5429,6 @@ def milk_dashboard():
     )
 
 @app.route("/cow_dashboard")
-@role_required("admin", "user")
 @login_required
 def cow_dashboard():
 
@@ -5629,12 +5602,8 @@ def main_dashboard():
         **combined_data
     )
 from sqlalchemy import inspect, text
-@app.route("/health")
-def health():
-    return {
-        "status": "online",
-        "service": "Advanced Farm ERP"
-    }, 200
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
