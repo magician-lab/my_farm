@@ -2454,9 +2454,9 @@ app.config['MAIL_DEFAULT_SENDER'] = 'MY FARM <magicdevelopers9@gmail.com>'
 mail = Mail(app)
 
 #PDFKit configuration
-config = pdfkit.configuration(
-    wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-)
+# config = pdfkit.configuration(
+#     wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+# )
 
 def get_employees_data():
 
@@ -2478,57 +2478,57 @@ def get_employees_data():
 
 # ================= UNIVERSAL REPORT ENGINE ================= #
 
-def generate_pdf(template_name, context, filename):
-    """Generate PDF from HTML template"""
-    rendered_html = render_template(template_name, **context)
-
-    folder = os.path.join("static", "reports")
-    os.makedirs(folder, exist_ok=True)
-
-    file_path = os.path.join(folder, filename)
-
-    pdfkit.from_string(
-        rendered_html,
-        file_path,
-        configuration=config
-    )
-    
-    return file_path
-
-# from weasyprint import HTML
-# from flask import render_template, current_app
-# import os
-
-
 # def generate_pdf(template_name, context, filename):
-#     """Generate PDF from HTML template using WeasyPrint"""
+#     """Generate PDF from HTML template"""
+#     rendered_html = render_template(template_name, **context)
 
-#     rendered_html = render_template(
-#         template_name,
-#         **context
+#     folder = os.path.join("static", "reports")
+#     os.makedirs(folder, exist_ok=True)
+
+#     file_path = os.path.join(folder, filename)
+
+#     pdfkit.from_string(
+#         rendered_html,
+#         file_path,
+#         configuration=config
 #     )
-
-#     reports_dir = os.path.join(
-#         current_app.root_path,
-#         "static",
-#         "reports"
-#     )
-
-#     os.makedirs(reports_dir, exist_ok=True)
-
-#     file_path = os.path.join(
-#         reports_dir,
-#         filename
-#     )
-
-#     HTML(
-#         string=rendered_html,
-#         base_url=current_app.root_path
-#     ).write_pdf(
-#         target=file_path
-#     )
-
+    
 #     return file_path
+
+from weasyprint import HTML
+from flask import render_template, current_app
+import os
+
+
+def generate_pdf(template_name, context, filename):
+    """Generate PDF from HTML template using WeasyPrint"""
+
+    rendered_html = render_template(
+        template_name,
+        **context
+    )
+
+    reports_dir = os.path.join(
+        current_app.root_path,
+        "static",
+        "reports"
+    )
+
+    os.makedirs(reports_dir, exist_ok=True)
+
+    file_path = os.path.join(
+        reports_dir,
+        filename
+    )
+
+    HTML(
+        string=rendered_html,
+        base_url=current_app.root_path
+    ).write_pdf(
+        target=file_path
+    )
+
+    return file_path
 
 def send_email_with_pdf(subject, recipients, body, pdf_path):
 
