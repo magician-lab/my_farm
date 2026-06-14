@@ -21,8 +21,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-import os
-
+# Database Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL',
     'sqlite:///database.db'
@@ -30,13 +29,23 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_pre_ping": True,
-    "pool_recycle": 300
+# PostgreSQL Connection Pool Settings
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_size': 10,
+    'max_overflow': 20
 }
+
+# Security
 app.config['SECRET_KEY'] = 'supersecretkey123'
 
+# Initialize Database
 db.init_app(app)
+
+# Create Tables if Missing
+with app.app_context():
+    db.create_all()
 
 # =========================================================
 # CREATE TABLES + DEFAULT ADMIN
