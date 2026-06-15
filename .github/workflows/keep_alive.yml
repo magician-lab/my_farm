@@ -2,7 +2,7 @@ name: Keep Render Awake
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Ping Health Endpoint
         run: |
-          curl -s https://my-farm-donn.onrender.com/health
+          curl -s https://YOUR-APP.onrender.com/health
