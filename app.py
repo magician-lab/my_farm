@@ -2558,7 +2558,11 @@ def send_email_with_pdf(subject, recipients, body, pdf_path):
             data=f.read()
         )
 
+    print("PDF PATH:", pdf_path)
+    print("FILE EXISTS:", os.path.exists(pdf_path))
     mail.send(msg)
+    
+    print("EMAIL SENT")
 
 
 
