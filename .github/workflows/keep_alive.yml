@@ -10,6 +10,4 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ping Health Endpoint
-        run: |
-          curl -s https://my-farm-donn.onrender.com/health
+      - run: curl https://my-farm-donn.onrender.com/health
