@@ -5618,7 +5618,9 @@ def main_dashboard():
         **combined_data
     )
 from sqlalchemy import inspect, text
-
+@app.route("/health")
+def health():
+    return "OK", 200
 
 
 if __name__ == "__main__":
