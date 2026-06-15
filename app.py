@@ -5641,6 +5641,23 @@ def smtp_test():
 
         return str(e), 500
 
+@app.route("/smtp_test_brevo")
+def smtp_test_brevo():
+
+    import socket
+
+    try:
+        socket.create_connection(
+            ("smtp-relay.brevo.com", 587),
+            timeout=10
+        )
+
+        return "Brevo reachable"
+
+    except Exception as e:
+
+        return str(e)
+
 @app.route("/health")
 def health():
     return "OK", 200
