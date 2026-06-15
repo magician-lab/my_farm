@@ -1,0 +1,15 @@
+name: Keep Render Awake
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Health Endpoint
+        run: |
+          curl -s https://my-farm-donn.onrender.com/health
