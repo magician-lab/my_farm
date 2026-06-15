@@ -5622,6 +5622,25 @@ def main_dashboard():
         **combined_data
     )
 from sqlalchemy import inspect, text
+
+@app.route("/smtp_test")
+def smtp_test():
+
+    import socket
+
+    try:
+
+        socket.create_connection(
+            ("smtp.gmail.com", 465),
+            timeout=10
+        )
+
+        return "SMTP reachable"
+
+    except Exception as e:
+
+        return str(e), 500
+
 @app.route("/health")
 def health():
     return "OK", 200
