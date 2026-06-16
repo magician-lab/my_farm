@@ -184,15 +184,7 @@ tr:nth-child(even){
 <!-- ================= EMAIL FORM (UNLIMITED EMAILS) ================= -->
 <form method="GET" action="{{ url_for('send_report', report_type='car_sales') }}">
 
-    <div class="email-box" id="emailBox">
 
-        <!-- first email row -->
-        <div class="email-row">
-            <input type="email" name="emails" placeholder="Enter email address" required>
-            <button type="button" class="btn btn-add" onclick="addEmail()">+</button>
-        </div>
-
-    </div>
      <a href="/financial_dashboard" class="action-btn">
         BACK TO DASHBOARD
     </a>
@@ -202,7 +194,7 @@ tr:nth-child(even){
      <a href="/car_expense_report" class="action-btn">
         EXPENSES
     </a>
-    <button type="submit" class="btn btn-send">📄 Send PDF</button>
+    <button type="submit" class="btn btn-send">📄 Download PDF</button>
 
     <input type="hidden" name="date" value="{{ selected_date }}">
 
@@ -261,28 +253,6 @@ tr:nth-child(even){
 
 </div>
 
-<!-- ================= SCRIPT ================= -->
-<script>
-
-function addEmail() {
-    const emailBox = document.getElementById("emailBox");
-
-    const row = document.createElement("div");
-    row.className = "email-row";
-
-    row.innerHTML = `
-        <input type="email" name="emails" placeholder="Enter email address">
-        <button type="button" class="btn btn-remove" onclick="removeEmail(this)">-</button>
-    `;
-
-    emailBox.appendChild(row);
-}
-
-function removeEmail(btn) {
-    btn.parentElement.remove();
-}
-
-</script>
 
 </body>
 </html>
