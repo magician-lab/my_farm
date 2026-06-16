@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="UTF-8">
+
+<title>Employees Report</title>
+
+<style>
+
+@page{
+    size:A4 portrait;
+    margin:15mm;
+}
+
+body{
+    font-family:Arial,sans-serif;
+    color:#222;
+    font-size:12px;
+}
+
+.header{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.header h1{
+    margin:0;
+    color:#198754;
+}
+
+.header h2{
+    margin:5px 0;
+    font-size:18px;
+}
+
+.summary{
+    margin-bottom:20px;
+    padding:10px;
+    background:#f5f5f5;
+    border:1px solid #ddd;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#198754;
+    color:white;
+    padding:8px;
+    border:1px solid #ccc;
+}
+
+td{
+    padding:8px;
+    border:1px solid #ccc;
+    text-align:center;
+}
+
+tr:nth-child(even){
+    background:#f9f9f9;
+}
+
+.footer{
+    margin-top:20px;
+    text-align:center;
+    font-size:11px;
+    color:#666;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+```
+<h1>MY FARM</h1>
+
+<h2>Employees Report</h2>
+
+<p>
+    Generated On:
+    {{ current_date }}
+</p>
+```
+
+</div>
+
+<div class="summary">
+
+```
+<strong>Total Employees:</strong>
+{{ employees|length }}
+
+<br><br>
+
+<strong>Total Salary:</strong>
+KES {{ "{:,.2f}".format(
+    employees|sum(attribute='salary')
+) }}
+```
+
+</div>
+
+<table>
+
+```
+<thead>
+    <tr>
+        <th>#</th>
+        <th>Employee Name</th>
+        <th>ID Number</th>
+        <th>Phone Number</th>
+        <th>Role</th>
+        <th>Salary (KES)</th>
+    </tr>
+</thead>
+
+<tbody>
+
+    {% for e in employees %}
+    <tr>
+
+        <td>{{ loop.index }}</td>
+
+        <td>{{ e.name }}</td>
+
+        <td>{{ e.id_number }}</td>
+
+        <td>{{ e.phone }}</td>
+
+        <td>{{ e.role }}</td>
+
+        <td>
+            {{ "{:,.2f}".format(
+                e.salary or 0
+            ) }}
+        </td>
+
+    </tr>
+    {% endfor %}
+
+</tbody>
+```
+
+</table>
+
+<div class="footer">
+
+```
+MY FARM Management System
+```
+
+</div>
+
+</body>
+</html>
