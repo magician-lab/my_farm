@@ -21,31 +21,15 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Database Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL',
-    'sqlite:///database.db'
+    "DATABASE_URL",
+    "sqlite:///database.db"
 )
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# PostgreSQL Connection Pool Settings
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': 300,
-    'pool_size': 10,
-    'max_overflow': 20
-}
-
-# Security
 app.config['SECRET_KEY'] = 'supersecretkey123'
 
-# Initialize Database
 db.init_app(app)
-
-# Create Tables if Missing
-with app.app_context():
-    db.create_all()
 
 # =========================================================
 # CREATE TABLES + DEFAULT ADMIN
@@ -2797,36 +2781,37 @@ def send_report(report_type):
 
         filename = f"delivery_{order_id or 'all'}.pdf"
 
-        elif report_type == "feeds_payments":
-    
-            order_id = request.args.get("order_id")
-    
-            order = FeedsOrderV2.query.get_or_404(order_id)
-    
-            payments = (
-                Payment.query
-                .filter_by(
-                    purpose_type="feeds",
-                    purpose=f"Feeds Order {order.order_ref}"
-                )
-                .order_by(Payment.date_paid.desc())
-                .all()
+    elif report_type == "feeds_payments":
+
+        order_id = request.args.get("order_id")
+
+        order = FeedsOrderV2.query.get_or_404(order_id)
+
+        payments = (
+            Payment.query
+            .filter_by(
+                purpose_type="feeds",
+                purpose=f"Feeds Order {order.order_ref}"
             )
-    
-            total_paid = sum(
-                float(p.amount or 0)
-                for p in payments
-            )
-    
-            data = {
-                "order": order,
-                "payments": payments,
-                "total_paid": total_paid
-            }
-    
-            template = "pdf/payments.html"
-    
-            filename = f"payments_{order.order_ref}.pdf"
+            .order_by(Payment.date_paid.desc())
+            .all()
+        )
+
+        total_paid = sum(
+            float(p.amount or 0)
+            for p in payments
+        )
+
+        data = {
+            "order": order,
+            "payments": payments,
+            "total_paid": total_paid
+        }
+
+        template = "pdf/payments.html"
+
+        filename = f"payments_{order.order_ref}.pdf"
+
     elif report_type == "employees":
 
         data = get_employees_data()
@@ -5621,46 +5606,11 @@ def main_dashboard():
         "main_dashboard.html",
         **combined_data
     )
-from sqlalchemy import inspect, text
-
-@app.route("/smtp_test")
-def smtp_test():
-
-    import socket
-
-    try:
-
-        socket.create_connection(
-            ("smtp.gmail.com", 465),
-            timeout=10
-        )
-
-        return "SMTP reachable"
-
-    except Exception as e:
-
-        return str(e), 500
-
-@app.route("/smtp_test_brevo")
-def smtp_test_brevo():
-
-    import socket
-
-    try:
-        socket.create_connection(
-            ("smtp-relay.brevo.com", 587),
-            timeout=10
-        )
-
-        return "Brevo reachable"
-
-    except Exception as e:
-
-        return str(e)
 
 @app.route("/health")
 def health():
     return "OK", 200
+
 
 
 if __name__ == "__main__":
