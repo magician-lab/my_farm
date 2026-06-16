@@ -237,18 +237,8 @@ td{
 
     <div class="email-box">
 
-        <input type="text"
-               name="emails"
-               placeholder="Enter email">
-
-        <button type="button"
-                onclick="addEmail(this)"
-                class="btn btn-blue">
-            +
-        </button>
-
         <button class="btn btn-green">
-            📄 Send PDF
+            📄 Dowload PDF
         </button>
 
     </div>
@@ -333,20 +323,5 @@ td{
 
 </div>
 
-<script>
-
-function addEmail(btn){
-
-    let input = document.createElement("input");
-
-    input.type = "text";
-    input.name = "emails";
-    input.placeholder = "Another email";
-
-    btn.parentNode.insertBefore(input, btn);
-
-}
-
-</script>
 
 {% endblock %}
