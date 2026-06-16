@@ -342,18 +342,8 @@ tr:hover{
 
     <div class="email-box">
 
-        <input type="email"
-               name="emails"
-               placeholder="Enter email address">
-
-        <button type="button"
-                onclick="addEmailField(this)"
-                class="btn btn-blue">
-            +
-        </button>
-
         <button class="btn btn-send">
-            📄 Send Order PDF
+            📄 Download Order PDF
         </button>
 
     </div>
@@ -370,18 +360,9 @@ tr:hover{
 
     <div class="email-box">
 
-        <input type="email"
-               name="emails"
-               placeholder="Enter email address">
-
-        <button type="button"
-                onclick="addEmailField(this)"
-                class="btn btn-blue">
-            +
-        </button>
 
         <button class="btn btn-blue">
-            🚚 Send Delivery PDF
+            🚚 Download Delivery PDF
         </button>
 
     </div>
@@ -398,18 +379,9 @@ tr:hover{
 
     <div class="email-box">
 
-        <input type="email"
-               name="emails"
-               placeholder="Enter email address">
-
-        <button type="button"
-                onclick="addEmailField(this)"
-                class="btn btn-blue">
-            +
-        </button>
 
         <button class="btn btn-green">
-            💰 Send Payment PDF
+            💰 Download Payment PDF
         </button>
 
     </div>
@@ -629,27 +601,5 @@ tr:hover{
 
 </div>
 
-<!-- =========================
-     🔥 SCRIPT
-========================= -->
-<script>
-
-function addEmailField(btn){
-
-    let input = document.createElement("input");
-
-    input.type = "email";
-    input.name = "emails";
-    input.placeholder = "Another email";
-
-    input.style.padding = "8px";
-    input.style.borderRadius = "8px";
-    input.style.border = "1px solid #ccc";
-
-    btn.parentNode.insertBefore(input, btn);
-
-}
-
-</script>
 
 {% endblock %}
