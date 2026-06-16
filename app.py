@@ -2546,69 +2546,11 @@ def generate_pdf(template_name, context, filename):
 
     return file_path
 
-def send_email_with_pdf(subject, recipients, body, pdf_path):
-
-    msg = Message(subject=subject, recipients=recipients)
-    msg.body = body
-
-    with open(pdf_path, "rb") as f:
-        msg.attach(
-            filename=os.path.basename(pdf_path),
-            content_type="application/pdf",
-            data=f.read()
-        )
-
-    print("PDF PATH:", pdf_path)
-    print("FILE EXISTS:", os.path.exists(pdf_path))
-    mail.send(msg)
-    
-    print("EMAIL SENT")
-
-
-
-@app.route('/send_report/<report_type>', methods=['GET', 'POST'])
+@app.route('/send_report/<report_type>')
 @login_required
 def send_report(report_type):
 
     selected_date = request.args.get("date")
-    import re
-
-    def is_valid_email(email):
-        pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        return re.match(pattern, email)
-
-    # 🔥 Get emails from UI
-    emails = request.args.getlist("emails")
-
-    if not emails:
-        return """
-        <script>
-            alert("❌ Please enter at least one email");
-            window.history.back();
-        </script>
-        """
-
-    valid_emails = []
-    invalid_emails = []
-
-    for email in emails:
-        email = email.strip()
-
-        if email:
-            if is_valid_email(email):
-                valid_emails.append(email)
-            else:
-                invalid_emails.append(email)
-
-    if not valid_emails:
-        return f"""
-        <script>
-            alert("❌ No valid emails provided. Invalid: {', '.join(invalid_emails)}");
-            window.history.back();
-        </script>
-        """
-
-    recipients = valid_emails
 
     if report_type == "milk":
         data = get_milk_report_data(selected_date)
@@ -2640,6 +2582,7 @@ def send_report(report_type):
         filename = "shed_report.pdf"
 
     elif report_type == "treatment":
+
         date = request.args.get("date")
         status = request.args.get("status")
 
@@ -2649,6 +2592,7 @@ def send_report(report_type):
         data["now"] = datetime.now()
 
         template = "treatment_pdf.html"
+
         filename = f"treatment_{date or 'all'}_{status or 'all'}.pdf"
 
     elif report_type == "insemination":
@@ -2660,13 +2604,16 @@ def send_report(report_type):
         data = get_insemination_data(status, month, year)
 
         template = "insemination_pdf.html"
+
         filename = f"insemination_{status or 'all'}_{month or year or 'all'}.pdf"
+
     elif report_type == "milk_sale":
+
         data = get_milk_sales(selected_date)
+
         template = "milk_sales_reportpdf.html"
+
         filename = f"milk_sale_{selected_date or 'all'}.pdf"
-
-
 
     elif report_type == "transactions":
 
@@ -2675,20 +2622,36 @@ def send_report(report_type):
         purpose = request.args.get("purpose")
         farm_id = request.args.get("farm_id")
 
-        data = get_transactions_data(filter_date, month, purpose, farm_id)
+        data = get_transactions_data(
+            filter_date,
+            month,
+            purpose,
+            farm_id
+        )
 
         template = "transactions_pdf.html"
+
         filename = f"transactions_{month or filter_date or 'all'}.pdf"
 
     elif report_type == "cow_analysis":
+
         from datetime import datetime
 
         date_str = request.args.get("date")
+
         data = get_monthly_cow_analysis(date_str)
 
         cow_report = []
-        for i, cow in enumerate(data["monthly_cows"], start=1):
-            avg = cow.total_milk / cow.days_recorded if cow.days_recorded > 0 else 0
+
+        for i, cow in enumerate(
+            data["monthly_cows"],
+            start=1
+        ):
+
+            avg = (
+                cow.total_milk /
+                cow.days_recorded
+            ) if cow.days_recorded > 0 else 0
 
             cow_report.append({
                 "no": i,
@@ -2698,9 +2661,13 @@ def send_report(report_type):
             })
 
         month_name = "All Records"
+
         if date_str:
             try:
-                month_name = datetime.strptime(date_str, "%Y-%m-%d").strftime("%B %Y")
+                month_name = datetime.strptime(
+                    date_str,
+                    "%Y-%m-%d"
+                ).strftime("%B %Y")
             except:
                 month_name = date_str
 
@@ -2708,29 +2675,36 @@ def send_report(report_type):
         data["month_name"] = month_name
 
         template = "cow_analysis_pdf.html"
+
         filename = f"cow_analysis_{date_str or 'all'}.pdf"
 
     elif report_type == "milk_sales_monthly":
+
         selected_date = request.args.get("date")
-        data = get_milk_sales_monthly(selected_date)
+
+        data = get_milk_sales_monthly(
+            selected_date
+        )
 
         from datetime import datetime
 
         month_name = "All Records"
+
         if selected_date:
             try:
-                month_name = datetime.strptime(selected_date, "%Y-%m-%d").strftime("%B %Y")
+                month_name = datetime.strptime(
+                    selected_date,
+                    "%Y-%m-%d"
+                ).strftime("%B %Y")
             except:
                 month_name = selected_date
 
         data["month_name"] = month_name
 
         template = "milk_sales_monthly_pdf.html"
+
         filename = f"milk_sales_monthly_{selected_date or 'all'}.pdf"
 
-    # ===============================
-    # FEEDS ORDERS PDF
-    # ===============================
     elif report_type == "feeds_orders":
 
         month = request.args.get("month")
@@ -2738,9 +2712,20 @@ def send_report(report_type):
 
         orders = get_orders(month, farm_id)
 
-        total_all = sum(o["total"] for o in orders)
-        total_paid = sum(o["paid"] for o in orders)
-        total_debt = total_all - total_paid
+        total_all = sum(
+            o["total"]
+            for o in orders
+        )
+
+        total_paid = sum(
+            o["paid"]
+            for o in orders
+        )
+
+        total_debt = (
+            total_all -
+            total_paid
+        )
 
         data = {
             "orders": orders,
@@ -2751,22 +2736,28 @@ def send_report(report_type):
         }
 
         template = "pdf/feeds_orders.html"
+
         filename = f"feeds_orders_{month or 'all'}.pdf"
 
-
-    # ===============================
-    # ORDER DETAIL PDF
-    # ===============================
     elif report_type == "feeds_order_detail":
 
         order_id = request.args.get("order_id")
-        order = FeedsOrderV2.query.get_or_404(order_id)
 
-        summary = build_order_summary(order)
+        order = FeedsOrderV2.query.get_or_404(
+            order_id
+        )
+
+        summary = build_order_summary(
+            order
+        )
 
         items = []
+
         for item in order.items:
-            delivered, remaining, status, color = calc_item_delivery(item)
+
+            delivered, remaining, status, color = (
+                calc_item_delivery(item)
+            )
 
             items.append({
                 "name": item.feed_name,
@@ -2785,36 +2776,41 @@ def send_report(report_type):
         }
 
         template = "pdf/order_detail.html"
+
         filename = f"order_{order.order_ref}.pdf"
 
-
-    # ===============================
-    # DELIVERY PDF
-    # ===============================
     elif report_type == "feeds_delivery":
 
         order_id = request.args.get("order_id")
 
-        deliveries = FeedsDeliveryV2.query.filter_by(order_id=order_id).all()
+        deliveries = (
+            FeedsDeliveryV2.query
+            .filter_by(order_id=order_id)
+            .all()
+        )
 
         data = {
             "deliveries": deliveries
         }
 
         template = "pdf/delivery.html"
+
         filename = f"delivery_{order_id or 'all'}.pdf"
 
-
-    # ===============================
-    # PAYMENTS PDF
-    # ===============================
     elif report_type == "feeds_payments":
 
         order_id = request.args.get("order_id")
 
-        payments = payments.query.filter_by(order_id=order_id).all()
+        payments = (
+            Payment.query
+            .filter_by(order_id=order_id)
+            .all()
+        )
 
-        total_paid = sum(p.amount for p in payments)
+        total_paid = sum(
+            p.amount
+            for p in payments
+        )
 
         data = {
             "payments": payments,
@@ -2822,6 +2818,7 @@ def send_report(report_type):
         }
 
         template = "pdf/payments.html"
+
         filename = f"payments_{order_id or 'all'}.pdf"
 
     elif report_type == "employees":
@@ -2829,9 +2826,11 @@ def send_report(report_type):
         data = get_employees_data()
 
         template = "employees_pdf.html"
+
         filename = "employees_report.pdf"
 
     else:
+
         return """
         <script>
             alert("❌ Invalid report type");
@@ -2839,23 +2838,18 @@ def send_report(report_type):
         </script>
         """
 
-    # Generate + send
-    pdf_path = generate_pdf(template, data, filename)
-
-    send_email_with_pdf(
-        subject=f"{report_type.capitalize()} Report",
-        recipients=recipients,
-        body="Attached report",
-        pdf_path=pdf_path
+    pdf_path = generate_pdf(
+        template,
+        data,
+        filename
     )
 
-    # ✅ JS alert + redirect back
-    return """
-    <script>
-        alert("✅ Report sent successfully!");
-        window.history.back();
-    </script>
-    """
+    return send_file(
+        pdf_path,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/pdf"
+    )
 @app.route("/cow_registry", methods=["GET", "POST"])
 @login_required
 
