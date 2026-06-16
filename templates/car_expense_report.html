@@ -216,16 +216,6 @@ tbody tr:hover{
 <!-- ================= EMAIL + EXPORT (UNLIMITED EMAILS) ================= -->
 <form method="GET" action="{{ url_for('send_report', report_type='car_expenses') }}">
 
-    <div class="email-box" id="emailBox">
-
-        <!-- first email row -->
-        <div class="email-row">
-            <input type="email" name="emails" placeholder="Enter email address" required>
-            <button type="button" class="btn btn-add" onclick="addEmail()">+</button>
-        </div>
-
-    </div>
-
     <input type="hidden" name="date" value="{{ selected_date }}">
      <a href="/car_sales_report" class="action-btn">
         back
@@ -234,7 +224,7 @@ tbody tr:hover{
         add expense
     </a>
     <button type="submit" class="btn btn-export" style="margin-top:10px;">
-        📄 Export & Email PDF
+        📄 Dowload PDF
     </button>
 
 </form>
@@ -293,28 +283,6 @@ tbody tr:hover{
 
 </div>
 
-<!-- ================= SCRIPT ================= -->
-<script>
-
-function addEmail() {
-    const box = document.getElementById("emailBox");
-
-    const row = document.createElement("div");
-    row.className = "email-row";
-
-    row.innerHTML = `
-        <input type="email" name="emails" placeholder="Enter email address">
-        <button type="button" class="btn btn-remove" onclick="removeEmail(this)">-</button>
-    `;
-
-    box.appendChild(row);
-}
-
-function removeEmail(btn) {
-    btn.parentElement.remove();
-}
-
-</script>
 
 </body>
 </html>
