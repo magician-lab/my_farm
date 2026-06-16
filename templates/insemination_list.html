@@ -161,19 +161,8 @@ tr:hover {
 
     <div style="margin-top: 15px; margin-bottom: 15px;">
 
-        <strong>📧 Send Report To:</strong><br><br>
 
-        <div id="email-container">
-            <input type="email" name="emails" placeholder="Enter email" required>
-        </div>
-
-        <br>
-
-        <button type="button" onclick="addEmail()">+ Add Another Email</button>
-
-    </div>
-
-    <button type="submit" class="download-btn">SEND REPORT</button>
+    <button type="submit" class="download-btn">DOWNLOAD REPORT</button>
 
 </form>
 
@@ -292,25 +281,6 @@ document.getElementById("searchInput").addEventListener("keyup", function() {
         }
     });
 });
-</script>
-<script>
-function addEmail() {
-    let container = document.getElementById("email-container");
-
-    let div = document.createElement("div");
-    div.style.marginTop = "5px";
-
-    div.innerHTML = `
-        <input type="email" name="emails" placeholder="Enter email">
-        <button type="button" onclick="removeEmail(this)">X</button>
-    `;
-
-    container.appendChild(div);
-}
-
-function removeEmail(button) {
-    button.parentElement.remove();
-}
 </script>
 
 </body>
