@@ -263,39 +263,16 @@ RESPONSIVE
 
 <div class="email-section">
 
-    <div class="email-title">
-        📧 Send Shed Report
-    </div>
 
     <form
     action="{{ url_for('send_report', report_type='shed_report') }}"
     method="GET">
 
-        <div id="email-container">
-
-            <input
-            type="email"
-            name="emails"
-            class="email-input"
-            placeholder="Enter recipient email"
-            required>
-
-        </div>
-
-        <button
-        type="button"
-        onclick="addEmail()"
-        class="btn btn-add">
-
-            + Add Email
-
-        </button>
-
         <button
         type="submit"
         class="btn btn-send">
 
-            Send PDF Report
+            Download Report
 
         </button>
 
@@ -434,29 +411,6 @@ RESPONSIVE
 
 </div>
 
-<script>
-
-function addEmail(){
-
-    let container =
-    document.getElementById(
-        "email-container"
-    );
-
-    let input =
-    document.createElement(
-        "input"
-    );
-
-    input.type = "email";
-    input.name = "emails";
-    input.placeholder = "Enter another email";
-    input.className = "email-input";
-
-    container.appendChild(input);
-}
-
-</script>
 
 </body>
 </html>
