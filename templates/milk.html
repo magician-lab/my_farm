@@ -236,21 +236,20 @@
     </div>
 </div>
 
-<!-- 🔥 EMAIL -->
+<!-- 🔥 DOWNLOAD PDF -->
 <div class="email-box">
-    <form method="GET" action="{{ url_for('send_report', report_type='milk') }}">
-        <input type="hidden" name="date" value="{{ selected_date }}">
+    <form method="GET"
+          action="{{ url_for('send_report', report_type='milk') }}">
 
-        <strong>📧 Send Report To:</strong><br><br>
+        <input type="hidden"
+               name="date"
+               value="{{ selected_date }}">
 
-        <div id="email-container">
-            <input type="email" name="emails" placeholder="Enter email" required>
-        </div>
+        <button type="submit"
+                class="send-btn">
+            📄 Download PDF
+        </button>
 
-        <button type="button" onclick="addEmail()">+ Add Another Email</button>
-        <br><br>
-
-        <button type="submit" class="send-btn">📄 Export & Email PDF</button>
     </form>
 </div>
 
@@ -320,16 +319,6 @@
 
 <!-- 🔥 SCRIPT -->
 <script>
-function addEmail() {
-    let container = document.getElementById("email-container");
-
-    let div = document.createElement("div");
-    div.innerHTML = `
-        <input type="email" name="emails" placeholder="Enter email">
-        <button type="button" onclick="this.parentElement.remove()">X</button>
-    `;
-    container.appendChild(div);
-}
 
 document.getElementById("searchInput").addEventListener("keyup", function() {
     let filter = this.value.toLowerCase();
