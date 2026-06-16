@@ -327,9 +327,9 @@ tbody tr:hover{
 
 <div class="email-section">
 
-    <div class="email-title">
-        📄 Send Orders Report PDF
-    </div>
+    <!-- <div class="email-title">
+        📄 Download PDF
+    </div> -->
 
     <form method="get"
           action="/send_report/feeds_orders">
@@ -344,18 +344,9 @@ tbody tr:hover{
 
         <div class="email-box">
 
-            <input type="email"
-                   name="emails"
-                   placeholder="Enter email address">
-
-            <button type="button"
-                    onclick="addEmail(this)"
-                    class="btn btn-blue">
-                    +
-            </button>
 
             <button class="btn btn-green">
-                📄 Send PDF
+                📄 Download PDF
             </button>
 
         </div>
@@ -495,20 +486,6 @@ tbody tr:hover{
 
 </div>
 
-<script>
 
-function addEmail(btn){
-
-    let input = document.createElement("input");
-
-    input.type = "email";
-    input.name = "emails";
-    input.placeholder = "Another email address";
-
-    btn.parentNode.insertBefore(input, btn);
-
-}
-
-</script>
 
 {% endblock %}
