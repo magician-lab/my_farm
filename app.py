@@ -2797,30 +2797,36 @@ def send_report(report_type):
 
         filename = f"delivery_{order_id or 'all'}.pdf"
 
-    elif report_type == "feeds_payments":
-
-        order_id = request.args.get("order_id")
-
-        payments = (
-            Payment.query
-            .filter_by(order_id=order_id)
-            .all()
-        )
-
-        total_paid = sum(
-            p.amount
-            for p in payments
-        )
-
-        data = {
-            "payments": payments,
-            "total_paid": total_paid
-        }
-
-        template = "pdf/payments.html"
-
-        filename = f"payments_{order_id or 'all'}.pdf"
-
+        elif report_type == "feeds_payments":
+    
+            order_id = request.args.get("order_id")
+    
+            order = FeedsOrderV2.query.get_or_404(order_id)
+    
+            payments = (
+                Payment.query
+                .filter_by(
+                    purpose_type="feeds",
+                    purpose=f"Feeds Order {order.order_ref}"
+                )
+                .order_by(Payment.date_paid.desc())
+                .all()
+            )
+    
+            total_paid = sum(
+                float(p.amount or 0)
+                for p in payments
+            )
+    
+            data = {
+                "order": order,
+                "payments": payments,
+                "total_paid": total_paid
+            }
+    
+            template = "pdf/payments.html"
+    
+            filename = f"payments_{order.order_ref}.pdf"
     elif report_type == "employees":
 
         data = get_employees_data()
