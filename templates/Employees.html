@@ -135,15 +135,10 @@
     KES {{ "{:,.2f}".format(Employees | sum(attribute='salary')) }}
 </div>
 
-<!-- 📧 SEND PDF -->
+<!-- 📧 DOWNLOAD PDF -->
 <form method="get" action="/send_report/employees">
-    <div class="email-box">
-        <input type="text" name="emails" placeholder="Enter email">
-
-        <button type="button" onclick="addEmailField(this)">+</button>
-
-        <button type="submit" class="btn-send">
-            📄 Send PDF
+  <button type="submit" class="btn-send">
+            📄 downoad pdf
         </button>
     </div>
 </form>
