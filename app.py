@@ -187,7 +187,7 @@ def login():
 
             print("LOGIN SUCCESS")
 
-            return redirect(url_for("milk_dashboard"))
+            return redirect(url_for("main_dashboard"))
 
         else:
 
