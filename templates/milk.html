@@ -207,18 +207,24 @@
         {% for record in records %}
             {% if record.total <= 10 %}
                 {% set below_10.count = below_10.count + 1 %}
+            {% elif record.total <= 15 %}
+                {% set between_10_15.count = between_10_15.count + 1 %}
             {% elif record.total <= 20 %}
-                {% set between_10_20.count = between_10_20.count + 1 %}
+                {% set between_15_20.count = between_15_20.count + 1 %}
+            {% elif record.total <= 25 %}
+                {% set between_20_25.count = between_20_25.count + 1 %}
             {% elif record.total <= 30 %}
-                {% set between_20_30.count = between_20_30.count + 1 %}
+                {% set between_25_30.count = between_25_30.count + 1 %}
             {% else %}
                 {% set above_30.count = above_30.count + 1 %}
             {% endif %}
         {% endfor %}
 
         <div class="card">Below 10<strong>{{ below_10.count }}</strong></div>
-        <div class="card">11-20<strong>{{ between_10_20.count }}</strong></div>
-        <div class="card">21-30<strong>{{ between_20_30.count }}</strong></div>
+        <div class="card">11-15<strong>{{ between_10_15.count }}</strong></div>
+        <div class="card">16-20<strong>{{ between_15_20.count }}</strong></div>
+        <div class="card">21-25<strong>{{ between_20_25.count }}</strong></div>
+        <div class="card">26-30<strong>{{ between_25_30.count }}</strong></div>
         <div class="card">Above 30<strong>{{ above_30.count }}</strong></div>
 
     </div>
