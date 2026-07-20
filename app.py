@@ -15,14 +15,14 @@ import pandas as pd
 import os
 import random
 import os
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    # "DATABASE_URL",
+app.config['SQLALCHEMY_DATABASE_URI'] = os.gotev(
+     "DATABASE_URL",
     "sqlite:///database.db"
 )
 
