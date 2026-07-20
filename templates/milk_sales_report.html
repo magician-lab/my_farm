@@ -182,7 +182,7 @@ td{
 <input type="hidden" name="date" value="{{ selected_date }}">
 
 <label>Actual Remaining:</label>
-<input type="number" step="0.01" name="actual_remaining" value="{{ actual_remaining }}">
+<input type="number" step="0.01" name="actual_remaining" value="{{ actual_available_today }}">
 
 <button class="btn-edit">Save</button>
 </form>
@@ -201,90 +201,127 @@ td{
 
 <tr>
 <td class="metric">Previous Remaining</td>
-<td class="system">{{ previous_system_remaining }}</td>
-<td class="actual">{{ previous_actual_remaining }}</td>
-<td class="{% if prev_variance>=0 %}pos{% else %}neg{% endif %}">
-{{ prev_variance|round(2) }}
+
+<td class="system">
+{{ previous_system_remaining|round(2) }}
+</td>
+
+<td class="actual">
+{{ previous_actual_remaining|round(2) }}
+</td>
+
+<td class="{% if pavail_variance>=0 %}pos{% else %}neg{% endif %}">
+{{ pavail_variance|round(2) }}
 </td>
 </tr>
+
 
 <tr>
 <td class="metric">Today's Production</td>
-<td class="system">{{ total_production }}</td>
-<td class="actual">{{ total_production }}</td>
+
+<td class="system">
+{{ grand_total|round(2) }}
+</td>
+
+<td class="actual">
+{{ grand_total|round(2) }}
+</td>
+
 <td class="neutral">0</td>
 </tr>
 
+
 <tr>
-<td class="metric">Today Available</td>
-<td class="system">{{ system_available_today }}</td>
-<td class="actual">{{ actual_available_today }}</td>
-<td class="{% if avail_variance>=0 %}pos{% else %}neg{% endif %}">
-{{ avail_variance|round(2) }}
+<td class="metric">Milk Available</td>
+
+<td class="system">
+{{ total_system_available|round(2) }}
+</td>
+
+<td class="actual">
+{{ total_available|round(2) }}
+</td>
+
+<td class="{% if pavail_variance>=0 %}pos{% else %}neg{% endif %}">
+{{ pavail_variance|round(2) }}
 </td>
 </tr>
 
+
 <tr>
-<td class="metric">Total Sales (Shops)</td>
-<td class="system">{{ total_sold_shops }}</td>
-<td class="actual">{{ total_sold_shops }}</td>
+<td class="metric">Milk Sold</td>
+
+<td class="system">
+{{ total_sold_shops|round(2) }}
+</td>
+
+<td class="actual">
+{{ total_sold_shops|round(2) }}
+</td>
+
 <td class="neutral">0</td>
 </tr>
 
+
 <tr>
-<td class="metric">Total Calf</td>
-<td class="system">{{ total_calf_used }}</td>
-<td class="actual">{{ total_calf_used }}</td>
+<td class="metric">Home Use</td>
+
+<td class="system">
+{{ total_home|round(2) }}
+</td>
+
+<td class="actual">
+{{ total_home|round(2) }}
+</td>
+
 <td class="neutral">0</td>
 </tr>
 
+
 <tr>
-<td class="metric">Total Home</td>
-<td class="system">{{ total_home_used }}</td>
-<td class="actual">{{ total_home_used }}</td>
+<td class="metric">Calf Use</td>
+
+<td class="system">
+{{ total_calf|round(2) }}
+</td>
+
+<td class="actual">
+{{ total_calf|round(2) }}
+</td>
+
 <td class="neutral">0</td>
 </tr>
+
 
 <tr>
 <td class="metric">Total Used</td>
-<td class="system">{{ total_used }}</td>
-<td class="actual">{{ total_used }}</td>
+
+<td class="system">
+{{ total_used|round(2) }}
+</td>
+
+<td class="actual">
+{{ total_used|round(2) }}
+</td>
+
 <td class="neutral">0</td>
 </tr>
 
-<tr>
-<td class="metric">Expected Remaining</td>
-<td class="system">{{ (system_available_today - total_used)|round(2) }}</td>
-<td class="actual">{{ (actual_available_today - total_used)|round(2) }}</td>
-<td class="neutral">N/A</td>
-</tr>
 
 <tr>
-<td class="metric">Remaining</td>
-<td class="system">{{ (system_available_today - total_used)|round(2) }}</td>
-<td class="actual">{{ actual_remaining }}</td>
-<td class="{% if (actual_remaining - (system_available_today - total_used))>=0 %}pos{% else %}neg{% endif %}">
-{{ (actual_remaining - (system_available_today - total_used))|round(2) }}
-</td>
-</tr>
+<td class="metric">Remaining Stock</td>
 
-<tr>
-<td class="metric">Actual vs Expected</td>
-<td class="system" style="color:#c62828; font-weight:bold;">N/A</td>
-
-<td class="actual" style="
-font-weight:bold;
-color:
-{% if (actual_remaining - (actual_available_today - total_used)) < 0 %}
-#c62828
-{% else %}
-green
-{% endif %}
-">
-{{ (actual_remaining - (actual_available_today - total_used))|round(2) }}
+<td class="system">
+{{ remaining_system|round(2) }}
 </td>
 
-<td class="neutral">N/A</td>
+<td class="actual">
+{{ actual_available_today|round(2) }}
+</td>
+
+<td class="{% if pavail_variance>=0 %}pos{% else %}neg{% endif %}">
+{{ pavail_variance|round(2) }}
+</td>
 </tr>
 
 </table>
@@ -308,7 +345,7 @@ green
 <th>Actions</th>
 </tr>
 
-{% for s in sales_records %}
+{% for s in daily_records %}
 <tr>
 <td>{{ loop.index }}</td>
 <td>{{ s.session }}</td>
