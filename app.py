@@ -15,19 +15,20 @@ import pandas as pd
 import os
 import random
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    "DATABASE_URL",
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    # "DATABASE_URL",
     "sqlite:///database.db"
 )
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'supersecretkey123'
+
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 300
@@ -985,276 +986,277 @@ def get_sales_report_data(selected_date=None):
         "selected_date": selected_date
     }
 
+from datetime import datetime, date
 
-def get_milk_report_data(date_str=None):
-
-    if date_str:
-        selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    else:
-        selected_date = date.today()
-
-    # ---- DAILY RECORDS ----
-    records = MilkRegistry.query.filter_by(date=selected_date).all()
- 
-    total_morning = sum(r.morning for r in records)
-    total_noon = sum(r.noon for r in records)
-    total_evening = sum(r.evening for r in records)
-    grand_total = sum(r.total for r in records)
-    above_10_litres_total = sum(r.total for r in records if r.total > 10)
-    cow_count = len(records)
-    above_10_litres = sum(1 for r in records if r.total > 10)
-    average_production = above_10_litres_total / above_10_litres if cow_count > 0 else 0
-
-    # ---- MONTHLY TOTAL ----
-    monthly_records = MilkRegistry.query.filter(
-        extract('month', MilkRegistry.date) == selected_date.month,
-        extract('year', MilkRegistry.date) == selected_date.year
-    ).all()
-
-    monthly_total = sum(r.total for r in monthly_records)
-
-    # ---- QUARTERLY TOTAL ----
-    quarter = (selected_date.month - 1) // 3 + 1
-
-    quarterly_records = MilkRegistry.query.filter(
-        extract('year', MilkRegistry.date) == selected_date.year
-    ).all()
-
-    quarterly_total = sum(
-        r.total for r in quarterly_records
-        if ((r.date.month - 1) // 3 + 1) == quarter
-    )
-
-    # ---- YEARLY TOTAL ----
-    yearly_records = MilkRegistry.query.filter(
-        extract('year', MilkRegistry.date) == selected_date.year
-    ).all()
-
-    yearly_total = sum(r.total for r in yearly_records)
-
-    return {
-        "records": records,
-        "selected_date": selected_date,
-        "total_morning": total_morning,
-        "total_noon": total_noon,
-        "total_evening": total_evening,
-        "grand_total": grand_total,
-        "average_production": round(average_production, 2),
-        "monthly_total": monthly_total,
-        "quarterly_total": quarterly_total,
-        "yearly_total": yearly_total,
-        "cow_count": cow_count
-    }
-
-
-
-def get_monthly_cow_analysis(date_str=None):
-
-    if date_str:
-        selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    else:
-        selected_date = date.today()
-
-    # ✅ FIXED: use cow_id + direct relationship
-    monthly_cows = db.session.query(
-        AnimalRegistry.name.label("cow_name"),
-        func.sum(MilkRegistry.total).label("total_milk"),
-        func.count(MilkRegistry.date).label("days_recorded")
-    ).join(
-        AnimalRegistry, AnimalRegistry.id == MilkRegistry.cow_id
-    ).filter(
-        extract('month', MilkRegistry.date) == selected_date.month,
-        extract('year', MilkRegistry.date) == selected_date.year
-    ).group_by(AnimalRegistry.name).all()
-
-    cow_count = len(monthly_cows)
-    overall_total = sum(c.total_milk for c in monthly_cows)
-
-    overall_average = overall_total / cow_count if cow_count > 0 else 0
-
-    return {
-        "selected_date": selected_date,
-        "monthly_cows": monthly_cows,
-        "overall_average": round(overall_average, 2)
-    }
-
-
-def get_animals_data(category=None):
-    base_query = AnimalRegistry.query.filter(
-        AnimalRegistry.category.ilike("nolonger_exist") == False
-    )
-    query = AnimalRegistry.query
-
-    # HANDLE EMPTY / NONE / ALL
-    if (
-        category
-        and str(category).strip().lower() not in ["all", "none", ""]
-    ):
-        query = query.filter(
-            AnimalRegistry.category.ilike(category)
-        )
-
-    animals = query.all()
-    return {
-        "animals": animals,
-        "existing": base_query,
-        "total_animals": AnimalRegistry.query.count(),
-        "existing_animals": base_query.count(),
-        "milkers": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("milker")
-        ).count(),
-
-        "dry_cows": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("dry")
-        ).count(),
-
-        "calves": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("calf")
-        ).count(),
-
-        "bulls": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("bull")
-        ).count(),
-
-        "incalf_heifers": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("incalf-heifer")
-        ).count(),
-
-        "yearlings": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("yearing")
-        ).count(),
-
-        "weaners": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("weaner")
-        ).count(),
-
-        "Bullying_heifer": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("Bullying-Heifer")
-        ).count(),
-
-        "steamers": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("steamer")
-        ).count(),
-
-        "nolonger_exist": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("nolonger_exist")
-        ).count(),
-
-    }
-
-
-def get_insemination_data(status=None, month=None, year=None):
-
-    from datetime import datetime
-
-    query = db.session.query(Insemination).join(AnimalRegistry)
-
-    # =========================
-    # 🔹 STATUS FILTER
-    # =========================
-    if status:
-        status = status.lower()
-
-        if status == "confirmed":
-            query = query.filter(Insemination.status == "confirmed")
-
-        elif status == "delivered":
-            query = query.filter(Insemination.status == "delivered")
-
-        elif status == "pending":
-            query = query.filter(
-                (Insemination.status == None) | (Insemination.status == "pending")
-            )
-
-        elif status == "aborted":
-            query = query.filter(Insemination.status == "aborted")
-
-    # =========================
-    # 🔹 MONTH FILTER (YYYY-MM)
-    # =========================
-    if month:
-        try:
-            y, m = month.split("-")
-            query = query.filter(
-                db.extract('year', Insemination.date_served) == int(y),
-                db.extract('month', Insemination.date_served) == int(m)
-            )
-        except:
-            pass
-
-    # =========================
-    # 🔹 YEAR FILTER (YYYY)
-    # =========================
-    elif year:
-        try:
-            query = query.filter(
-                db.extract('year', Insemination.date_served) == int(year)
-            )
-        except:
-            pass
-
-    # =========================
-    # 🔥 SORT (LATEST → OLDEST)
-    # =========================
-    records = query.order_by(Insemination.date_served.desc()).all()
-
-    # =========================
-    # 🔹 FORMAT MONTH NAME
-    # =========================
-    month_name = None
-    if month:
-        try:
-            month_name = datetime.strptime(month, "%Y-%m").strftime("%B %Y")
-        except:
-            month_name = month
-
-    return {
-        "records": records,
-        "status": status,
-        "month": month,
-        "year": year,
-        "month_name": month_name,
-        "now": datetime.now()
-    }
-
-
-
-def to_float(val):
-    return float(val or 0)
-
-from datetime import datetime, date, timedelta
-from sqlalchemy import func
-
-def to_float(val):
-    return float(val or 0)
-
-def normalize_date(date_str=None):
+def normalize_date(selected_date=None):
     """
-    Converts string date to a Python date object.
+    Converts string date to python date object.
     """
 
-    if isinstance(date_str, date):
-        return date_str
+    if isinstance(selected_date, date):
+        return selected_date
 
-    if date_str:
+    if selected_date:
         return datetime.strptime(
-            date_str,
+            selected_date,
             "%Y-%m-%d"
         ).date()
 
     return date.today()
 
-def load_milk_data():
+from collections import defaultdict
 
-    production = MilkRegistry.query.all()
+def load_history(selected_date):
+    """
+    Loads all historical records using only THREE SQL queries.
+    """
 
-    sales = MilkSalesRegistry.query.all()
-
-    remaining = (
-        MilkDailyRemaining.query
-        .order_by(MilkDailyRemaining.date)
+    # Production
+    production_records = (
+        MilkRegistry.query
+        .filter(MilkRegistry.date < selected_date)
+        .order_by(MilkRegistry.date)
         .all()
     )
+
+    # Sales
+    sales_records = (
+        MilkSalesRegistry.query
+        .filter(MilkSalesRegistry.date < selected_date)
+        .order_by(MilkSalesRegistry.date)
+        .all()
+    )
+
+    # Actual Remaining
+    remaining_records = (
+        MilkDailyRemaining.query
+        .filter(MilkDailyRemaining.date < selected_date)
+        .all()
+    )
+
+    return (
+        production_records,
+        sales_records,
+        remaining_records
+    )
+
+from collections import defaultdict
+
+def group_history(
+    production_records,
+    sales_records,
+    remaining_records
+):
+
+    production = defaultdict(list)
+    sales = defaultdict(list)
+    remaining = {}
+
+    for r in production_records:
+        production[r.date].append(r)
+
+    for r in sales_records:
+        sales[r.date].append(r)
+
+    for r in remaining_records:
+        remaining[r.date] = r
+
+    return production, sales, remaining
+
+def calculate_history_stock(
+    production,
+    sales,
+    remaining
+):
+
+    system_running = 0
+    actual_running = 0
+
+    all_dates = sorted(
+        set(production.keys()) |
+        set(sales.keys()) |
+        set(remaining.keys())
+    )
+
+    for current_day in all_dates:
+
+        produced = sum(
+            float(r.total or 0)
+            for r in production[current_day]
+        )
+
+        used = sum(
+            float(r.shop1 or 0)
+            + float(r.shop2 or 0)
+            + float(r.shop3 or 0)
+            + float(r.home or 0)
+            + float(r.calf or 0)
+            for r in sales[current_day]
+        )
+
+        system_running = max(
+            system_running + produced - used,
+            0
+        )
+
+        if current_day in remaining:
+
+            actual_running = float(
+                remaining[current_day].actual_remaining or 0
+            )
+
+        else:
+
+            actual_running = max(
+                actual_running + produced - used,
+                0
+            )
+
+    return system_running, actual_running
+
+from sqlalchemy.orm import joinedload
+
+def load_today(selected_date):
+    """
+    Load all data needed for the selected day.
+
+    Only 3 SQL queries are executed.
+    """
+
+    milk_records = (
+        MilkRegistry.query
+        .options(joinedload(MilkRegistry.cow))
+        .filter(MilkRegistry.date == selected_date)
+        .all()
+    )
+
+    sales_records = (
+        MilkSalesRegistry.query
+        .filter(MilkSalesRegistry.date == selected_date)
+        .all()
+    )
+
+    remaining_record = (
+        MilkDailyRemaining.query
+        .filter(MilkDailyRemaining.date == selected_date)
+        .first()
+    )
+
+    return {
+        "milk_records": milk_records,
+        "sales_records": sales_records,
+        "remaining_record": remaining_record
+    }
+
+def calculate_today_production(milk_records):
+
+    total_morning = 0
+    total_noon = 0
+    total_evening = 0
+    grand_total = 0
+
+    cow_count = len(milk_records)
+
+    above10_total = 0
+    above10_count = 0
+
+    for milk in milk_records:
+
+        morning = float(milk.morning or 0)
+        noon = float(milk.noon or 0)
+        evening = float(milk.evening or 0)
+        total = float(milk.total or 0)
+
+        total_morning += morning
+        total_noon += noon
+        total_evening += evening
+        grand_total += total
+
+        if total > 10:
+            above10_total += total
+            above10_count += 1
+
+    average = (
+        above10_total / above10_count
+        if above10_count
+        else 0
+    )
+
+    return {
+        "total_morning": round(total_morning,2),
+        "total_noon": round(total_noon,2),
+        "total_evening": round(total_evening,2),
+        "grand_total": round(grand_total,2),
+        "cow_count": cow_count,
+        "average_production": round(average,2)
+    }
+
+def calculate_today_sales(sales_records):
+
+    shop1 = 0
+    shop2 = 0
+    shop3 = 0
+    home = 0
+    calf = 0
+
+    morning_sales = 0
+    noon_sales = 0
+    evening_sales = 0
+
+    for sale in sales_records:
+
+        s1 = float(sale.shop1 or 0)
+        s2 = float(sale.shop2 or 0)
+        s3 = float(sale.shop3 or 0)
+        hm = float(sale.home or 0)
+        cf = float(sale.calf or 0)
+
+        total = s1 + s2 + s3
+
+        shop1 += s1
+        shop2 += s2
+        shop3 += s3
+        home += hm
+        calf += cf
+
+        if sale.session == "Morning":
+            morning_sales += total
+
+        elif sale.session == "Noon":
+            noon_sales += total
+
+        elif sale.session == "Evening":
+            evening_sales += total
+
+    total_shop_sales = shop1 + shop2 + shop3
+    total_used = total_shop_sales + home + calf
+
+    return {
+
+        "shop1": round(shop1,2),
+        "shop2": round(shop2,2),
+        "shop3": round(shop3,2),
+
+        "home": round(home,2),
+        "calf": round(calf,2),
+
+        "morning_sales": round(morning_sales,2),
+        "noon_sales": round(noon_sales,2),
+        "evening_sales": round(evening_sales,2),
+
+        "total_sold_shops": round(total_shop_sales,2),
+        "total_used": round(total_used,2),
+        "other_uses": round(home + calf,2)
+    }
+
+from bisect import bisect_right
+
+def load_price_cache():
+    """
+    Loads every milk price into memory.
+
+    Executes ONLY ONE SQL query.
+    """
 
     prices = (
         MilkPrice.query
@@ -1262,38 +1264,27 @@ def load_milk_data():
         .all()
     )
 
-    return {
-        "production": production,
-        "sales": sales,
-        "remaining": remaining,
-        "prices": prices
-    }
-
-from bisect import bisect_right
-
-
-def build_price_cache(prices):
-
-    price_dates = []
-    price_values = []
+    dates = []
+    values = []
 
     for p in prices:
 
-        price_dates.append(
-            p.effective_date
-        )
+        dates.append(p.effective_date)
+        values.append(float(p.price))
 
-        price_values.append(
-            float(p.price)
-        )
+    return dates, values
 
-    return price_dates, price_values
+from bisect import bisect_right
 
-def get_price(
-    price_dates,
-    price_values,
-    target_date
-):
+def get_price(price_dates, price_values, target_date):
+    """
+    Returns the price effective on target_date.
+
+    O(log n)
+    """
+
+    if not price_dates:
+        return 0
 
     index = bisect_right(
         price_dates,
@@ -1305,171 +1296,143 @@ def get_price(
 
     return price_values[index]
 
+def calculate_monthly_revenue(
+    sales_records,
+    price_dates,
+    price_values
+):
+
+    revenue = 0
+
+    for sale in sales_records:
+
+        litres = (
+            float(sale.shop1 or 0)
+            + float(sale.shop2 or 0)
+            + float(sale.shop3 or 0)
+        )
+
+        price = get_price(
+            price_dates,
+            price_values,
+            sale.date
+        )
+
+        revenue += litres * price
+
+    return round(revenue,2)
+
+def calculate_today_revenue(
+    sales_records,
+    price_dates,
+    price_values
+):
+
+    revenue = 0
+
+    for sale in sales_records:
+
+        litres = (
+            float(sale.shop1 or 0)
+            + float(sale.shop2 or 0)
+            + float(sale.shop3 or 0)
+        )
+
+        price = get_price(
+            price_dates,
+            price_values,
+            sale.date
+        )
+
+        revenue += litres * price
+
+    return round(revenue,2)
 
 
-def calculate_production(production, selected_date):
+def calculate_sales_summary(all_sales, selected_date):
 
-    month = selected_date.month
-    year = selected_date.year
-    quarter = ((month - 1) // 3) + 1
+    quarter = (selected_date.month - 1) // 3 + 1
 
-    total_morning = 0
-    total_noon = 0
-    total_evening = 0
+    daily_sales = 0
+    monthly_sales = 0
+    quarterly_sales = 0
+    yearly_sales = 0
 
-    grand_total = 0
-    cow_count = 0
+    for sale in all_sales:
 
-    monthly_total = 0
-    quarterly_total = 0
-    yearly_total = 0
+        litres = (
+            float(sale.shop1 or 0)
+            + float(sale.shop2 or 0)
+            + float(sale.shop3 or 0)
+        )
 
-    above_10_total = 0
-    above_10_count = 0
+        # ----------------------------
+        # Daily
+        # ----------------------------
 
-    today_records = []
+        if sale.date == selected_date:
+            daily_sales += litres
 
-    for record in production:
+        # ----------------------------
+        # Monthly
+        # ----------------------------
 
-        record_month = record.date.month
-        record_year = record.date.year
-        record_quarter = ((record_month - 1) // 3) + 1
+        if (
+            sale.date.month == selected_date.month
+            and sale.date.year == selected_date.year
+        ):
+            monthly_sales += litres
 
-        # --------------------------------
-        # TODAY
-        # --------------------------------
+        # ----------------------------
+        # Quarterly
+        # ----------------------------
 
-        if record.date == selected_date:
+        if (
+            sale.date.year == selected_date.year
+            and ((sale.date.month - 1) // 3 + 1) == quarter
+        ):
+            quarterly_sales += litres
 
-            today_records.append(record)
+        # ----------------------------
+        # Yearly
+        # ----------------------------
 
-            total_morning += to_float(record.morning)
-            total_noon += to_float(record.noon)
-            total_evening += to_float(record.evening)
-
-            grand_total += to_float(record.total)
-
-            cow_count += 1
-
-            if to_float(record.total) > 10:
-
-                above_10_total += to_float(record.total)
-                above_10_count += 1
-
-        # --------------------------------
-        # YEAR
-        # --------------------------------
-
-        if record_year == year:
-
-            yearly_total += to_float(record.total)
-
-            # ----------------------------
-            # MONTH
-            # ----------------------------
-
-            if record_month == month:
-                monthly_total += to_float(record.total)
-
-            # ----------------------------
-            # QUARTER
-            # ----------------------------
-
-            if record_quarter == quarter:
-                quarterly_total += to_float(record.total)
-
-    average_production = (
-        above_10_total / above_10_count
-        if above_10_count else 0
-    )
+        if sale.date.year == selected_date.year:
+            yearly_sales += litres
 
     return {
 
-        "records": today_records,
+        "daily_sales": round(daily_sales,2),
 
-        "total_morning": round(total_morning,2),
-        "total_noon": round(total_noon,2),
-        "total_evening": round(total_evening,2),
+        "monthly_sales": round(monthly_sales,2),
 
-        "grand_total": round(grand_total,2),
+        "quarterly_sales": round(quarterly_sales,2),
 
-        "monthly_total": round(monthly_total,2),
-        "quarterly_total": round(quarterly_total,2),
-        "yearly_total": round(yearly_total,2),
+        "yearly_sales": round(yearly_sales,2)
 
-        "cow_count": cow_count,
-
-        "average_production": round(
-            average_production,
-            2
-        )
     }
 
-def calculate_sales(
-    sales,
+def calculate_revenue_summary(
+    all_sales,
     selected_date,
     price_dates,
     price_values
 ):
 
-    month = selected_date.month
-    year = selected_date.year
-    quarter = ((month - 1) // 3) + 1
+    quarter = (selected_date.month - 1) // 3 + 1
 
-    # =====================================================
-    # DAILY TOTALS
-    # =====================================================
+    daily = 0
+    monthly = 0
+    quarterly = 0
+    yearly = 0
 
-    total_shop1 = 0
-    total_shop2 = 0
-    total_shop3 = 0
+    for sale in all_sales:
 
-    total_home = 0
-    total_calf = 0
-
-    total_sold = 0
-    total_used = 0
-
-    # =====================================================
-    # SALES ANALYTICS
-    # =====================================================
-
-    daily_total_sales = 0
-    monthly_total_sales = 0
-    quarterly_total_sales = 0
-    yearly_total_sales = 0
-
-    daily_total_litres = 0
-    monthly_total_litres = 0
-    quarterly_total_litres = 0
-    yearly_total_litres = 0
-
-    # =====================================================
-    # TABLE DATA
-    # =====================================================
-
-    monthly_data = []
-
-    # =====================================================
-    # LOOP
-    # =====================================================
-
-    for sale in sales:
-
-        record_month = sale.date.month
-        record_year = sale.date.year
-        record_quarter = ((record_month - 1) // 3) + 1
-
-        shop1 = to_float(sale.shop1)
-        shop2 = to_float(sale.shop2)
-        shop3 = to_float(sale.shop3)
-
-        calf = to_float(sale.calf)
-        home = to_float(sale.home)
-
-        litres = shop1 + shop2 + shop3
-
-        used = litres + calf + home
+        litres = (
+            float(sale.shop1 or 0)
+            + float(sale.shop2 or 0)
+            + float(sale.shop3 or 0)
+        )
 
         price = get_price(
             price_dates,
@@ -1479,426 +1442,153 @@ def calculate_sales(
 
         revenue = litres * price
 
-        # =================================================
-        # TODAY
-        # =================================================
-
         if sale.date == selected_date:
+            daily += revenue
 
-            total_shop1 += shop1
-            total_shop2 += shop2
-            total_shop3 += shop3
+        if (
+            sale.date.month == selected_date.month
+            and sale.date.year == selected_date.year
+        ):
+            monthly += revenue
 
-            total_home += home
-            total_calf += calf
+        if (
+            sale.date.year == selected_date.year
+            and ((sale.date.month - 1)//3 + 1) == quarter
+        ):
+            quarterly += revenue
 
-            total_sold += litres
-            total_used += used
-
-            daily_total_sales += revenue
-            daily_total_litres += litres
-
-        # =================================================
-        # YEAR
-        # =================================================
-
-        if record_year == year:
-
-            yearly_total_sales += revenue
-            yearly_total_litres += litres
-
-            # =============================================
-            # MONTH
-            # =============================================
-
-            if record_month == month:
-
-                monthly_total_sales += revenue
-                monthly_total_litres += litres
-
-                monthly_data.append(sale)
-
-            # =============================================
-            # QUARTER
-            # =============================================
-
-            if record_quarter == quarter:
-
-                quarterly_total_sales += revenue
-                quarterly_total_litres += litres
-
-    # =====================================================
-    # RETURN
-    # =====================================================
+        if sale.date.year == selected_date.year:
+            yearly += revenue
 
     return {
 
-        # TABLE
+        "daily_revenue": round(daily,2),
 
-        "monthly_data": monthly_data,
+        "monthly_revenue": round(monthly,2),
 
-        # DAILY
+        "quarterly_revenue": round(quarterly,2),
 
-        "total_shop1": round(total_shop1,2),
-        "total_shop2": round(total_shop2,2),
-        "total_shop3": round(total_shop3,2),
-
-        "total_home": round(total_home,2),
-        "total_calf": round(total_calf,2),
-
-        "total_sold_shops": round(total_sold,2),
-        "total_used": round(total_used,2),
-
-        "other_uses": round(
-            total_home + total_calf,
-            2
-        ),
-
-        # LITRES
-
-        "daily_sales": round(daily_total_litres,2),
-        "monthly_sales": round(monthly_total_litres,2),
-        "quarterly_sales": round(quarterly_total_litres,2),
-        "yearly_sales": round(yearly_total_litres,2),
-
-        # REVENUE
-
-        "daily_revenue": round(daily_total_sales,2),
-        "monthly_revenue": round(monthly_total_sales,2),
-        "quarterly_revenue": round(quarterly_total_sales,2),
-        "yearly_revenue": round(yearly_total_sales,2)
+        "yearly_revenue": round(yearly,2)
 
     }
 
-def calculate_stock(
-    production,
-    sales,
-    remaining,
-    selected_date,
-    grand_total,
-    total_sold_shops
-):
+
+
+from sqlalchemy import extract
+
+def get_milk_report_data(date_str=None):
     """
-    Computes the running milk stock.
-
-    System Remaining =
-        Yesterday System
-        + Today's Production
-        - Today's Usage
-
-    Actual Remaining is read from MilkDailyRemaining.
-
-    Returns stock analytics for the selected date.
+    Optimized Milk Report
+    Only TWO SQL queries are executed.
     """
 
-    # ==========================================
-    # BUILD DAILY PRODUCTION
-    # ==========================================
-
-    production_by_date = {}
-
-    for p in production:
-
-        production_by_date[p.date] = (
-            production_by_date.get(p.date, 0)
-            + to_float(p.total)
-        )
-
-    # ==========================================
-    # BUILD DAILY USAGE
-    # ==========================================
-
-    usage_by_date = {}
-
-    for s in sales:
-
-        used = (
-
-            to_float(s.shop1)
-
-            + to_float(s.shop2)
-
-            + to_float(s.shop3)
-
-            + to_float(s.home)
-
-            + to_float(s.calf)
-
-        )
-
-        usage_by_date[s.date] = (
-            usage_by_date.get(s.date, 0)
-            + used
-        )
-
-    # ==========================================
-    # BUILD ACTUAL REMAINING
-    # ==========================================
-
-    actual_remaining_by_date = {}
-
-    for r in remaining:
-
-        actual_remaining_by_date[r.date] = (
-            to_float(r.actual_remaining)
-        )
-
-    # ==========================================
-    # ALL DATES
-    # ==========================================
-
-    all_dates = sorted(
-
-        set(production_by_date.keys())
-
-        | set(usage_by_date.keys())
-
-        | set(actual_remaining_by_date.keys())
-
-    )
-
-    # ==========================================
-    # RUNNING SYSTEM STOCK
-    # ==========================================
-
-    running_system = 0
-
-    previous_system_remaining = 0
-
-    system_available_today = 0
-
-    actual_available_today = 0
-
-    for day in all_dates:
-
-        produced = production_by_date.get(day, 0)
-
-        used = usage_by_date.get(day, 0)
-
-        previous_system_remaining = running_system
-
-        running_system = (
-
-            running_system
-
-            + produced
-
-            - used
-
-        )
-
-        if day == selected_date:
-
-            system_available_today = running_system
-
-            actual_available_today = (
-
-                actual_remaining_by_date.get(
-                    day,
-                    0
-                )
-
-            )
-
-            break
-
-    # ==========================================
-    # VARIANCE
-    # ==========================================
-
-    pavail_variance = (
-
-        actual_available_today
-
-        - system_available_today
-
-    )
-
-    # ==========================================
-    # CONVERSION %
-    # ==========================================
-    total_available=grand_total+actual_available_today
-
-    if total_available:
-
-        percentage_conversion = (
-
-            total_sold_shops
-
-            / total_available
-
-        ) * 100
-
-    else:
-
-        percentage_conversion = 0
-
-    # ==========================================
-    # ERROR %
-    # ==========================================
-
-    if system_available_today:
-
-        percentage_error = (
-
-            abs(pavail_variance)
-
-            / system_available_today
-
-        ) * 100
-
-    else:
-
-        percentage_error = 0
-
-    # ==========================================
-    # RETURN
-    # ==========================================
-
-    return {
-
-        "previous_system_remaining":
-            round(previous_system_remaining, 2),
-
-        "system_available_today":
-            round(system_available_today, 2),
-
-        "actual_available_today":
-            round(actual_available_today, 2),
-
-        "pavail_variance":
-            round(pavail_variance, 2),
-
-        "percentage_conversion":
-            round(percentage_conversion, 2),
-
-        "percentage_error":
-            round(percentage_error, 2)
-
-    }
-
-def get_milk_sales(date_str=None):
-    """
-    Main Milk Analytics Engine
-
-    Returns all milk sales, production and stock analytics
-    for dashboards, reports and PDFs.
-    """
-
-    # =====================================================
-    # NORMALIZE DATE
-    # =====================================================
+    # -------------------------------------------------------
+    # Selected Date
+    # -------------------------------------------------------
 
     selected_date = normalize_date(date_str)
 
-    # =====================================================
-    # LOAD ALL DATA (ONLY 4 DATABASE QUERIES)
-    # =====================================================
+    # -------------------------------------------------------
+    # Today's Records (1 Query)
+    # -------------------------------------------------------
 
-    data = load_milk_data()
-
-    production = data["production"]
-    sales = data["sales"]
-    remaining = data["remaining"]
-    prices = data["prices"]
-
-    # =====================================================
-    # BUILD PRICE CACHE
-    # =====================================================
-
-    price_dates, price_values = build_price_cache(
-        prices
+    records = (
+        MilkRegistry.query
+        .filter(MilkRegistry.date == selected_date)
+        .all()
     )
 
-    # =====================================================
-    # PRODUCTION ENGINE
-    # =====================================================
+    total_morning = 0
+    total_noon = 0
+    total_evening = 0
+    grand_total = 0
 
-    production_data = calculate_production(
-        production,
-        selected_date
+    cow_count = len(records)
+
+    above10_total = 0
+    above10_count = 0
+
+    for record in records:
+
+        morning = float(record.morning or 0)
+        noon = float(record.noon or 0)
+        evening = float(record.evening or 0)
+        total = float(record.total or 0)
+
+        total_morning += morning
+        total_noon += noon
+        total_evening += evening
+        grand_total += total
+
+        if total > 10:
+            above10_total += total
+            above10_count += 1
+
+    average_production = (
+        above10_total / above10_count
+        if above10_count > 0
+        else 0
     )
 
-    # =====================================================
-    # SALES ENGINE
-    # =====================================================
+    # -------------------------------------------------------
+    # Entire Year's Records (1 Query)
+    # -------------------------------------------------------
 
-    sales_data = calculate_sales(
-        sales,
-        selected_date,
-        price_dates,
-        price_values
-    )
-
-    # =====================================================
-    # STOCK ENGINE
-    # =====================================================
-
-    stock_data = calculate_stock(
-        production,
-        sales,
-        remaining,
-        selected_date,
-        production_data["grand_total"],
-        sales_data["total_used"]
-    )
-
-    # =====================================================
-    # PERFORMANCE METRICS
-    # =====================================================
-
-    total_sold = sales_data["total_sold_shops"]
-    grand_total = production_data["grand_total"]
-
-    if grand_total > 0:
-
-        sales_percentage = round(
-            (total_sold / grand_total) * 100,
-            2
+    year_records = (
+        MilkRegistry.query
+        .filter(
+            extract("year", MilkRegistry.date) == selected_date.year
         )
+        .all()
+    )
 
-    else:
+    monthly_total = 0
+    quarterly_total = 0
+    yearly_total = 0
 
-        sales_percentage = 0
+    quarter = (selected_date.month - 1) // 3 + 1
 
-    # =====================================================
-    # FINAL RETURN
-    # =====================================================
+    for record in year_records:
+
+        total = float(record.total or 0)
+
+        yearly_total += total
+
+        if record.date.month == selected_date.month:
+            monthly_total += total
+
+        if ((record.date.month - 1) // 3 + 1) == quarter:
+            quarterly_total += total
+
+    # -------------------------------------------------------
+    # Return
+    # -------------------------------------------------------
 
     return {
 
-        # Date
+        "records": records,
 
         "selected_date": selected_date,
 
-        # ----------------------------------------
-        # Production
-        # ----------------------------------------
+        "total_morning": round(total_morning, 2),
 
-        **production_data,
+        "total_noon": round(total_noon, 2),
 
-        # ----------------------------------------
-        # Sales
-        # ----------------------------------------
+        "total_evening": round(total_evening, 2),
 
-        **sales_data,
+        "grand_total": round(grand_total, 2),
 
-        # ----------------------------------------
-        # Stock
-        # ----------------------------------------
+        "average_production": round(average_production, 2),
 
-        **stock_data,
+        "monthly_total": round(monthly_total, 2),
 
-        # ----------------------------------------
-        # Dashboard Extras
-        # ----------------------------------------
+        "quarterly_total": round(quarterly_total, 2),
 
-        "sales_percentage": sales_percentage
+        "yearly_total": round(yearly_total, 2),
+
+        "cow_count": cow_count
 
     }
-
-from datetime import datetime
-
 
 def get_shed_report_data():
 
@@ -2398,6 +2088,965 @@ def get_transactions_data(
 
     }
 
+def get_monthly_cow_analysis(date_str=None):
+
+    if date_str:
+        selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    else:
+        selected_date = date.today()
+
+    # ✅ FIXED: use cow_id + direct relationship
+    monthly_cows = db.session.query(
+        AnimalRegistry.name.label("cow_name"),
+        func.sum(MilkRegistry.total).label("total_milk"),
+        func.count(MilkRegistry.date).label("days_recorded")
+    ).join(
+        AnimalRegistry, AnimalRegistry.id == MilkRegistry.cow_id
+    ).filter(
+        extract('month', MilkRegistry.date) == selected_date.month,
+        extract('year', MilkRegistry.date) == selected_date.year
+    ).group_by(AnimalRegistry.name).all()
+
+    cow_count = len(monthly_cows)
+    overall_total = sum(c.total_milk for c in monthly_cows)
+
+    overall_average = overall_total / cow_count if cow_count > 0 else 0
+
+    return {
+        "selected_date": selected_date,
+        "monthly_cows": monthly_cows,
+        "overall_average": round(overall_average, 2)
+    }
+
+
+def get_animals_data(category=None):
+    base_query = AnimalRegistry.query.filter(
+        AnimalRegistry.category.ilike("nolonger_exist") == False
+    )
+    query = AnimalRegistry.query
+
+    # HANDLE EMPTY / NONE / ALL
+    if (
+        category
+        and str(category).strip().lower() not in ["all", "none", ""]
+    ):
+        query = query.filter(
+            AnimalRegistry.category.ilike(category)
+        )
+
+    animals = query.all()
+    return {
+        "animals": animals,
+        "existing": base_query,
+        "total_animals": AnimalRegistry.query.count(),
+        "existing_animals": base_query.count(),
+        "milkers": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("milker")
+        ).count(),
+
+        "dry_cows": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("dry")
+        ).count(),
+
+        "calves": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("calf")
+        ).count(),
+
+        "bulls": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("bull")
+        ).count(),
+
+        "incalf_heifers": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("incalf-heifer")
+        ).count(),
+
+        "yearlings": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("yearing")
+        ).count(),
+
+        "weaners": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("weaner")
+        ).count(),
+
+        "Bullying_heifer": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("Bullying-Heifer")
+        ).count(),
+
+        "steamers": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("steamer")
+        ).count(),
+
+        "nolonger_exist": AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("nolonger_exist")
+        ).count(),
+
+    }
+
+
+def get_insemination_data(status=None, month=None, year=None):
+
+    from datetime import datetime
+
+    query = db.session.query(Insemination).join(AnimalRegistry)
+
+    # =========================
+    # 🔹 STATUS FILTER
+    # =========================
+    if status:
+        status = status.lower()
+
+        if status == "confirmed":
+            query = query.filter(Insemination.status == "confirmed")
+
+        elif status == "delivered":
+            query = query.filter(Insemination.status == "delivered")
+
+        elif status == "pending":
+            query = query.filter(
+                (Insemination.status == None) | (Insemination.status == "pending")
+            )
+
+        elif status == "aborted":
+            query = query.filter(Insemination.status == "aborted")
+
+    # =========================
+    # 🔹 MONTH FILTER (YYYY-MM)
+    # =========================
+    if month:
+        try:
+            y, m = month.split("-")
+            query = query.filter(
+                db.extract('year', Insemination.date_served) == int(y),
+                db.extract('month', Insemination.date_served) == int(m)
+            )
+        except:
+            pass
+
+    # =========================
+    # 🔹 YEAR FILTER (YYYY)
+    # =========================
+    elif year:
+        try:
+            query = query.filter(
+                db.extract('year', Insemination.date_served) == int(year)
+            )
+        except:
+            pass
+
+    # =========================
+    # 🔥 SORT (LATEST → OLDEST)
+    # =========================
+    records = query.order_by(Insemination.date_served.desc()).all()
+
+    # =========================
+    # 🔹 FORMAT MONTH NAME
+    # =========================
+    month_name = None
+    if month:
+        try:
+            month_name = datetime.strptime(month, "%Y-%m").strftime("%B %Y")
+        except:
+            month_name = month
+
+    return {
+        "records": records,
+        "status": status,
+        "month": month,
+        "year": year,
+        "month_name": month_name,
+        "now": datetime.now()
+    }
+
+
+
+def to_float(val):
+    return float(val or 0)
+
+from datetime import datetime, date
+
+def normalize_date(date_str=None):
+    """
+    Converts string date to a Python date object.
+    """
+
+    if isinstance(date_str, date):
+        return date_str
+
+    if date_str:
+        return datetime.strptime(
+            date_str,
+            "%Y-%m-%d"
+        ).date()
+
+    return date.today()
+
+def load_milk_data():
+
+    production = MilkRegistry.query.all()
+
+    sales = MilkSalesRegistry.query.all()
+
+    remaining = (
+        MilkDailyRemaining.query
+        .order_by(MilkDailyRemaining.date)
+        .all()
+    )
+
+    prices = (
+        MilkPrice.query
+        .order_by(MilkPrice.effective_date)
+        .all()
+    )
+
+    return {
+        "production": production,
+        "sales": sales,
+        "remaining": remaining,
+        "prices": prices
+    }
+
+from bisect import bisect_right
+
+
+def build_price_cache(prices):
+
+    price_dates = []
+    price_values = []
+
+    for p in prices:
+
+        price_dates.append(
+            p.effective_date
+        )
+
+        price_values.append(
+            float(p.price)
+        )
+
+    return price_dates, price_values
+
+def get_price(
+    price_dates,
+    price_values,
+    target_date
+):
+
+    index = bisect_right(
+        price_dates,
+        target_date
+    ) - 1
+
+    if index < 0:
+        return 0
+
+    return price_values[index]
+
+
+
+def calculate_production(production, selected_date):
+
+    month = selected_date.month
+    year = selected_date.year
+    quarter = ((month - 1) // 3) + 1
+
+    total_morning = 0
+    total_noon = 0
+    total_evening = 0
+
+    grand_total = 0
+    cow_count = 0
+
+    monthly_total = 0
+    quarterly_total = 0
+    yearly_total = 0
+
+    above_10_total = 0
+    above_10_count = 0
+
+    today_records = []
+
+    for record in production:
+
+        record_month = record.date.month
+        record_year = record.date.year
+        record_quarter = ((record_month - 1) // 3) + 1
+
+        # --------------------------------
+        # TODAY
+        # --------------------------------
+
+        if record.date == selected_date:
+
+            today_records.append(record)
+
+            total_morning += to_float(record.morning)
+            total_noon += to_float(record.noon)
+            total_evening += to_float(record.evening)
+
+            grand_total += to_float(record.total)
+
+            cow_count += 1
+
+            if to_float(record.total) > 10:
+
+                above_10_total += to_float(record.total)
+                above_10_count += 1
+
+        # --------------------------------
+        # YEAR
+        # --------------------------------
+
+        if record_year == year:
+
+            yearly_total += to_float(record.total)
+
+            # ----------------------------
+            # MONTH
+            # ----------------------------
+
+            if record_month == month:
+                monthly_total += to_float(record.total)
+
+            # ----------------------------
+            # QUARTER
+            # ----------------------------
+
+            if record_quarter == quarter:
+                quarterly_total += to_float(record.total)
+
+    average_production = (
+        above_10_total / above_10_count
+        if above_10_count else 0
+    )
+
+    return {
+
+        "records": today_records,
+
+        "total_morning": round(total_morning,2),
+        "total_noon": round(total_noon,2),
+        "total_evening": round(total_evening,2),
+
+        "grand_total": round(grand_total,2),
+
+        "monthly_total": round(monthly_total,2),
+        "quarterly_total": round(quarterly_total,2),
+        "yearly_total": round(yearly_total,2),
+
+        "cow_count": cow_count,
+
+        "average_production": round(
+            average_production,
+            2
+        )
+    }
+
+def calculate_sales(
+    sales,
+    selected_date,
+    price_dates,
+    price_values
+):
+
+    month = selected_date.month
+    year = selected_date.year
+    quarter = ((month - 1) // 3) + 1
+
+    # =====================================================
+    # DAILY TOTALS
+    # =====================================================
+
+    total_shop1 = 0
+    total_shop2 = 0
+    total_shop3 = 0
+
+    total_home = 0
+    total_calf = 0
+
+    total_sold = 0
+    total_used = 0
+
+    # =====================================================
+    # SALES ANALYTICS
+    # =====================================================
+
+    daily_total_sales = 0
+    monthly_total_sales = 0
+    quarterly_total_sales = 0
+    yearly_total_sales = 0
+
+    daily_total_litres = 0
+    monthly_total_litres = 0
+    quarterly_total_litres = 0
+    yearly_total_litres = 0
+
+    # =====================================================
+    # TABLE DATA
+    # =====================================================
+
+    monthly_data = []
+    daily_records=[]
+    # =====================================================
+    # LOOP
+    # =====================================================
+
+
+
+    for sale in sales:
+
+        record_month = sale.date.month
+        record_year = sale.date.year
+        record_quarter = ((record_month - 1) // 3) + 1
+
+        shop1 = to_float(sale.shop1)
+        shop2 = to_float(sale.shop2)
+        shop3 = to_float(sale.shop3)
+
+        calf = to_float(sale.calf)
+        home = to_float(sale.home)
+
+        litres = shop1 + shop2 + shop3
+
+        used = litres + calf + home
+
+        price = get_price(
+            price_dates,
+            price_values,
+            sale.date
+        )
+
+        revenue = litres * price
+
+        # =================================================
+        # TODAY
+        # =================================================
+
+        if sale.date == selected_date:
+
+            total_shop1 += shop1
+            total_shop2 += shop2
+            total_shop3 += shop3
+
+            total_home += home
+            total_calf += calf
+
+            total_sold += litres
+            total_used += used
+
+            daily_total_sales += revenue
+            daily_total_litres += litres
+            daily_records.append(sale)
+        # =================================================
+        # YEAR
+        # =================================================
+
+        if record_year == year:
+
+            yearly_total_sales += revenue
+            yearly_total_litres += litres
+
+            # =============================================
+            # MONTH
+            # =============================================
+
+            if record_month == month:
+
+                monthly_total_sales += revenue
+                monthly_total_litres += litres
+
+                monthly_data.append(sale)
+
+            # =============================================
+            # QUARTER
+            # =============================================
+
+            if record_quarter == quarter:
+
+                quarterly_total_sales += revenue
+                quarterly_total_litres += litres
+
+    # =====================================================
+    # RETURN
+    # =====================================================
+
+    return {
+
+        # TABLE
+
+        "monthly_data": monthly_data,
+        "daily_records":daily_records,
+        # DAILY
+
+        "total_shop1": round(total_shop1,2),
+        "total_shop2": round(total_shop2,2),
+        "total_shop3": round(total_shop3,2),
+
+        "total_home": round(total_home,2),
+        "total_calf": round(total_calf,2),
+
+        "total_sold_shops": round(total_sold,2),
+        "total_used": round(total_used,2),
+
+        "other_uses": round(
+            total_home + total_calf,
+            2
+        ),
+
+        # LITRES
+
+        "daily_sales": round(daily_total_litres,2),
+        "monthly_sales": round(monthly_total_litres,2),
+        "quarterly_sales": round(quarterly_total_litres,2),
+        "yearly_sales": round(yearly_total_litres,2),
+
+        # REVENUE
+
+        "daily_revenue": round(daily_total_sales,2),
+        "monthly_revenue": round(monthly_total_sales,2),
+        "quarterly_revenue": round(quarterly_total_sales,2),
+        "yearly_revenue": round(yearly_total_sales,2)
+
+    }
+
+def calculate_stock(
+    production,
+    sales,
+    remaining,
+    selected_date,
+    grand_total,
+    total_sold_shops,
+    total_used
+):
+    """
+    Computes the running milk stock.
+
+    System Remaining =
+        Yesterday System
+        + Today's Production
+        - Today's Usage
+
+    Actual Remaining is read from MilkDailyRemaining.
+
+    Returns stock analytics for the selected date.
+    """
+
+    # ==========================================
+    # BUILD DAILY PRODUCTION
+    # ==========================================
+
+    production_by_date = {}
+
+    for p in production:
+
+        production_by_date[p.date] = (
+            production_by_date.get(p.date, 0)
+            + to_float(p.total)
+        )
+
+    # ==========================================
+    # BUILD DAILY USAGE
+    # ==========================================
+
+    usage_by_date = {}
+
+    for s in sales:
+
+        used = (
+
+            to_float(s.shop1)
+
+            + to_float(s.shop2)
+
+            + to_float(s.shop3)
+
+            + to_float(s.home)
+
+            + to_float(s.calf)
+
+        )
+
+        usage_by_date[s.date] = (
+            usage_by_date.get(s.date, 0)
+            + used
+        )
+
+    # ==========================================
+    # BUILD ACTUAL REMAINING
+    # ==========================================
+
+    actual_remaining_by_date = {}
+
+    for r in remaining:
+
+        actual_remaining_by_date[r.date] = (
+            to_float(r.actual_remaining)
+        )
+    # ==========================================
+    # PREVIOUS DAY ACTUAL REMAINING
+    # ==========================================
+
+    previous_actual_remaining = 0
+
+    previous_dates = [
+        d for d in actual_remaining_by_date.keys()
+        if d < selected_date
+    ]
+
+    if previous_dates:
+
+        latest_previous = max(previous_dates)
+
+        previous_actual_remaining = actual_remaining_by_date.get(
+            latest_previous,
+            0
+        )
+    # ==========================================
+    # ALL DATES
+    # ==========================================
+
+    all_dates = sorted(
+
+        set(production_by_date.keys())
+
+        | set(usage_by_date.keys())
+
+        | set(actual_remaining_by_date.keys())
+
+    )
+
+    # ==========================================
+    # RUNNING SYSTEM STOCK
+    # ==========================================
+
+    running_system = 0
+
+    previous_system_remaining = 0
+
+    system_available_today = 0
+
+    actual_available_today = 0
+
+    for day in all_dates:
+
+        produced = production_by_date.get(day, 0)
+
+        used = usage_by_date.get(day, 0)
+
+        previous_system_remaining = running_system
+
+        running_system = (
+
+            running_system
+
+            + produced
+
+            - used
+
+        )
+
+        if day == selected_date:
+
+            system_available_today = running_system
+
+            actual_available_today = (
+
+                actual_remaining_by_date.get(
+                    day,
+                    0
+                )
+
+            )
+
+            break
+
+    # ==========================================
+    # VARIANCE
+    # ==========================================
+
+    pavail_variance = (
+
+        actual_available_today
+
+        - system_available_today
+
+    )
+
+    # ==========================================
+    # CONVERSION %
+    # ==========================================
+    total_available=grand_total +actual_available_today
+    total_system_available=system_available_today+grand_total
+    actual_remaining=total_available-total_used
+    remaining_system=total_system_available-total_used
+   
+    if total_available:
+
+        percentage_conversion = (
+
+            total_sold_shops
+
+            / total_available
+
+        ) * 100
+
+    else:
+
+        percentage_conversion = 0
+
+    # ==========================================
+    # ERROR %
+    # ==========================================
+
+    if system_available_today:
+
+        percentage_error = (
+
+            abs(pavail_variance)
+
+            / system_available_today
+
+        ) * 100
+
+    else:
+
+        percentage_error = 0
+
+    # ==========================================
+    # RETURN
+    # ==========================================
+
+    return {
+
+        "previous_system_remaining":
+            round(previous_system_remaining, 2),
+
+        "system_available_today":
+            round(system_available_today, 2),
+
+        "total_system_available":
+            round(total_system_available, 2),
+
+        "remaining_system":
+            round(remaining_system, 2),
+
+        "total_available":
+            round(total_available, 2),
+
+        "actual_available_today":
+            round(actual_available_today, 2),
+
+        "previous_actual_remaining":
+            round(previous_actual_remaining, 2),
+
+        "pavail_variance":
+            round(pavail_variance, 2),
+        "actual_remaining":
+            round(actual_remaining, 2),
+        "percentage_conversion":
+            round(percentage_conversion, 2),
+
+        "percentage_error":
+            round(percentage_error, 2)
+
+    }
+
+def get_milk_sales(date_str=None):
+    """
+    Main Milk Analytics Engine
+
+    Returns all milk sales, production and stock analytics
+    for dashboards, reports and PDFs.
+    """
+
+    # =====================================================
+    # NORMALIZE DATE
+    # =====================================================
+
+    selected_date = normalize_date(date_str)
+
+    # =====================================================
+    # LOAD ALL DATA (ONLY 4 DATABASE QUERIES)
+    # =====================================================
+
+    data = load_milk_data()
+
+    production = data["production"]
+    sales = data["sales"]
+    remaining = data["remaining"]
+    prices = data["prices"]
+    
+    # =====================================================
+    # BUILD PRICE CACHE
+    # =====================================================
+
+    price_dates, price_values = build_price_cache(
+        prices
+    )
+
+    # =====================================================
+    # PRODUCTION ENGINE
+    # =====================================================
+
+    production_data = calculate_production(
+        production,
+        selected_date
+    )
+
+    # =====================================================
+    # SALES ENGINE
+    # =====================================================
+
+    sales_data = calculate_sales(
+        sales,
+        selected_date,
+        price_dates,
+        price_values,
+        
+    )
+
+    # =====================================================
+    # STOCK ENGINE
+    # =====================================================
+
+    stock_data = calculate_stock(
+        production,
+        sales,
+        remaining,
+        selected_date,
+        production_data["grand_total"],
+        sales_data["total_sold_shops"],
+        sales_data["total_used"]
+    )
+
+    # =====================================================
+    # PERFORMANCE METRICS
+    # =====================================================
+    total_used=sales_data["total_used"]
+    total_sold = sales_data["total_sold_shops"]
+    grand_total = production_data["grand_total"]
+
+    if grand_total > 0:
+
+        sales_percentage = round(
+            (total_sold / grand_total) * 100,
+            2
+        )
+
+    else:
+
+        sales_percentage = 0
+
+    # =====================================================
+    # FINAL RETURN
+    # =====================================================
+
+    return {
+
+        # Date
+
+        "selected_date": selected_date,
+
+        # ----------------------------------------
+        # Production
+        # ----------------------------------------
+
+        **production_data,
+
+        # ----------------------------------------
+        # Sales
+        # ----------------------------------------
+
+        **sales_data,
+
+        # ----------------------------------------
+        # Stock
+        # ----------------------------------------
+
+        **stock_data,
+
+        # ----------------------------------------
+        # Dashboard Extras
+        # ----------------------------------------
+
+        "sales_percentage": sales_percentage
+
+    }
+
+
+def get_shed_report_data():
+
+    sheds = CowShed.query.all()
+
+    report = []
+
+    total_capacity = 0
+    total_occupied = 0
+
+    for shed in sheds:
+
+        animals = AnimalRegistry.query.filter_by(
+            current_shed_id=shed.id
+        ).all()
+
+        occupied = len(animals)
+
+        capacity = shed.capacity or 0
+
+        remaining = max(
+            capacity - occupied,
+            0
+        )
+
+        total_capacity += capacity
+        total_occupied += occupied
+
+        report.append({
+
+            "shed": shed,
+
+            "animals": animals,
+
+            "occupied": occupied,
+
+            "remaining": remaining
+
+        })
+
+    total_remaining = (
+        total_capacity -
+        total_occupied
+    )
+
+    occupancy_rate = 0
+
+    if total_capacity > 0:
+
+        occupancy_rate = round(
+            (total_occupied / total_capacity)
+            * 100,
+            1
+        )
+
+    return {
+
+        "report": report,
+
+        "total_sheds": len(sheds),
+
+        "total_capacity": total_capacity,
+
+        "total_occupied": total_occupied,
+
+        "total_remaining": total_remaining,
+
+        "occupancy_rate": occupancy_rate,
+
+        "now": datetime.now()
+
+    }
+
+
+
 def get_milk_sales_monthly(selected_date_str=None):
 
     from datetime import datetime, date
@@ -2477,6 +3126,156 @@ def get_milk_sales_monthly(selected_date_str=None):
         "total_use": round(total_use, 2)
     }
 
+from datetime import date
+
+def get_financial_dashboard_data(selected_date=None):
+
+    # =====================================
+    # DEFAULT DATE
+    # =====================================
+
+    if not selected_date:
+        selected_date = date.today().strftime("%Y-%m-%d")
+
+    # =====================================
+    # LOAD ALL MODULES
+    # =====================================
+
+    milk = get_milk_sales(selected_date)
+
+    vehicle_sales = get_sales_report_data(selected_date)
+
+    vehicle_expenses = get_car_expense_report_data(selected_date)
+
+    payments = get_transactions_data(selected_date)
+
+    employees_data = get_employees_data()
+
+    # =====================================
+    # SALARY
+    # =====================================
+
+    total_salary = sum(
+
+        emp["salary"]
+
+        for emp in employees_data["employees"]
+
+    )
+
+    # =====================================
+    # REVENUE
+    # =====================================
+
+    milk_revenue = milk.get("daily_revenue", 0)
+
+    vehicle_revenue = vehicle_sales.get("total_sales", 0)
+
+    total_revenue = (
+
+        milk_revenue
+
+        + vehicle_revenue
+
+    )
+
+    # =====================================
+    # EXPENSES
+    # =====================================
+
+    feed_expense = payments.get(
+
+        "feed_daily",
+
+        0
+
+    )
+
+    other_expense = payments.get(
+
+        "other_daily",
+
+        0
+
+    )
+
+    vehicle_expense = vehicle_expenses.get(
+
+        "total_expense",
+
+        0
+
+    )
+
+    total_expense = (
+
+        feed_expense
+
+        + other_expense
+
+        + vehicle_expense
+
+        + total_salary
+
+    )
+
+    # =====================================
+    # PROFIT
+    # =====================================
+
+    net_profit = (
+
+        total_revenue
+
+        - total_expense
+
+    )
+
+    # =====================================
+    # PROFIT %
+    # =====================================
+
+    if total_revenue:
+
+        profit_margin = round(
+
+            (net_profit / total_revenue) * 100,
+
+            2
+
+        )
+
+    else:
+
+        profit_margin = 0
+
+    # =====================================
+    # FINAL DATA
+    # =====================================
+
+    return {
+
+        "selected_date": selected_date,
+
+        "total_revenue": round(total_revenue,2),
+
+        "total_expense": round(total_expense,2),
+
+        "net_profit": round(net_profit,2),
+
+        "profit_margin": profit_margin,
+
+        **milk,
+
+        **vehicle_sales,
+
+        **vehicle_expenses,
+
+        **payments,
+
+        **employees_data
+
+    }
     
 CONFIRMATION_METHODS = {
     "heat observation": 21,
@@ -2506,9 +3305,9 @@ app.config['MAIL_DEFAULT_SENDER'] = 'MY FARM <magicdevelopers9@gmail.com>'
 mail = Mail(app)
 
 #PDFKit configuration
-# config = pdfkit.configuration(
-#     wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-# )
+config = pdfkit.configuration(
+    wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+)
 
 def get_employees_data():
 
@@ -2530,57 +3329,57 @@ def get_employees_data():
 
 # ================= UNIVERSAL REPORT ENGINE ================= #
 
-# def generate_pdf(template_name, context, filename):
-#     """Generate PDF from HTML template"""
-#     rendered_html = render_template(template_name, **context)
-
-#     folder = os.path.join("static", "reports")
-#     os.makedirs(folder, exist_ok=True)
-
-#     file_path = os.path.join(folder, filename)
-
-#     pdfkit.from_string(
-#         rendered_html,
-#         file_path,
-#         configuration=config
-#     )
-    
-#     return file_path
-
-from weasyprint import HTML
-from flask import render_template, current_app
-import os
-
-
 def generate_pdf(template_name, context, filename):
-    """Generate PDF from HTML template using WeasyPrint"""
+    """Generate PDF from HTML template"""
+    rendered_html = render_template(template_name, **context)
 
-    rendered_html = render_template(
-        template_name,
-        **context
+    folder = os.path.join("static", "reports")
+    os.makedirs(folder, exist_ok=True)
+
+    file_path = os.path.join(folder, filename)
+
+    pdfkit.from_string(
+        rendered_html,
+        file_path,
+        configuration=config
     )
-
-    reports_dir = os.path.join(
-        current_app.root_path,
-        "static",
-        "reports"
-    )
-
-    os.makedirs(reports_dir, exist_ok=True)
-
-    file_path = os.path.join(
-        reports_dir,
-        filename
-    )
-
-    HTML(
-        string=rendered_html,
-        base_url=current_app.root_path
-    ).write_pdf(
-        target=file_path
-    )
-
+    
     return file_path
+
+# from weasyprint import HTML
+# from flask import render_template, current_app
+# import os
+
+
+# def generate_pdf(template_name, context, filename):
+#     """Generate PDF from HTML template using WeasyPrint"""
+
+#     rendered_html = render_template(
+#         template_name,
+#         **context
+#     )
+
+#     reports_dir = os.path.join(
+#         current_app.root_path,
+#         "static",
+#         "reports"
+#     )
+
+#     os.makedirs(reports_dir, exist_ok=True)
+
+#     file_path = os.path.join(
+#         reports_dir,
+#         filename
+#     )
+
+#     HTML(
+#         string=rendered_html,
+#         base_url=current_app.root_path
+#     ).write_pdf(
+#         target=file_path
+#     )
+
+#     return file_path
 
 @app.route('/send_report/<report_type>')
 @login_required
