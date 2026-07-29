@@ -3766,6 +3766,7 @@ def animals():
 
 @app.route("/delete_cow/<int:id>", methods=["GET", "POST"])
 @login_required
+@role_required("admin")
 def delete_animal(id):
 
     animal = AnimalRegistry.query.get_or_404(id)
@@ -3782,6 +3783,7 @@ def delete_animal(id):
 
     # ================= POST =================
 @app.route("/edit_animal_record/<int:id>", methods=["GET", "POST"])
+@role_required("admin")
 @login_required
 def edit_animal_record(id):
 
@@ -4227,6 +4229,7 @@ def insemination():
 
     return render_template("insemination_list.html", **data)
 @app.route("/insemination/delete/<int:id>")
+@role_required("admin")
 @login_required
 def delete_insemination(id):
 
@@ -4240,6 +4243,7 @@ def delete_insemination(id):
 from datetime import datetime, timedelta
 
 @app.route("/insemination/edit/<int:id>", methods=["GET","POST"])
+@role_required("admin")
 @login_required
 def edit_insemination(id):
 
@@ -5875,6 +5879,7 @@ def delete_milk_price(id):
 
 @app.route("/milk_sales_monthly")
 @login_required
+@role_required("admin")
 def milk_sales_monthly():
 
     selected_date = request.args.get("date")
@@ -6100,7 +6105,7 @@ def edit_car_sale(id):
 
 @app.route("/payments", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "finance")
+@role_required("admin", "finance", "user")
 def payments():
     message = None
     farms = Farm.query.all()
