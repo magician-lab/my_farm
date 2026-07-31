@@ -1492,6 +1492,7 @@ def get_milk_report_data(date_str=None):
     records = (
         MilkRegistry.query
         .filter(MilkRegistry.date == selected_date)
+        .order_by(MilkRegistry.total.desc())
         .all()
     )
 
