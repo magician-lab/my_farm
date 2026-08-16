@@ -276,7 +276,9 @@ body.dark .theme-toggle{background:var(--flash-bg);color:var(--flash-text);}
     <a class="nav" href="/milk_dashboard"><i class="fa-solid fa-droplet"></i> Milk Dashboard</a>
     <a class="nav" href="/milk_registry"><i class="fa-solid fa-bucket"></i> Milk Registry</a>
     <a class="nav" href="/milk_sales_entry"><i class="fa-solid fa-store"></i> Milk Sales</a>
+    {% if session.get("role") == "admin" %}
     <a class="nav" href="/milk_prices"><i class="fa-solid fa-tags"></i> Milk Prices</a>
+    {% endif %}
     <a class="nav" href="/manage_milking"><i class="fa-solid fa-arrows-rotate"></i> Manage Milking</a>
 
     <div class="section">Livestock</div>

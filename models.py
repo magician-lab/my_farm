@@ -153,6 +153,8 @@ class MilkPrice(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
+
 class CarRegistry(db.Model):
     __tablename__ = "car_registry"
 

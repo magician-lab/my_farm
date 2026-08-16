@@ -6224,8 +6224,10 @@ def update_actual_remaining():
 from datetime import datetime
 
 @app.route("/milk_prices", methods=["GET", "POST"])
-@login_required
+@role_required("admin")
 def milk_prices():
+
+    farm = Farm.query.filter_by(name="Murang'a").first()
 
     # ---------------- ADD / UPDATE ----------------
     if request.method == "POST":
@@ -6256,7 +6258,8 @@ def milk_prices():
 
                 new_price = MilkPrice(
                     price=price,
-                    effective_date=effective_date_str
+                    effective_date=effective_date_str,
+                    farm_id=farm.id
                 )
 
                 db.session.add(new_price)
@@ -6268,13 +6271,16 @@ def milk_prices():
         return redirect(url_for("milk_prices"))
 
     # ---------------- GET ALL ----------------
-    prices = MilkPrice.query.order_by(
+    prices = MilkPrice.query.filter(
+        MilkPrice.farm_id == farm.id
+    ).order_by(
         MilkPrice.effective_date.desc()
     ).all()
 
     return render_template(
         "milk_prices.html",
-        prices=prices
+        prices=prices,
+        farm=farm
     )
 
 
@@ -6283,7 +6289,7 @@ def milk_prices():
 # =========================
 
 @app.route("/delete_milk_price/<int:id>")
-@login_required
+@role_required("admin")
 def delete_milk_price(id):
 
     record = MilkPrice.query.get_or_404(id)
