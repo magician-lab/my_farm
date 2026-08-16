@@ -8,7 +8,6 @@ from decimal import Decimal
 
 from datetime import date, datetime
 from sqlalchemy import extract, func
-import pdfkit
 import os
 from flask_mail import Mail, Message
 import pandas as pd
@@ -3666,11 +3665,6 @@ app.config['MAIL_DEFAULT_SENDER'] = 'MY FARM <magicdevelopers9@gmail.com>'
 
 mail = Mail(app)
 
-#PDFKit configuration
-config = pdfkit.configuration(
-    wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-)
-
 def get_employees_data():
 
     employees = EmployeesRegistry.query.all()
@@ -3692,7 +3686,9 @@ def get_employees_data():
 # ================= UNIVERSAL REPORT ENGINE ================= #
 
 def generate_pdf(template_name, context, filename):
-    """Generate PDF from HTML template"""
+    """Generate PDF from HTML template using WeasyPrint"""
+    from weasyprint import HTML
+
     rendered_html = render_template(template_name, **context)
 
     folder = os.path.join("static", "reports")
@@ -3700,48 +3696,14 @@ def generate_pdf(template_name, context, filename):
 
     file_path = os.path.join(folder, filename)
 
-    pdfkit.from_string(
-        rendered_html,
-        file_path,
-        configuration=config
+    HTML(
+        string=rendered_html,
+        base_url=os.getcwd()
+    ).write_pdf(
+        target=file_path
     )
-    
+
     return file_path
-
-# from weasyprint import HTML
-# from flask import render_template, current_app
-# import os
-
-
-# def generate_pdf(template_name, context, filename):
-#     """Generate PDF from HTML template using WeasyPrint"""
-
-#     rendered_html = render_template(
-#         template_name,
-#         **context
-#     )
-
-#     reports_dir = os.path.join(
-#         current_app.root_path,
-#         "static",
-#         "reports"
-#     )
-
-#     os.makedirs(reports_dir, exist_ok=True)
-
-#     file_path = os.path.join(
-#         reports_dir,
-#         filename
-#     )
-
-#     HTML(
-#         string=rendered_html,
-#         base_url=current_app.root_path
-#     ).write_pdf(
-#         target=file_path
-#     )
-
-#     return file_path
 
 @app.route('/send_report/<report_type>')
 @login_required
