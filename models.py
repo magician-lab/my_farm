@@ -21,7 +21,9 @@ class Treatment(db.Model):
     cost = db.Column(db.Float)
     vet = db.Column(db.String(100))
 
-    status = db.Column(db.String(20))  # healed / recovering   
+    status = db.Column(db.String(20))  # healed / recovering
+
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)   
 
 class CalfRegistry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,6 +56,8 @@ class Insemination(db.Model):
     status = db.Column(db.String(20), default=None)
 
     calving_date = db.Column(db.Date)
+
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
 
 class AssetsRegistry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -120,6 +124,8 @@ class MilkRegistry(db.Model):
     evening = db.Column(db.Numeric(10,2), nullable=False)
     total = db.Column(db.Numeric(10,2), nullable=False)
 
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
+
     cow = db.relationship('AnimalRegistry', backref='milk_records')
 
 class MilkSalesRegistry(db.Model):
@@ -134,6 +140,8 @@ class MilkSalesRegistry(db.Model):
     home = db.Column(db.Numeric(10,2), default=0)
     calf = db.Column(db.Numeric(10,2), default=0)
     price = db.Column(db.Numeric(10,2), default=0)
+
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
 
 class MilkPrice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -152,6 +160,7 @@ class CarRegistry(db.Model):
     plate_number = db.Column(db.String(50), unique=True, nullable=False)
     model = db.Column(db.String(100))
     driver = db.Column(db.String(100))
+    active = db.Column(db.Boolean, default=True)
 
     expenses = db.relationship("CarExpense", backref="car", cascade="all, delete", lazy=True)
     sales = db.relationship("CarSales", backref="car", cascade="all, delete", lazy=True)
@@ -198,6 +207,8 @@ class AnimalRegistry(db.Model):
         db.ForeignKey("cow_shed.id"),
         nullable=True
     )
+
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
 
 class CowShed(db.Model):
 
@@ -347,6 +358,9 @@ class Admin(db.Model):
         db.String(50),
         default="user"
     )
+
+    # Farm access: NULL = admin access to all farms, specific farm_id = restricted
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
 
     # =====================================================
     # OTP RESET

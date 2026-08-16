@@ -1,27 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Treatment Management</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Treatment Management{% endblock %}
+{% block page_title %}Treatment Management{% endblock %}
+{% block content %}
 <style>
 
+
 /* ================= GLOBAL ================= */
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Arial, sans-serif;
-    background:#f4f6f9;
-    padding:20px;
-    color:#333;
-}
 
 .container{
     max-width:1500px;
@@ -304,10 +288,8 @@ tr:hover{
             text-decoration: none;
             border-radius: 4px;}
 
-</style>
-</head>
 
-<body>
+</style>
 
 <div class="container">
     <a href="/cow_dashboard" class="btn_dashboard">← Back</a>
@@ -600,6 +582,21 @@ tr:hover{
 
 </a>
 
+<!-- Status navigation buttons -->
+<a href="{{ url_for('treatment', status='healed', date=request.args.get('date')) }}"
+   class="btn" style="background:#27ae60; margin-left:4px">
+
+    Heal
+
+</a>
+
+<a href="{{ url_for('treatment', status='recovering', date=request.args.get('date')) }}"
+   class="btn" style="background:#e74c3c; margin-left:4px">
+
+    Recovery
+
+</a>
+
 </div>
 
 </td>
@@ -633,7 +630,8 @@ tr:hover{
 </div>
 
 <!-- LIVE SEARCH -->
-
+{% endblock %}
+{% block scripts %}
 <script>
 
 document.getElementById("searchInput")
@@ -656,6 +654,4 @@ document.getElementById("searchInput")
 });
 
 </script>
-
-</body>
-</html>
+{% endblock %}

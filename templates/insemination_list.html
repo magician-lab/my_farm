@@ -1,287 +1,140 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Insemination Records</title>
+{% extends "base_erp.html" %}
+{% block title %}Insemination Records{% endblock %}
+{% block page_title %}Insemination Records{% endblock %}
+{% block content %}
 
-<style>
-
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f6fa;
-    padding: 40px;
-    color: #333;
-}
-
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* FILTER + BUTTONS */
-.filter-box {
-    margin-bottom: 20px;
-}
-
-select, button, input {
-    padding: 6px 10px;
-    margin-right: 10px;
-}
-
-/* SEARCH BAR */
-.search-box {
-    margin-bottom: 15px;
-}
-
-.search-box input {
-    width: 250px;
-}
-
-/* BUTTONS */
-.add-btn, .download-btn {
-    display: inline-block;
-    padding: 10px 15px;
-    border-radius: 6px;
-    text-decoration: none;
-    color: white;
-    font-size: 14px;
-}
-
-.add-btn {
-    background: #4CAF50;
-}
-
-.download-btn {
-    background: #673ab7;
-}
-
-/* TABLE */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-th {
-    background: #4CAF50;
-    color: white;
-    padding: 12px;
-}
-
-td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    text-align: center;
-}
-
-tr:hover {
-    background: #f9fbff;
-}
-
-/* ACTION BUTTONS */
-.action-btn {
-    padding: 6px 10px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 13px;
-    color: white;
-}
-
-.edit {
-    background: #2196F3;
-}
-
-.delete {
-    background: #f44336;
-}
-
-/* STATUS COLORS */
-.danger {
-    color: #f44336;
-    font-weight: bold;
-}
-
-.warning {
-    color: #ff9800;
-    font-weight: bold;
-}
-
-.safe {
-    color: #4CAF50;
-}
-         .btn_dashboard {
-            display: inline-block;
-            margin-bottom: 15px;
-            padding: 8px 14px;
-            background: green;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;}
-</style>
-
-</head>
-
-<body>
-<a href="/cow_dashboard" class="btn_dashboard">← Back</a>
-<h2>🐄 Insemination Records</h2>
-
-<form method="GET" class="filter-box">
-
-    <label>Status</label>
-    <select name="status">
-        <option value="">All</option>
-        <option value="confirmed" {% if request.args.get('status') == 'confirmed' %}selected{% endif %}>Confirmed</option>
-        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
-        <option value="aborted" {% if request.args.get('status') == 'aborted' %}selected{% endif %}>Aborted</option>
-        <option value="delivered" {% if request.args.get('status') == 'delivered' %}selected{% endif %}>Delivered</option>
-    </select>
-
-    <label>Month</label>
-    <input type="month" name="month" value="{{ request.args.get('month','') }}">
-
-    <button type="submit">Filter</button>
-
-</form>
-
-<!-- 🔍 SEARCH BAR -->
-<div class="search-box">
-    <input type="text" id="searchInput" placeholder="Search cow name...">
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-heart-pulse"></i> Insemination Records</h1>
+        <p class="sub">
+            {% if current_farm %}{{ current_farm.name }} · {% endif %}
+            Showing {{ (request.args.get('status') or 'confirmed')|title }} records
+        </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn btn-green" href="/insemination/add"><i class="fa-solid fa-plus"></i> Add Record</a>
+        <form method="GET" action="{{ url_for('send_report', report_type='insemination') }}" style="display:flex;">
+            <input type="hidden" name="status" value="{{ request.args.get('status') }}">
+            <input type="hidden" name="month" value="{{ request.args.get('month') }}">
+            <input type="hidden" name="year" value="{{ request.args.get('year') }}">
+            <button type="submit" class="btn btn-purple" style="background:#6a1b9a;"><i class="fa-solid fa-download"></i> Report</button>
+        </form>
+    </div>
 </div>
 
-<a class="add-btn" href="/insemination/add">+ Add Record</a>
+<div class="card">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+        <form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <select name="status" onchange="this.form.submit()">
+                <option value="confirmed" {% if (request.args.get('status') or 'confirmed') == 'confirmed' %}selected{% endif %}>Expectant (Confirmed)</option>
+                <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="delivered" {% if request.args.get('status') == 'delivered' %}selected{% endif %}>Delivered</option>
+                <option value="aborted" {% if request.args.get('status') == 'aborted' %}selected{% endif %}>Aborted</option>
+                <option value="" {% if request.args.get('status') == '' %}selected{% endif %}>All</option>
+            </select>
+            <input type="month" name="month" value="{{ request.args.get('month','') }}" onchange="this.form.submit()">
+        </form>
+        <div style="flex:1;min-width:200px;">
+            <input type="text" id="searchInput" placeholder="Search cow name..." style="width:100%;padding:9px 13px;border:1.5px solid var(--input-border);border-radius:9px;background:var(--input-bg);color:var(--text);">
+        </div>
+    </div>
 
-<form method="GET" action="{{ url_for('send_report', report_type='insemination') }}">
+    <div class="table-wrap">
+        <table id="recordsTable">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Cow Name</th>
+                    <th>Breed</th>
+                    <th>Date Served</th>
+                    <th>Confirmation Method</th>
+                    <th>Confirmation Date</th>
+                    <th>Status</th>
+                    <th>Calving Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="cow-name" style="font-weight:700;">{{ r.animal.name }}</td>
+                    <td>{{ r.animal.breed }}</td>
+                    <td>{{ r.date_served }}</td>
+                    <td>{{ r.confirmation_method }}</td>
+                    <td>
+                        {% if r.confirmation_date %}
+                            {% set days_diff = (r.confirmation_date - now.date()).days %}
+                            {% if days_diff < 0 and (r.status or '').lower() == 'pending' %}
+                                <span class="badge badge-red">{{ r.confirmation_date }}</span>
+                            {% elif days_diff <= 7 %}
+                                <span class="badge badge-orange">{{ r.confirmation_date }}</span>
+                            {% else %}
+                                <span class="badge badge-green">{{ r.confirmation_date }}</span>
+                            {% endif %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if (r.status or 'pending').lower() == 'confirmed' %}
+                            <span class="badge badge-green">Expectant</span>
+                        {% elif (r.status or '').lower() == 'delivered' %}
+                            <span class="badge badge-blue">Delivered</span>
+                        {% elif (r.status or '').lower() == 'aborted' %}
+                            <span class="badge badge-red">Aborted</span>
+                        {% else %}
+                            <span class="badge badge-orange">{{ r.status or 'Pending' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.calving_date %}
+                            {% set calving_diff = (r.calving_date - now.date()).days %}
+                            {% if (r.status or '').lower() == 'delivered' %}
+                                <span class="badge badge-green">{{ r.calving_date }}</span>
+                            {% elif calving_diff < 0 %}
+                                <span class="badge badge-red">{{ r.calving_date }}</span>
+                            {% elif calving_diff <= 7 %}
+                                <span class="badge badge-orange">{{ r.calving_date }}</span>
+                            {% else %}
+                                {{ r.calving_date }}
+                            {% endif %}
+                        {% else %}
+                            {% if r.status == "aborted" %}NA{% else %}<span class="badge badge-gray">Unknown</span>{% endif %}
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <a class="btn btn-blue" style="padding:6px 12px;" href="/insemination/edit/{{ r.id }}"><i class="fa-solid fa-pen"></i> Edit</a>
+                        <a class="btn btn-red" style="padding:6px 12px;" href="/insemination/delete/{{ r.id }}" onclick="return confirm('Delete record?')"><i class="fa-solid fa-trash"></i> Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if records|length == 0 %}
+                <tr>
+                    <td colspan="9" style="text-align:center;padding:30px;color:var(--muted);">No records found</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
-    <!-- 🔥 PRESERVE FILTERS -->
-    <input type="hidden" name="status" value="{{ request.args.get('status') }}">
-    <input type="hidden" name="month" value="{{ request.args.get('month') }}">
-    <input type="hidden" name="year" value="{{ request.args.get('year') }}">
+{% endblock %}
 
-    <div style="margin-top: 15px; margin-bottom: 15px;">
-
-
-    <button type="submit" class="download-btn">DOWNLOAD REPORT</button>
-
-</form>
-
-<br><br>
-
-<table id="recordsTable">
-
-<tr>
-    <th>No</th>
-    <th>Cow Name</th>
-    <th>Breed</th>
-    <th>Date Served</th>
-    <th>Confirmation Method</th>
-    <th>Confirmation Date</th>
-    <th>Status</th>
-    <th>Calving Date</th>
-    <th>Actions</th>
-</tr>
-
-{% for r in records %}
-<tr>
-
-<td>{{ loop.index }}</td>
-
-<td class="cow-name">{{ r.animal.name }}</td>
-<td>{{ r.animal.breed }}</td>
-<td>{{ r.date_served }}</td>
-<td>{{ r.confirmation_method }}</td>
-
-<td>
-{% if r.confirmation_date %}
-    {% set days_diff = (r.confirmation_date - now.date()).days %}
-
-    {% if days_diff < 0 and (r.status or '').lower() == 'pending' %}
-        <span class="danger">{{ r.confirmation_date }}</span>
-    {% elif days_diff <= 7 %}
-        <span class="warning">{{ r.confirmation_date }}</span>
-    {% else %}
-        <span class="safe">{{ r.confirmation_date }}</span>
-    {% endif %}
-{% else %}
-    N/A
-{% endif %}
-</td>
-
-<td>{{ r.status or "Pending" }}</td>
-
-<td>
-{% if r.calving_date %}
-
-    {% set calving_diff = (r.calving_date - now.date()).days %}
-
-    {% if (r.status or '').lower() == 'delivered' %}
-        <span class="safe">{{ r.calving_date }}</span>
-
-    {% elif calving_diff < 0 %}
-        <span class="danger">{{ r.calving_date }}</span>
-
-    {% elif calving_diff <= 7 %}
-        <span class="warning">{{ r.calving_date }}</span>
-
-    {% else %}
-        {{ r.calving_date }}
-    {% endif %}
-
-{% else %}
-
-    {% if r.status == "aborted" %}
-        NA
-    {% else %}
-        Unknown
-    {% endif %}
-
-{% endif %}
-</td>
-
-<td>
-<a class="action-btn edit" href="/insemination/edit/{{ r.id }}">Edit</a>
-
-<a class="action-btn delete"
-   href="/insemination/delete/{{ r.id }}"
-   onclick="return confirm('Delete record?')">
-   Delete
-</a>
-</td>
-
-</tr>
-{% endfor %}
-
-{% if records|length == 0 %}
-<tr>
-    <td colspan="9">No records found</td>
-</tr>
-{% endif %}
-
-</table>
-
-<!-- 🔥 LIVE SEARCH SCRIPT -->
+{% block scripts %}
+<style>
+    .btn-purple{background:#6a1b9a;color:#fff;}
+    .btn-purple:hover{background:#4a148c;}
+</style>
 <script>
-document.getElementById("searchInput").addEventListener("keyup", function() {
-    let filter = this.value.toLowerCase();
-    let rows = document.querySelectorAll("#recordsTable tr");
-
-    rows.forEach((row, index) => {
-        if (index === 0) return; // skip header
-
-        let cowNameCell = row.querySelector(".cow-name");
-        if (!cowNameCell) return;
-
-        let cowName = cowNameCell.textContent.toLowerCase();
-
-        if (cowName.includes(filter)) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
-        }
+    document.getElementById("searchInput").addEventListener("keyup", function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#recordsTable tbody tr");
+        rows.forEach(function(row){
+            let name = row.querySelector(".cow-name");
+            if (!name) return;
+            row.style.display = name.textContent.toLowerCase().includes(filter) ? "" : "none";
+        });
     });
-});
 </script>
-
-</body>
-</html>
+{% endblock %}

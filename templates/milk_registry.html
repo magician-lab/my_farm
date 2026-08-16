@@ -1,27 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Milk Production Registry</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Milk Production Registry{% endblock %}
+{% block page_title %}Milk Production Registry{% endblock %}
+{% block content %}
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family: Arial, sans-serif;
-    background:#f3f6fb;
-    padding:30px;
-    color:#1f2937;
-}
 
 .container{
     max-width:1500px;
@@ -309,11 +291,8 @@ tbody tr:hover{
     }
 
 }
+
 </style>
-
-</head>
-
-<body>
 
 <div class="container">
 
@@ -346,19 +325,7 @@ tbody tr:hover{
 
     <!-- FLASH MESSAGES -->
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-
-            {% for category, message in messages %}
-
-                <div class="alert alert-{{ category }}">
-                    {{ message }}
-                </div>
-
-            {% endfor %}
-
-        {% endif %}
-    {% endwith %}
+    
 
     <!-- IMPORT SECTION -->
 
@@ -578,7 +545,8 @@ tbody tr:hover{
     </div>
 
 </div>
-
+{% endblock %}
+{% block scripts %}
 <script>
 
 function calculateRow(input){
@@ -625,6 +593,4 @@ function calculateDailyTotal(){
 }
 
 </script>
-
-</body>
-</html>
+{% endblock %}

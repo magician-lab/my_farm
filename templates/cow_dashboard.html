@@ -1,23 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cow Dashboard</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Cow Dashboard{% endblock %}
+{% block page_title %}Cow Dashboard{% endblock %}
+{% block content %}
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Arial, sans-serif;
-    background:#f4f6f9;
-    padding:20px;
-}
 
 .container{
     max-width:1300px;
@@ -135,10 +121,8 @@ body{
 
 }
 
-</style>
-</head>
 
-<body>
+</style>
 
 <div class="container">
 
@@ -280,6 +264,4 @@ body{
     </div>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

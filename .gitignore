@@ -1,0 +1,27 @@
+# secrets / local config
+.env
+
+# databases (local copies only - production data lives in PostgreSQL)
+instance/
+*.db
+
+# backups (contain production data dumps - never push)
+backup/
+backups/
+
+# python
+__pycache__/
+*.pyc
+
+# generated pdf reports
+static/
+
+# nested repos / local junk
+farm-data/
+my-farm-advanced/
+my_farm/
+test.pdf
+test_output.txt
+test_output2.txt
+final_check.py
+simple_template.html

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Feeds Report</title>
+{% extends "base_erp.html" %}
+{% block title %}Feeds Report{% endblock %}
+{% block page_title %}Feeds Report{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body {
             font-family: 'Segoe UI', Arial;
             background: #f4f6f9;
@@ -110,10 +110,8 @@
         .balance-green { color: green; font-weight: bold; }
         .balance-red { color: red; font-weight: bold; }
 
-    </style>
-</head>
-
-<body>
+    
+</style>
 
 <div class="container">
 
@@ -326,6 +324,4 @@ KSh {{ "{:,}".format(total_balance) }}
 </div>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,26 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Car sales module</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+{% extends "base_erp.html" %}
+{% block title %}Car sales module{% endblock %}
+{% block page_title %}Car sales module{% endblock %}
+{% block content %}
 <style>
+
 /* ================= BASE ================= */
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-    font-family:Arial, sans-serif;
-}
-
-body{
-    background:#eef2f7;
-    padding:20px;
-    color:#333;
-}
-
 /* ================= CONTAINER ================= */
 .container{
     max-width:1200px;
@@ -165,10 +149,8 @@ tr:nth-child(even){
     font-weight:bold;
     transition:0.3s;
 }
-</style>
-</head>
 
-<body>
+</style>
 
 <div class="container">
 
@@ -252,7 +234,4 @@ tr:nth-child(even){
 </div>
 
 </div>
-
-
-</body>
-</html>
+{% endblock %}

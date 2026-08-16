@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Car Expense</title>
+{% extends "base_erp.html" %}
+{% block title %}Add Car Expense{% endblock %}
+{% block page_title %}Add Car Expense{% endblock %}
+{% block content %}
+<style>
 
-    <style>
 
         *{
             box-sizing: border-box;
@@ -115,28 +113,15 @@
 
         }
 
-    </style>
-</head>
-<body>
+    
+</style>
 
 <div class="container">
         <a href="/car_expense_report" class="nav-btn">
             Back
         </a>
     <!-- FLASH MESSAGES -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-
-            {% for category, message in messages %}
-
-                <div class="flash {{ category }}">
-                    {{ message }}
-                </div>
-
-            {% endfor %}
-
-        {% endif %}
-    {% endwith %}
+    
 
     <h2>Add Car Expense</h2>
 
@@ -185,6 +170,4 @@
     </form>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

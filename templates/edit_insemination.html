@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Edit Record</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Edit Record{% endblock %}
+{% block page_title %}Edit Record{% endblock %}
+{% block content %}
 <style>
 
-body{
-    font-family: Arial;
-    background:#f5f7fb;
-    padding:40px;
-}
 
 .container{
     width:420px;
@@ -54,11 +48,8 @@ button:hover{
     background:#1e88e5;
 }
 
+
 </style>
-
-</head>
-
-<body>
 
 <div class="container">
 
@@ -113,6 +104,4 @@ button:hover{
 </form>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Add Treatment Record</title>
+{% extends "base_erp.html" %}
+{% block title %}Add Treatment Record{% endblock %}
+{% block page_title %}Add Treatment Record{% endblock %}
+{% block content %}
+<style>
 
-    <style>
 
         body{
             font-family: Arial, sans-serif;
@@ -99,11 +99,9 @@
             border-radius: 4px;}
 
 
-    </style>
-</head>
-
-<body>
     
+</style>
+
 <h2>➕ Add Treatment Record</h2>
 <a href="/insemination" class="btn_dashboard">← Back</a>
 <form method="POST">
@@ -149,6 +147,4 @@
 <a href="{{ url_for('treatment') }}" class="back-btn">
 ← Back to Treatment Records
 </a>
-
-</body>
-</html>
+{% endblock %}

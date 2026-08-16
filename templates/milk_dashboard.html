@@ -1,25 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Milk Dashboard</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Milk Dashboard{% endblock %}
+{% block page_title %}Milk Dashboard{% endblock %}
+{% block content %}
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Arial, sans-serif;
-    background:#f4f6f9;
-    padding:20px;
-    color:#333;
-}
 
 /* HEADER */
 
@@ -208,9 +192,8 @@ body{
 
 }
 
+
 </style>
-</head>
-<body>
 
 <!-- HEADER -->
 
@@ -369,6 +352,4 @@ body{
     </div>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

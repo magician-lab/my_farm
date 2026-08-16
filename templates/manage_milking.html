@@ -1,18 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-<meta charset="UTF-8">
-<title>Manage Milking Herd</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Manage Milking Herd{% endblock %}
+{% block page_title %}Manage Milking Herd{% endblock %}
+{% block content %}
 <style>
 
-body{
-font-family:Arial, sans-serif;
-background:#f4f6f9;
-padding:30px;
-}
 
 h1{
 text-align:center;
@@ -160,12 +151,8 @@ grid-template-columns:1fr;
 
 }
 
+
 </style>
-
-</head>
-
-
-<body>
 
 <h1>🥛 Manage Milking Herd</h1>
 <div class="top-actions">
@@ -281,8 +268,8 @@ Remove from Milking Herd
 </div>
 
 </form>
-
-
+{% endblock %}
+{% block scripts %}
 <script>
 
 function searchAnimals(input,tableID){
@@ -307,8 +294,4 @@ rows[i].style.display="none";
 }
 
 </script>
-
-
-</body>
-
-</html>
+{% endblock %}

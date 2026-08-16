@@ -1,838 +1,255 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Farm ERP Dashboard</title>
-
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
-<style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:'Segoe UI',Arial,sans-serif;
-    background:#f1f5f2;
-    padding:25px;
-    color:#333;
-}
-
-
-/* HEADER */
-
-.top-bar{
-
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    flex-wrap:wrap;
-
-    margin-bottom:25px;
-
-}
-
-
-.title{
-
-    font-size:32px;
-    font-weight:700;
-    color:#145214;
-
-}
-
-
-.subtitle{
-
-    color:#777;
-    margin-top:5px;
-
-}
-
-
-/* FILTER */
-
-.filter-form{
-
-    display:flex;
-    gap:10px;
-    align-items:center;
-
-}
-
-
-input[type=date]{
-
-    padding:12px;
-    border-radius:10px;
-    border:1px solid #ccc;
-
-}
-
-
-button{
-
-    background:#1b5e20;
-    color:white;
-    border:none;
-
-    padding:12px 20px;
-
-    border-radius:10px;
-    cursor:pointer;
-
-    font-weight:bold;
-
-}
-
-
-button:hover{
-
-    background:#2e7d32;
-
-}
-
-
-.logout-btn{
-
-    background:#b71c1c;
-    color:white;
-
-    padding:12px 20px;
-
-    border-radius:10px;
-
-    text-decoration:none;
-
-}
-
-
-
-/* ACTIONS */
-
-.top-actions{
-
-    background:white;
-
-    padding:20px;
-
-    border-radius:18px;
-
-    display:flex;
-
-    gap:15px;
-
-    flex-wrap:wrap;
-
-    box-shadow:0 5px 15px rgba(0,0,0,.08);
-
-    margin-bottom:30px;
-
-}
-
-
-
-.action-btn{
-
-    background:#1b5e20;
-
-    color:white;
-
-    padding:14px 20px;
-
-    border-radius:12px;
-
-    text-decoration:none;
-
-    font-weight:600;
-
-    transition:.3s;
-
-}
-
-
-
-.action-btn:hover{
-
-    background:#388e3c;
-
-    transform:translateY(-2px);
-
-}
-
-
-
-/* SECTION TITLE */
-
-
-.section-title{
-
-    margin:25px 0 15px;
-
-    color:#145214;
-
-    font-size:22px;
-
-}
-
-
-
-/* CARDS */
-
-.cards{
-
-    display:grid;
-
-    grid-template-columns:
-    repeat(auto-fit,minmax(240px,1fr));
-
-    gap:22px;
-
-}
-
-
-
-.card{
-
-    background:white;
-
-    padding:25px;
-
-    border-radius:18px;
-
-    box-shadow:0 5px 15px rgba(0,0,0,.08);
-
-    position:relative;
-
-    overflow:hidden;
-
-}
-
-
-
-.card i{
-
-    position:absolute;
-
-    right:20px;
-
-    top:20px;
-
-    font-size:35px;
-
-    opacity:.15;
-
-}
-
-
-
-.card h3{
-
-    color:#777;
-
-    font-size:15px;
-
-    margin-bottom:12px;
-
-}
-
-
-
-.card h1{
-
-    font-size:32px;
-
-    margin-bottom:8px;
-
-}
-
-
-
-.card small{
-
-    color:#777;
-
-}
-
-
-/* COLORS */
-
-
-.green h1{
-
-    color:#1b5e20;
-
-}
-
-
-.blue h1{
-
-    color:#1565c0;
-
-}
-
-
-.orange h1{
-
-    color:#ef6c00;
-
-}
-
-
-.red h1{
-
-    color:#c62828;
-
-}
-
-
-.purple h1{
-
-    color:#6a1b9a;
-
-}
-
-
-
-.alert-card{
-
-    border-left:7px solid #c62828;
-
-}
-
-
-
-/* RESPONSIVE */
-
-
-@media(max-width:700px){
-
-    body{
-
-        padding:15px;
-
-    }
-
-
-    .title{
-
-        font-size:25px;
-
-    }
-
-
-    .filter-form{
-
-        width:100%;
-        margin-top:15px;
-
-    }
-
-
-    .filter-form input,
-    button{
-
-        width:100%;
-
-    }
-
-
-}
-
-
-
-</style>
-
-</head>
-
-
-<body>
-
-
-<!-- HEADER -->
-
-<div class="top-bar">
-
-
-<div>
-
-<div class="title">
-
-<i class="fa-solid fa-cow"></i>
-
-Farm Management Dashboard
+{% extends "base_erp.html" %}
+{% block title %}Dashboard | AgriERP{% endblock %}
+{% block page_title %}<i class="fa-solid fa-gauge-high" style="color:#2e7d32;margin-right:8px;"></i>Main Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-chart-line"></i>Production Overview</h1>
+        <div class="sub">
+            {% if current_farm %}
+                <span class="farm-badge"><i class="fa-solid fa-building"></i> {{ current_farm.name }}</span>
+            {% else %}
+                <span class="farm-badge"><i class="fa-solid fa-globe"></i> All Farms</span>
+            {% endif %}
+            &nbsp; {{ selected_date.strftime('%B %d, %Y') }}
+        </div>
+    </div>
+    <form method="GET" style="display:flex;align-items:center;gap:8px;">
+        <div class="form-group" style="margin:0;">
+            <input type="date" name="filter_date" value="{{ selected_date }}">
+        </div>
+        <button class="btn btn-green"><i class="fa-solid fa-filter"></i> Filter</button>
+    </form>
+</div>
+
+<div class="cards-grid">
+
+    <div class="stat-card green">
+        <i class="fa-solid fa-bucket icon"></i>
+        <div class="label">Today's Production</div>
+        <div class="value">{{ "{:,.2f}".format(grand_total or 0) }} L</div>
+        <div class="sub">Morning {{ "{:,.1f}".format(total_morning or 0) }} · Noon {{ "{:,.1f}".format(total_noon or 0) }} · Evening {{ "{:,.1f}".format(total_evening or 0) }}</div>
+    </div>
+
+    <div class="stat-card purple">
+        <i class="fa-solid fa-cow icon"></i>
+        <div class="label">Milked Cows</div>
+        <div class="value">{{ cow_count }}</div>
+        <div class="sub">Cows Milked This Day</div>
+    </div>
+
+    <div class="stat-card blue">
+        <i class="fa-solid fa-chart-simple icon"></i>
+        <div class="label">Average / Cow</div>
+        <div class="value">{{ "{:,.2f}".format(average_production or 0) }} L</div>
+        <div class="sub">Above 10L per cow</div>
+    </div>
+
+    <div class="stat-card green">
+        <i class="fa-solid fa-store icon"></i>
+        <div class="label">Sold to Shops</div>
+        <div class="value">{{ "{:,.2f}".format(total_sold_shops or 0) }} L</div>
+        <div class="sub">Shop 1: {{ "{:,.1f}".format(total_shop1 or 0) }} · Shop 2: {{ "{:,.1f}".format(total_shop2 or 0) }} · Shop 3: {{ "{:,.1f}".format(total_shop3 or 0) }}</div>
+    </div>
+
+    <div class="stat-card orange">
+        <i class="fa-solid fa-house icon"></i>
+        <div class="label">Used (Home + Calves)</div>
+        <div class="value">{{ "{:,.2f}".format(total_used or 0) }} L</div>
+        <div class="sub">Home {{ "{:,.1f}".format(total_home or 0) }} · Calves {{ "{:,.1f}".format(total_calf or 0) }}</div>
+    </div>
+
+    <div class="stat-card blue">
+        <i class="fa-solid fa-warehouse icon"></i>
+        <div class="label">Available Running Milk</div>
+        <div class="value">{{ "{:,.2f}".format(system_available_today or 0) }} L</div>
+        <div class="sub">System Stock on Selected Date</div>
+    </div>
+
+    <div class="stat-card purple">
+        <i class="fa-solid fa-clock-rotate-left icon"></i>
+        <div class="label">Previous Remaining</div>
+        <div class="value">{{ "{:,.2f}".format(previous_actual_remaining or 0) }} L</div>
+        <div class="sub">Carried Over From Previous Day</div>
+    </div>
+
+    <div class="stat-card orange">
+        <i class="fa-solid fa-boxes-stacked icon"></i>
+        <div class="label">Actual Remaining</div>
+        <div class="value">{{ "{:,.2f}".format(actual_available_today or 0) }} L</div>
+        <div class="sub">Actual Stock This Day</div>
+    </div>
+
+    <div class="stat-card green">
+        <i class="fa-solid fa-calendar icon"></i>
+        <div class="label">Month Total</div>
+        <div class="value">{{ "{:,.2f}".format(monthly_total or 0) }} L</div>
+        <div class="sub">{{ selected_date.strftime('%B %Y') }}</div>
+    </div>
+
+    <div class="stat-card orange">
+        <i class="fa-solid fa-layer-group icon"></i>
+        <div class="label">Quarter Total</div>
+        <div class="value">{{ "{:,.2f}".format(quarterly_total or 0) }} L</div>
+        <div class="sub">Current Quarter</div>
+    </div>
+
+    <div class="stat-card purple">
+        <i class="fa-solid fa-calendar-days icon"></i>
+        <div class="label">Year Total</div>
+        <div class="value">{{ "{:,.2f}".format(yearly_total or 0) }} L</div>
+        <div class="sub">{{ selected_date.year }}</div>
+    </div>
+
+    <div class="stat-card red">
+        <i class="fa-solid fa-triangle-exclamation icon"></i>
+        <div class="label">Stock Variance</div>
+        <div class="value">{{ "{:,.2f}".format(pavail_variance or 0) }} L</div>
+        <div class="sub">{{ "{:,.2f}".format(percentage_error or 0) }}% Error · {{ "{:,.2f}".format(percentage_conversion or 0) }}% Converted</div>
+    </div>
 
 </div>
 
+<!-- ============ MILK DISTRIBUTION ============ -->
+<div class="cards-grid">
+    <div class="card">
+        <h2><i class="fa-solid fa-chart-pie"></i> Milk Distribution ({{ selected_date.strftime('%B %d, %Y') }})</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th>Destination</th><th>Litres</th><th style="width:40%;">Share</th></tr>
+                <tr>
+                    <td><i class="fa-solid fa-store" style="color:#1565c0;margin-right:6px;"></i> Shop 1</td>
+                    <td>{{ "{:,.2f}".format(total_shop1 or 0) }} L</td>
+                    <td>
+                        <div style="background:#e3f2fd;border-radius:8px;height:12px;">
+                            <div style="background:#1565c0;height:12px;border-radius:8px;width:{{ (total_shop1 / grand_total * 100) if grand_total else 0 }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><i class="fa-solid fa-store" style="color:#0d47a1;margin-right:6px;"></i> Shop 2</td>
+                    <td>{{ "{:,.2f}".format(total_shop2 or 0) }} L</td>
+                    <td>
+                        <div style="background:#e3f2fd;border-radius:8px;height:12px;">
+                            <div style="background:#0d47a1;height:12px;border-radius:8px;width:{{ (total_shop2 / grand_total * 100) if grand_total else 0 }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><i class="fa-solid fa-store" style="color:#1565c0;margin-right:6px;"></i> Shop 3</td>
+                    <td>{{ "{:,.2f}".format(total_shop3 or 0) }} L</td>
+                    <td>
+                        <div style="background:#e3f2fd;border-radius:8px;height:12px;">
+                            <div style="background:#1976d2;height:12px;border-radius:8px;width:{{ (total_shop3 / grand_total * 100) if grand_total else 0 }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><i class="fa-solid fa-house" style="color:#ef6c00;margin-right:6px;"></i> Home Use</td>
+                    <td>{{ "{:,.2f}".format(total_home or 0) }} L</td>
+                    <td>
+                        <div style="background:#fff3e0;border-radius:8px;height:12px;">
+                            <div style="background:#ef6c00;height:12px;border-radius:8px;width:{{ (total_home / grand_total * 100) if grand_total else 0 }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><i class="fa-solid fa-baby" style="color:#6a1b9a;margin-right:6px;"></i> Calves</td>
+                    <td>{{ "{:,.2f}".format(total_calf or 0) }} L</td>
+                    <td>
+                        <div style="background:#f3e5f5;border-radius:8px;height:12px;">
+                            <div style="background:#6a1b9a;height:12px;border-radius:8px;width:{{ (total_calf / grand_total * 100) if grand_total else 0 }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr style="background:#e8f5e9;">
+                    <td><strong>Total Production</strong></td>
+                    <td><strong>{{ "{:,.2f}".format(grand_total or 0) }} L</strong></td>
+                    <td>
+                        <div style="background:#e8f5e9;border-radius:8px;height:12px;">
+                            <div style="background:#2e7d32;height:12px;border-radius:8px;width:100%;"></div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
 
-<div class="subtitle">
-
-Production • Sales • Finance • Animals
-
+    <div class="card">
+        <h2><i class="fa-solid fa-clock"></i> Recent Inseminations</h2>
+        {% if recent_insem %}
+        <div class="table-wrap">
+            <table>
+                <tr><th>Animal</th><th>Date Served</th><th>Status</th></tr>
+                {% for ins in recent_insem %}
+                <tr>
+                    <td>{{ ins.animal.name if ins.animal else 'Unknown' }}</td>
+                    <td>{{ ins.date_served or '-' }}</td>
+                    <td>
+                        {% if ins.status == 'confirmed' %}
+                        <span class="badge badge-green">Expectant</span>
+                        {% elif ins.status == 'delivered' %}
+                        <span class="badge badge-blue">Delivered</span>
+                        {% else %}
+                        <span class="badge badge-orange">{{ ins.status or 'Pending' }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% else %}
+        <p style="color:var(--muted);">No insemination records yet.</p>
+        {% endif %}
+    </div>
 </div>
 
+<!-- ============ FARM OVERVIEW (admin) ============ -->
+{% if is_admin and farms %}
+<div class="card">
+    <h2><i class="fa-solid fa-building"></i> Farm Overview</h2>
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th>Farm</th>
+                <th>Animals</th>
+                <th>Milk Records</th>
+                <th>Action</th>
+            </tr>
+            {% for f in farms %}
+            <tr>
+                <td><i class="fa-solid fa-building" style="color:#2e7d32;margin-right:6px;"></i>{{ f.name }}</td>
+                <td>{{ animals_by_farm.get(f.id, {}).get('animals', 0) }}</td>
+                <td>{{ animals_by_farm.get(f.id, {}).get('milk', 0) }}</td>
+                <td>
+                    <a class="btn btn-green" href="/set-farm/{{ f.id }}">
+                        <i class="fa-solid fa-arrow-right"></i> Open Farm
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endif %}
 
+<!-- ============ QUICK ACTIONS ============ -->
+<div class="card">
+    <h2><i class="fa-solid fa-bolt"></i> Quick Actions</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn btn-green" href="/milk_registry"><i class="fa-solid fa-bucket"></i> Record Milk</a>
+        <a class="btn btn-blue" href="/milk_sales_entry"><i class="fa-solid fa-store"></i> Record Sales</a>
+        <a class="btn btn-orange" href="/cow_registry"><i class="fa-solid fa-cow"></i> Add Animal</a>
+        <a class="btn btn-green" href="/insemination/add"><i class="fa-solid fa-heart-pulse"></i> Add Insemination</a>
+        <a class="btn btn-blue" href="/add_treatment"><i class="fa-solid fa-stethoscope"></i> Add Treatment</a>
+        {% if is_admin %}
+        <a class="btn btn-orange" href="/feeds_v2/create"><i class="fa-solid fa-wheat-awn"></i> New Feed Order</a>
+        <a class="btn btn-gray" href="/users"><i class="fa-solid fa-user-plus"></i> Add User</a>
+        <a class="btn btn-gray" href="/farms"><i class="fa-solid fa-building-circle-check"></i> Manage Farms</a>
+        {% endif %}
+    </div>
 </div>
 
-
-
-<form method="GET" class="filter-form">
-
-
-<a href="/logout" class="logout-btn">
-
-<i class="fa fa-power-off"></i>
-Logout
-
-</a>
-
-
-<input 
-type="date"
-name="filter_date"
-value="{{selected_date}}">
-
-
-<button>
-
-<i class="fa fa-filter"></i>
-
-Filter
-
-</button>
-
-
-</form>
-
-
-</div>
-
-
-
-<!-- ACTIONS -->
-
-
-<div class="top-actions">
-
-
-<a class="action-btn" href="/milk_dashboard">
-
-<i class="fa fa-droplet"></i>
-
-Milk
-
-</a>
-
-
-<a class="action-btn" href="/cow_dashboard">
-
-<i class="fa fa-cow"></i>
-
-Animals
-
-</a>
-
-
-<a class="action-btn" href="/feeds_v2/orders">
-
-<i class="fa fa-wheat-awn"></i>
-
-Feeds
-
-</a>
-
-
-<a class="action-btn" href="/financial_dashboard">
-
-<i class="fa fa-money-bill"></i>
-
-Finance
-
-</a>
-
-<a class="action-btn" href="/payments">
-
-<i class="fa fa-money-bill"></i>
-
-Add payment
-
-</a>
-
-
-<a class="action-btn" href="/Employees">
-
-<i class="fa fa-users"></i>
-
-Employees
-
-</a>
-
-
-<a class="action-btn" href="/users">
-
-<i class="fa fa-user-shield"></i>
-
-Users
-
-</a>
-
-
-<a class="action-btn" href="/farms">
-
-<i class="fa fa-building"></i>
-
-Farms
-
-</a>
-
-
-
-</div>
-
-
-
-<h2 class="section-title">
-
-<i class="fa fa-chart-line"></i>
-
-Production Overview
-
-</h2>
-
-
-
-<div class="cards">
-
-
-
-<div class="card green">
-
-<i class="fa fa-bucket"></i>
-
-<h3>
-Today's Production
-</h3>
-
-<h1>
-{{ "{:,.2f}".format(grand_total) }} L
-</h1>
-
-<small>
-Selected Date Total
-</small>
-
-</div>
-
-
-
-
-<div class="card purple">
-
-<i class="fa fa-cow"></i>
-
-<h3>
-Milked Cows
-</h3>
-
-<h1>
-
-{{cow_count}}
-
-</h1>
-
-</div>
-
-
-
-
-
-<div class="card blue">
-
-<i class="fa fa-chart-simple"></i>
-
-<h3>
-Average Production
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(average_production)}} L
-
-</h1>
-
-
-<small>
-Above 10L
-</small>
-
-
-</div>
-
-
-
-
-
-<div class="card purple">
-
-<i class="fa fa-water"></i>
-
-<h3>
-Total Used
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(total_used)}} L
-
-</h1>
-
-
-</div>
-
-
-
-
-<div class="card green">
-
-
-<i class="fa fa-store"></i>
-
-<h3>
-Total Sold
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(total_sold_shops)}} L
-
-</h1>
-
-
-</div>
-
-
-
-
-
-<div class="card orange">
-
-
-<i class="fa fa-house"></i>
-
-
-<h3>
-Other Uses
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(other_uses)}} L
-
-</h1>
-
-
-<small>
-Home + Calves
-</small>
-
-
-</div>
-
-
-
-
-
-<div class="card purple">
-
-
-<i class="fa fa-percent"></i>
-
-
-<h3>
-Sales Conversion
-</h3>
-
-
-<h1>
-
-{{percentage_conversion}}%
-
-</h1>
-
-
-</div>
-
-
-
-
-
-<div class="card green">
-
-<i class="fa fa-database"></i>
-
-
-<h3>
-System Available
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(total_system_available or 0)}} L
-
-</h1>
-
-
-</div>
-
-
-
-
-
-<div class="card orange">
-
-
-<i class="fa fa-balance-scale"></i>
-
-
-<h3>
-Actual Available
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(total_available or 0)}} L
-
-</h1>
-
-
-</div>
-
-
-
-
-
-<div class="card red alert-card">
-
-
-<i class="fa fa-triangle-exclamation"></i>
-
-
-<h3>
-Discrepancy
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(pavail_variance or 0)}} L
-
-</h1>
-
-
-<small>
-
-{{percentage_error}}% Error
-
-</small>
-
-
-</div>
-
-
-
-
-
-<div class="card blue">
-
-<i class="fa fa-calendar"></i>
-
-<h3>
-Monthly Production
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(monthly_total)}} L
-
-</h1>
-
-
-<small>
-{{selected_date.strftime('%B %Y')}}
-</small>
-
-</div>
-
-
-
-
-
-<div class="card orange">
-
-
-<i class="fa fa-layer-group"></i>
-
-
-<h3>
-Quarterly Production
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(quarterly_total)}} L
-
-</h1>
-
-
-</div>
-
-
-
-
-
-<div class="card purple">
-
-
-<i class="fa fa-calendar-days"></i>
-
-
-<h3>
-Yearly Production
-</h3>
-
-
-<h1>
-
-{{"{:,.2f}".format(yearly_total)}} L
-
-</h1>
-
-
-<small>
-{{selected_date.year}}
-</small>
-
-
-</div>
-
-
-
-
-</div>
-
-
-</body>
-</html>
+{% endblock %}

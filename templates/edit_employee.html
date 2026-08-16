@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Employee</title>
+{% extends "base_erp.html" %}
+{% block title %}Edit Employee{% endblock %}
+{% block page_title %}Edit Employee{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body {
             font-family: Arial;
             padding: 20px;
@@ -60,10 +60,8 @@
         .btn-back {
             background: #007bff;
         }
-    </style>
-</head>
-
-<body>
+    
+</style>
 
 <div class="card">
 
@@ -97,6 +95,4 @@
     </form>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

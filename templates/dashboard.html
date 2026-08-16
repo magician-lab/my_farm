@@ -1,16 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-
-<title>Farm Dashboard</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Farm Dashboard{% endblock %}
+{% block page_title %}Farm Dashboard{% endblock %}
+{% block content %}
 <style>
 
-body{
-font-family: Arial;
-background:#f4f6f9;
-padding:40px;
-}
 
 h1{
 text-align:center;
@@ -82,11 +75,8 @@ font-size:13px;
 margin-top:10px;
 }
 
+
 </style>
-
-</head>
-
-<body>
 
 <h1>🐄 Livestock Dashboard</h1>
 
@@ -261,6 +251,4 @@ margin-top:10px;
 </div>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

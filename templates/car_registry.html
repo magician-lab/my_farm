@@ -1,26 +1,148 @@
-<h2>Car Registration</h2>
+{% extends "base_erp.html" %}
+{% block title %}Vehicles{% endblock %}
+{% block page_title %}Vehicles{% endblock %}
+{% block content %}
 
-<form method="POST">
-    <input type="text" name="plate_number" placeholder="Plate Number" required>
-    <input type="text" name="model" placeholder="Car Model">
-    <input type="text" name="driver" placeholder="Driver Name">
-    <button type="submit">Register Car</button>
-</form>
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-car"></i> Vehicles</h1>
+        <p class="sub">Register vehicles, add daily sales and expenses per vehicle. Deactivate instead of deleting.</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn btn-green" href="/vehicle_analytics"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+        <a class="btn btn-blue" href="/car_sales/add"><i class="fa-solid fa-plus"></i> Add Sale</a>
+        <a class="btn btn-orange" href="/add_car_expense"><i class="fa-solid fa-wrench"></i> Add Expense</a>
+    </div>
+</div>
 
-<hr>
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for cat, m in messages %}
+        <div class="flash {% if cat and cat != 'message' and cat != 'success' %}{{ cat }}{% endif %}" style="position:static;margin-bottom:14px;">
+            <i class="fa-solid fa-circle-check"></i> {{ m }}
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
-<h3>Registered Cars</h3>
-<table border="1">
-    <tr>
-        <th>Plate</th>
-        <th>Model</th>
-        <th>Driver</th>
-    </tr>
-    {% for car in cars %}
-    <tr>
-        <td>{{ car.plate_number }}</td>
-        <td>{{ car.model }}</td>
-        <td>{{ car.driver }}</td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="cards-grid">
+    <div class="card">
+        <h2><i class="fa-solid fa-plus-circle"></i> Register Vehicle</h2>
+        <form method="POST" action="/car_registry">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Plate Number</label>
+                    <input type="text" name="plate_number" placeholder="e.g. KDA 123A" required>
+                </div>
+                <div class="form-group">
+                    <label>Model</label>
+                    <input type="text" name="model" placeholder="e.g. Toyota Hilux">
+                </div>
+                <div class="form-group">
+                    <label>Driver</label>
+                    <input type="text" name="driver" placeholder="Driver's name">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-green"><i class="fa-solid fa-check"></i> Register Vehicle</button>
+        </form>
+    </div>
+</div>
+
+<!-- ============ ACTIVE VEHICLES ============ -->
+<div class="card">
+    <h2><i class="fa-solid fa-circle-check"></i> Active Vehicles ({{ active_cars|length }})</h2>
+    {% if active_cars %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Plate</th>
+                    <th>Model</th>
+                    <th>Driver</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for car in active_cars %}
+                <tr>
+                    <td><strong>{{ car.plate_number }}</strong></td>
+                    <td>{{ car.model or '-' }}</td>
+                    <td>{{ car.driver or '-' }}</td>
+                    <td><span class="badge badge-green">Active</span></td>
+                    <td style="white-space:nowrap;">
+                        <button class="btn btn-gray" style="padding:5px 12px;" onclick="toggleEdit({{ car.id }})"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <a class="btn btn-blue" style="padding:5px 12px;" href="/car_sales/add?car_id={{ car.id }}"><i class="fa-solid fa-store"></i> Sale</a>
+                        <a class="btn btn-orange" style="padding:5px 12px;" href="/add_car_expense?car_id={{ car.id }}"><i class="fa-solid fa-wrench"></i> Expense</a>
+                        <form method="POST" action="/cars/deactivate/{{ car.id }}" style="display:inline;" onsubmit="return confirm('Deactivate {{ car.plate_number }}? Its history is kept.')">
+                            <button type="submit" class="btn btn-red" style="padding:5px 12px;"><i class="fa-solid fa-ban"></i> Deactivate</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr id="editRow{{ car.id }}" style="display:none;background:#f6faf5;">
+                    <td colspan="5">
+                        <form method="POST" action="/cars/edit/{{ car.id }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                            <input type="text" name="plate_number" value="{{ car.plate_number }}" style="padding:8px;border:1px solid #dce4dc;border-radius:8px;min-width:140px;">
+                            <input type="text" name="model" value="{{ car.model or '' }}" style="padding:8px;border:1px solid #dce4dc;border-radius:8px;min-width:140px;">
+                            <input type="text" name="driver" value="{{ car.driver or '' }}" style="padding:8px;border:1px solid #dce4dc;border-radius:8px;min-width:140px;">
+                            <button type="submit" class="btn btn-green" style="padding:8px 14px;"><i class="fa-solid fa-save"></i> Save</button>
+                            <button type="button" class="btn btn-gray" style="padding:8px 14px;" onclick="toggleEdit({{ car.id }})">Cancel</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color:var(--muted);">No active vehicles. Register one above.</p>
+    {% endif %}
+</div>
+
+<!-- ============ INACTIVE VEHICLES ============ -->
+<div class="card">
+    <h2><i class="fa-solid fa-circle-minus"></i> Inactive Vehicles ({{ inactive_cars|length }})</h2>
+    {% if inactive_cars %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Plate</th>
+                    <th>Model</th>
+                    <th>Driver</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for car in inactive_cars %}
+                <tr>
+                    <td><strong>{{ car.plate_number }}</strong></td>
+                    <td>{{ car.model or '-' }}</td>
+                    <td>{{ car.driver or '-' }}</td>
+                    <td><span class="badge badge-red">Inactive</span></td>
+                    <td>
+                        <form method="POST" action="/cars/reactivate/{{ car.id }}" style="display:inline;">
+                            <button type="submit" class="btn btn-green" style="padding:5px 12px;"><i class="fa-solid fa-rotate-left"></i> Reactivate</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color:var(--muted);">No inactive vehicles.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleEdit(id){
+    var row = document.getElementById('editRow' + id);
+    if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+</script>
+{% endblock %}

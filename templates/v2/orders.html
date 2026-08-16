@@ -1,5 +1,5 @@
 {% extends "v2/base.html" %}
-{% block content %}
+{% block v2_content %}
 
 <style>
 
@@ -486,6 +486,20 @@ tbody tr:hover{
 
 </div>
 
+<script>
 
+function addEmail(btn){
+
+    let input = document.createElement("input");
+
+    input.type = "email";
+    input.name = "emails";
+    input.placeholder = "Another email address";
+
+    btn.parentNode.insertBefore(input, btn);
+
+}
+
+</script>
 
 {% endblock %}

@@ -1,24 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cow Monthly Analysis</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Cow Monthly Analysis{% endblock %}
+{% block page_title %}Cow Monthly Analysis{% endblock %}
+{% block content %}
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Arial, sans-serif;
-    background:#f4f6f9;
-    padding:20px;
-    color:#333;
-}
 
 .container{
     max-width:1400px;
@@ -330,10 +315,8 @@ tr:hover{
 
 }
 
-</style>
-</head>
 
-<body>
+</style>
 
 <div class="container">
 
@@ -545,6 +528,4 @@ tr:hover{
     </div>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

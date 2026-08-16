@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Edit Treatment</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Edit Treatment{% endblock %}
+{% block page_title %}Edit Treatment{% endblock %}
+{% block content %}
 <style>
 
-body{
-    font-family: Arial;
-    background:#f4f6f9;
-    padding:40px;
-}
 
 h2{
     text-align:center;
@@ -62,10 +56,8 @@ button:hover{
     color:#3498db;
 }
 
-</style>
-</head>
 
-<body>
+</style>
 
 <h2>✏️ Edit Treatment</h2>
 
@@ -85,6 +77,4 @@ button:hover{
 </form>
 
 <a href="{{ url_for('treatment') }}" class="back">← Back to Records</a>
-
-</body>
-</html>
+{% endblock %}

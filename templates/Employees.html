@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Employee List</title>
+{% extends "base_erp.html" %}
+{% block title %}Employee List{% endblock %}
+{% block page_title %}Employee List{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -107,10 +107,8 @@
 
         .btn-blue { background: #007bff; }
         .btn-red { background: red; }
-    </style>
-</head>
-
-<body>
+    
+</style>
 
 <h2>Employees</h2>
 <p>Today's Date: {{ current_date }}</p>
@@ -135,10 +133,11 @@
     KES {{ "{:,.2f}".format(Employees | sum(attribute='salary')) }}
 </div>
 
-<!-- 📧 DOWNLOAD PDF -->
+<!-- 📧 SEND PDF -->
 <form method="get" action="/send_report/employees">
-  <button type="submit" class="btn-send">
-            📄 downoad pdf
+
+        <button type="submit" class="btn-send">
+            📄 Dowload PDF
         </button>
     </div>
 </form>
@@ -200,6 +199,8 @@
 </form>
 
 <!-- 🔥 SCRIPT SECTION -->
+{% endblock %}
+{% block scripts %}
 <script>
 
 /* 🔍 LIVE SEARCH */
@@ -218,17 +219,5 @@ document.getElementById("searchInput").addEventListener("keyup", function() {
     });
 });
 
-/* ➕ ADD EMAIL FIELD */
-function addEmailField(btn) {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.name = "emails";
-    input.placeholder = "Another email";
-
-    btn.parentNode.insertBefore(input, btn);
-}
-
 </script>
-
-</body>
-</html>
+{% endblock %}

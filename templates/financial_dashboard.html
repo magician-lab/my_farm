@@ -1,27 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Financial Dashboard</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Financial Dashboard{% endblock %}
+{% block page_title %}Financial Dashboard{% endblock %}
+{% block content %}
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Arial, sans-serif;
-    background:#f1f5f9;
-    color:#111827;
-}
 
 /* ====================================
 TOP HEADER
@@ -236,11 +218,8 @@ RESPONSIVE
 
 }
 
+
 </style>
-
-</head>
-
-<body>
 
 <!-- ====================================
 HEADER
@@ -591,7 +570,4 @@ EXPENDITURE SECTION
 </div>
 
 </div>
-
-</body>
-
-</html>
+{% endblock %}

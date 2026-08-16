@@ -1,8 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Expense</title>
-    <style>
+{% extends "base_erp.html" %}
+{% block title %}Edit Expense{% endblock %}
+{% block page_title %}Edit Expense{% endblock %}
+{% block content %}
+<style>
+
         body { font-family: Arial; padding: 20px; background: #f4f6f9; }
         .form-box {
             max-width: 500px;
@@ -23,9 +24,8 @@
             border: none;
             width: 100%;
         }
-    </style>
-</head>
-<body>
+    
+</style>
 
 <div class="form-box">
     <h2>Edit Expense</h2>
@@ -57,6 +57,4 @@
 
     </form>
 </div>
-
-</body>
-</html>
+{% endblock %}

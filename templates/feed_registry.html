@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Farm | Feeds Registry</title>
+{% extends "base_erp.html" %}
+{% block title %}My Farm | Feeds Registry{% endblock %}
+{% block page_title %}My Farm | Feeds Registry{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: linear-gradient(to right, #eef2f7, #e3e9f0);
@@ -108,9 +108,8 @@
             font-size: 14px;
         }
 
-    </style>
-</head>
-<body>
+    
+</style>
 
 <div class="container">
 
@@ -166,6 +165,4 @@
     </form>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Feed</title>
+{% extends "base_erp.html" %}
+{% block title %}Edit Feed{% endblock %}
+{% block page_title %}Edit Feed{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body {
             font-family: 'Segoe UI', Arial;
             background: #f4f6f9;
@@ -79,9 +79,8 @@
             background: #1a68d1;
         }
 
-    </style>
-</head>
-<body>
+    
+</style>
 
 <div class="container">
 
@@ -115,6 +114,4 @@
     </form>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

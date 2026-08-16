@@ -1,26 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Car Expense Report</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+{% extends "base_erp.html" %}
+{% block title %}Car Expense Report{% endblock %}
+{% block page_title %}Car Expense Report{% endblock %}
+{% block content %}
 <style>
+
 /* ================= BASE ================= */
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-    font-family:Arial, sans-serif;
-}
-
-body{
-    background:#eef2f7;
-    padding:20px;
-    color:#333;
-}
-
 /* ================= CONTAINER ================= */
 .container{
     max-width:1200px;
@@ -192,10 +176,8 @@ tbody tr:hover{
     font-weight:bold;
     transition:0.3s;
 }
-</style>
-</head>
 
-<body>
+</style>
 
 <div class="container">
 
@@ -282,7 +264,4 @@ tbody tr:hover{
 </table>
 
 </div>
-
-
-</body>
-</html>
+{% endblock %}

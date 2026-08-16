@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Milk Sales Module</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Milk Sales Module{% endblock %}
+{% block page_title %}Milk Sales Module{% endblock %}
+{% block content %}
 <style>
+
 :root{
     --green:#1b5e20;
     --green2:#2e7d32;
@@ -14,13 +13,6 @@
     --card:#ffffff;
     --soft:#e8f5e9;
     --warn:#fff8e1;
-}
-
-body{
-    font-family: Arial, sans-serif;
-    background: var(--bg);
-    padding: 18px;
-    color:#222;
 }
 
 h2{text-align:center;color:var(--green);}
@@ -147,10 +139,8 @@ td{
     }
 
 }
-</style>
-</head>
 
-<body>
+</style>
 
 <h2>🥛 MILK SALES MODULE</h2>
     <a href="/milk_dashboard" class="action-btn">
@@ -377,6 +367,8 @@ onclick="return confirm('Delete?')">
 </div>
 
 <!-- 🔥 EMAIL SCRIPT -->
+{% endblock %}
+{% block scripts %}
 <script>
 function addEmail() {
     let container = document.getElementById("email-container");
@@ -391,6 +383,4 @@ function addEmail() {
     container.appendChild(div);
 }
 </script>
-
-</body>
-</html>
+{% endblock %}

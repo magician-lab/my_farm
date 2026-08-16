@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Car Sale</title>
+{% extends "base_erp.html" %}
+{% block title %}Add Car Sale{% endblock %}
+{% block page_title %}Add Car Sale{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body {
             font-family: Arial;
             background: #f4f6f9;
@@ -82,23 +80,11 @@
     transition:0.3s;
 }
 
-    </style>
-</head>
-<body>
+    
+</style>
+
 <!-- FLASH MESSAGES -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
 
-        {% for category, message in messages %}
-
-            <div class="flash {{ category }}">
-                {{ message }}
-            </div>
-
-        {% endfor %}
-
-    {% endif %}
-{% endwith %}
 
 
 <h2>Add Car Sale</h2>
@@ -128,6 +114,4 @@
     <button type="submit">Save Sale</button>
 
 </form>
-
-</body>
-</html>
+{% endblock %}

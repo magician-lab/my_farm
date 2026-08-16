@@ -1,8 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Expenses List</title>
-    <style>
+{% extends "base_erp.html" %}
+{% block title %}Expenses List{% endblock %}
+{% block page_title %}Expenses List{% endblock %}
+{% block content %}
+<style>
+
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -48,11 +49,10 @@
             text-decoration: none;
             border-radius: 4px;}
 
-    </style>
-</head>
-<body>
-      
-    <h2>Incurred Expenses</h2>
+    
+</style>
+
+<h2>Incurred Expenses</h2>
     <p>Today's Date: {{ current_date }}</p>
 
     <form method="POST">
@@ -91,6 +91,4 @@
 
 
     </form>
-
-</body>
-</html>
+{% endblock %}

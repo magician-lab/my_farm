@@ -1,24 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monthly Milk Analysis</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Monthly Milk Analysis{% endblock %}
+{% block page_title %}Monthly Milk Analysis{% endblock %}
+{% block content %}
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Arial, sans-serif;
-    background:#f4f6f8;
-    padding:20px;
-    color:#333;
-}
 
 /* HEADER */
 
@@ -250,10 +235,8 @@ tfoot{
 
 }
 
-</style>
-</head>
 
-<body>
+</style>
 
 <div class="page-header">
     <div class="page-title">
@@ -464,6 +447,4 @@ tfoot{
 </table>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

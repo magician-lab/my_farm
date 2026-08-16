@@ -1,12 +1,12 @@
-from datetime import date, datetime
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from models import db, CalfRegistry, Insemination, AssetsRegistry, ExpensesRegistry, EmployeesRegistry, ShopRegistry, UserRegistry, FeedsRegistry, MilkRegistry, MilkSalesRegistry, CarRegistry, CarExpense, AnimalRegistry, MilkingHerd, CarSales, Treatment,Farm,Payment, MilkDailyRemaining, Admin, FeedsOrderV2, FeedsDeliveryV2, FeedsOrderItemV2, MilkPrice,CowShed,AnimalMovement
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime, date, timedelta
 from decimal import Decimal
+
+from datetime import date, datetime
 from sqlalchemy import extract, func
 import pdfkit
 import os
@@ -15,13 +15,15 @@ import pandas as pd
 import os
 import random
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    os.environ.get("DATABASE_URL") or "sqlite:///database.db"
+)
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'supersecretkey123'
@@ -41,6 +43,63 @@ with app.app_context():
 
     # Create tables
     db.create_all()
+
+    # =====================================================
+    # MIGRATIONS (additive columns, safe on SQLite + PostgreSQL)
+    # Adds any model column missing from the database and
+    # backfills farm_id (existing data = Murang'a farm) and
+    # car active = TRUE. NEVER drops or rewrites data.
+    # =====================================================
+
+    from sqlalchemy import inspect as sa_inspect, text
+
+    insp = sa_inspect(db.engine)
+
+    # per-column backfill values for newly added columns
+    PG = db.engine.dialect.name == "postgresql"
+
+    def backfill_literal(col_name):
+        if col_name == "farm_id":
+            return "1"
+        return "TRUE" if PG else "1"
+
+    for table in db.metadata.sorted_tables:
+
+        try:
+            existing = {c["name"] for c in insp.get_columns(table.name)}
+        except Exception:
+            continue
+
+        for col in table.columns:
+
+            if col.name in existing:
+                continue
+
+            col_type = col.type.compile(db.engine.dialect)
+
+            ddl = 'ALTER TABLE "%s" ADD COLUMN "%s" %s' % (
+                table.name,
+                col.name,
+                col_type
+            )
+
+            with db.engine.connect() as conn:
+                conn.execute(text(ddl))
+                conn.commit()
+
+            if col.name in ("farm_id", "active"):
+                with db.engine.connect() as conn:
+                    conn.execute(text(
+                        'UPDATE "%s" SET "%s" = %s WHERE "%s" IS NULL' % (
+                            table.name,
+                            col.name,
+                            backfill_literal(col.name),
+                            col.name
+                        )
+                    ))
+                    conn.commit()
+
+            print("Migration: added %s.%s" % (table.name, col.name))
 
     # =====================================================
     # CHECK IF ADMIN EXISTS
@@ -71,11 +130,53 @@ with app.app_context():
 
         db.session.commit()
 
-        print("✅ Default admin created")
+        print("Created admin Default admin created")
 
     else:
 
-        print("✅ Admin already exists")
+        print("Created admin Admin already exists")
+
+    # =====================================================
+    # DEFAULT FARMS
+    # =====================================================
+
+    default_farms = ["Murang'a", "Meru"]
+
+    for fname in default_farms:
+
+        if not Farm.query.filter_by(name=fname).first():
+            db.session.add(Farm(name=fname))
+
+    db.session.commit()
+
+    # =====================================================
+    # DEFAULT USERS PER FARM
+    # =====================================================
+
+    default_users = [
+        # (username, email, password, role, farm_name)
+        ("muranga", "muranga.farm@gmail.com", "muranga123", "user", "Murang'a"),
+        ("meru", "meru.farm@gmail.com", "meru123", "user", "Meru"),
+    ]
+
+    for uname, uemail, upass, urole, farm_name in default_users:
+
+        existing_user = Admin.query.filter_by(username=uname).first()
+
+        if not existing_user:
+
+            farm = Farm.query.filter_by(name=farm_name).first()
+
+            db.session.add(Admin(
+                username=uname,
+                email=uemail,
+                password=generate_password_hash(upass),
+                role=urole,
+                farm_id=farm.id if farm else None
+            ))
+
+    db.session.commit()
+
 
 @app.before_request
 def require_login():
@@ -84,6 +185,7 @@ def require_login():
         return
 
     allowed = [
+        "landing",
         "login",
         "forgot",
         "verify_otp",
@@ -99,6 +201,76 @@ def require_login():
     # If not logged in
     if not session.get("logged_in") and request.endpoint not in allowed:
         return redirect(url_for("login"))
+
+
+# =========================================================
+# TEMPLATE CONTEXT (farms, current farm, role helpers)
+# =========================================================
+
+@app.context_processor
+def inject_farm_context():
+
+    if session.get("logged_in"):
+
+        farms = Farm.query.order_by(Farm.name).all()
+
+        is_admin = session.get("role") == "admin"
+
+        # Admin farm context: session farm_id (0/None = all farms)
+        if is_admin:
+            current_farm_id = session.get("farm_id")
+        else:
+            current_farm_id = session.get("farm_id")
+
+        current_farm = None
+        if current_farm_id:
+            current_farm = Farm.query.get(current_farm_id)
+
+        return dict(
+            farms=farms,
+            current_farm=current_farm,
+            current_farm_id=current_farm_id,
+            is_admin=is_admin
+        )
+
+    return dict(farms=[], current_farm=None, current_farm_id=None, is_admin=False)
+
+
+# =========================================================
+# FARM HELPER
+# =========================================================
+
+def current_entry_farm_id():
+    """
+    Returns the farm a new record should be associated with:
+    - Non-admin users: their assigned farm (locked)
+    - Admin: the farm context selected in the switcher,
+      otherwise defaults to the first farm (Murang'a)
+    """
+    farm_id = session.get("farm_id")
+
+    if farm_id:
+        return farm_id
+
+    first = Farm.query.order_by(Farm.id).first()
+
+    return first.id if first else None
+
+
+# =========================================================
+# LANDING PAGE
+# =========================================================
+
+@app.route("/")
+def landing():
+
+    # If already logged in, go straight to the dashboard
+    if session.get("logged_in"):
+        return redirect(url_for("main_dashboard"))
+
+    farms = Farm.query.order_by(Farm.name).all()
+
+    return render_template("landing.html", farms=farms)
 
 
 # =========================================================
@@ -145,6 +317,26 @@ def role_required(*roles):
 
                 return redirect(url_for("access_denied"))
 
+            # Farm permission check for non-admin users
+            user_farm_id = session.get("farm_id")
+            if user_role != "admin" and user_farm_id:
+                # Check if the route has a farm_id parameter or if the
+                # function needs farm context
+                if "farm_id" in kwargs:
+                    if kwargs["farm_id"] != user_farm_id:
+                        flash(
+                            "Access denied. You don't have permission for this farm.",
+                            "error"
+                        )
+                        return redirect(url_for("select_farm"))
+                elif "farm_id" in args:
+                    if args[args.index("farm_id") + 1] != user_farm_id:
+                        flash(
+                            "Access denied. You don't have permission for this farm.",
+                            "error"
+                        )
+                        return redirect(url_for("select_farm"))
+
             return f(*args, **kwargs)
 
         return wrapper
@@ -160,6 +352,122 @@ def role_required(*roles):
 @login_required
 def access_denied():
     return render_template("access_denied.html")
+
+
+# =========================================================
+# FARM SELECTION
+# =========================================================
+
+@app.route("/select-farm", methods=["GET", "POST"])
+def select_farm():
+
+    # Users with an assigned farm skip selection
+    if session.get("farm_id"):
+        return redirect(url_for("main_dashboard"))
+
+    farms = Farm.query.all()
+
+    if request.method == "POST":
+        farm_id = request.form.get("farm_id")
+        if farm_id:
+            session["farm_id"] = int(farm_id)
+            flash("Farm selected successfully", "success")
+            return redirect(url_for("main_dashboard"))
+
+    return render_template("select_farm.html", farms=farms)
+
+
+# =========================================================
+# FARM SWITCHER (admin can switch farm context)
+# =========================================================
+
+@app.route("/set-farm/<int:farm_id>")
+@login_required
+def set_farm(farm_id):
+
+    # farm_id = 0 means all farms (admin)
+    if farm_id == 0:
+        session.pop("farm_id", None)
+        flash("Showing all farms", "success")
+    else:
+        farm = Farm.query.get(farm_id)
+        if farm:
+            session["farm_id"] = farm_id
+            flash(f"Now viewing: {farm.name}", "success")
+
+    return redirect(request.referrer or url_for("main_dashboard"))
+
+
+# =========================================================
+# MAIN DASHBOARD (with farm context)
+# =========================================================
+
+@app.route("/dashboard")
+@login_required
+def main_dashboard():
+
+    from datetime import date
+
+    # Date filter: default today, driven by ?filter_date=
+    date_str = request.args.get("filter_date")
+    if date_str:
+        try:
+            selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            selected_date = date.today()
+    else:
+        selected_date = date.today()
+
+    # Farm context: admin can switch farms via the switcher,
+    # farm users are locked to their assigned farm
+    farm_id = session.get("farm_id")
+
+    # One analytics engine call handles production + sales + stock,
+    # all filtered by date and farm
+    analytics = get_milk_sales(
+        selected_date.strftime("%Y-%m-%d"),
+        farm_id
+    )
+
+    # Farm counts
+    if farm_id:
+        total_animals = AnimalRegistry.query.filter_by(farm_id=farm_id).count()
+        recent_insem = Insemination.query.filter_by(farm_id=farm_id).order_by(
+            Insemination.date_served.desc()
+        ).limit(5).all()
+    else:
+        total_animals = AnimalRegistry.query.count()
+        recent_insem = Insemination.query.order_by(
+            Insemination.date_served.desc()
+        ).limit(5).all()
+
+    farms = Farm.query.all()
+
+    # Per-farm stats for admin overview
+    animals_by_farm = {}
+
+    if session.get("role") == "admin":
+
+        for f in Farm.query.all():
+
+            animals_by_farm[f.id] = {
+                "animals": AnimalRegistry.query.filter_by(
+                    farm_id=f.id
+                ).count(),
+                "milk": MilkRegistry.query.filter_by(
+                    farm_id=f.id
+                ).count()
+            }
+
+    return render_template(
+        "main_dashboard.html",
+        total_animals=total_animals,
+        recent_insem=recent_insem,
+        farms=farms,
+        is_admin=session.get("role") == "admin",
+        animals_by_farm=animals_by_farm,
+        **analytics
+    )
 
 
 # =========================================================
@@ -186,10 +494,18 @@ def login():
             session["user_id"] = user.id
             session["username"] = user.username
             session["role"] = user.role
+            session["farm_id"] = user.farm_id
 
             print("LOGIN SUCCESS")
 
-            return redirect(url_for("main_dashboard"))
+            # If admin, go to main dashboard (all farms); farm users go
+            # straight to their farm dashboard; users without a farm pick one
+            if user.role == "admin":
+                return redirect(url_for("main_dashboard"))
+            elif user.farm_id:
+                return redirect(url_for("main_dashboard"))
+            else:
+                return redirect(url_for("select_farm"))
 
         else:
 
@@ -240,6 +556,7 @@ def manage_users():
         email = request.form.get("email")
         password = request.form.get("password")
         role = request.form.get("role")
+        farm_id = request.form.get("farm_id")
 
         # =================================================
         # VALIDATION
@@ -292,7 +609,8 @@ def manage_users():
             username=username,
             email=email,
             password=generate_password_hash(password),
-            role=role
+            role=role,
+            farm_id=int(farm_id) if farm_id else None
         )
 
         db.session.add(new_user)
@@ -310,10 +628,12 @@ def manage_users():
     # =====================================================
 
     users = Admin.query.all()
+    farms = Farm.query.all()
 
     return render_template(
         "users.html",
-        users=users
+        users=users,
+        farms=farms
     )
 
 
@@ -332,6 +652,7 @@ def edit_user(id):
     email = request.form.get("email")
     password = request.form.get("password")
     role = request.form.get("role")
+    farm_id = request.form.get("farm_id")
 
     # =====================================================
     # VALIDATION
@@ -383,6 +704,7 @@ def edit_user(id):
     user.username = username
     user.email = email
     user.role = role
+    user.farm_id = int(farm_id) if farm_id else None
 
     # Only update password if entered
     if password:
@@ -847,7 +1169,7 @@ def calc_payment(order):
         color = "green"
 
     return total_cost, paid, balance, status, color
-def get_treatment_data(date_str=None, status=None):
+def get_treatment_data(date_str=None, status=None, farm_id=None):
 
     query = Treatment.query.join(AnimalRegistry)
 
@@ -861,6 +1183,12 @@ def get_treatment_data(date_str=None, status=None):
         selected_date = None   # 👈 no filtering
 
     # -------------------------
+    # FARM FILTER
+    # -------------------------
+    if farm_id:
+        query = query.filter(AnimalRegistry.farm_id == int(farm_id))
+
+    # -------------------------
     # STATUS FILTER
     # -------------------------
     if status:
@@ -868,14 +1196,12 @@ def get_treatment_data(date_str=None, status=None):
 
     records = query.order_by(AnimalRegistry.name.asc()).all()
 
-    # STATUS COUNTS
-    healed_count = Treatment.query.filter(
-        Treatment.status == "healed"
-    ).count()
+    # STATUS COUNTS (using filtered records)
+    filtered = records
 
-    recovering_count = Treatment.query.filter(
-        Treatment.status == "recovering"
-    ).count()
+    healed_count = sum(1 for r in filtered if r.status == "healed")
+
+    recovering_count = sum(1 for r in filtered if r.status == "recovering")
 
     # -------------------------
     # COST CALCULATIONS
@@ -888,16 +1214,20 @@ def get_treatment_data(date_str=None, status=None):
     else:
         base_query = Treatment.query  # 👈 ALL DATA
 
+    if farm_id:
+        base_query = base_query.filter(AnimalRegistry.farm_id == int(farm_id))
+
     daily_total = sum(r.cost for r in base_query.all())
 
     # MONTH
     if selected_date:
-        month_total = sum(
-            r.cost for r in Treatment.query.filter(
-                extract('month', Treatment.date_treated) == selected_date.month,
-                extract('year', Treatment.date_treated) == selected_date.year
-            ).all()
+        month_query = Treatment.query.join(AnimalRegistry).filter(
+            extract('month', Treatment.date_treated) == selected_date.month,
+            extract('year', Treatment.date_treated) == selected_date.year
         )
+        if farm_id:
+            month_query = month_query.filter(AnimalRegistry.farm_id == int(farm_id))
+        month_total = sum(r.cost for r in month_query.all())
     else:
         month_total = daily_total
 
@@ -905,10 +1235,14 @@ def get_treatment_data(date_str=None, status=None):
     if selected_date:
         quarter = (selected_date.month - 1)//3 + 1
 
+        quarter_query = Treatment.query.join(AnimalRegistry).filter(
+            extract('year', Treatment.date_treated) == selected_date.year
+        )
+        if farm_id:
+            quarter_query = quarter_query.filter(AnimalRegistry.farm_id == int(farm_id))
+
         quarter_total = sum(
-            r.cost for r in Treatment.query.filter(
-                extract('year', Treatment.date_treated) == selected_date.year
-            ).all()
+            r.cost for r in quarter_query.all()
             if ((r.date_treated.month-1)//3+1) == quarter
         )
     else:
@@ -916,11 +1250,12 @@ def get_treatment_data(date_str=None, status=None):
 
     # YEAR
     if selected_date:
-        year_total = sum(
-            r.cost for r in Treatment.query.filter(
-                extract('year', Treatment.date_treated) == selected_date.year
-            ).all()
+        year_query = Treatment.query.join(AnimalRegistry).filter(
+            extract('year', Treatment.date_treated) == selected_date.year
         )
+        if farm_id:
+            year_query = year_query.filter(AnimalRegistry.farm_id == int(farm_id))
+        year_total = sum(r.cost for r in year_query.all())
     else:
         year_total = daily_total
 
@@ -928,7 +1263,7 @@ def get_treatment_data(date_str=None, status=None):
 # STATUS COUNTS (SAFE FIX)
 # -------------------------
 
-    filtered = records   # ✅ ALWAYS use already filtered records
+    filtered = records   # Created admin ALWAYS use already filtered records
 
     healed_count = sum(1 for r in filtered if r.status == "healed")
     recovering_count = sum(1 for r in filtered if r.status == "recovering")
@@ -1473,7 +1808,7 @@ def calculate_revenue_summary(
 
 from sqlalchemy import extract
 
-def get_milk_report_data(date_str=None):
+def get_milk_report_data(date_str=None, farm_id=None):
     """
     Optimized Milk Report
     Only TWO SQL queries are executed.
@@ -1489,9 +1824,17 @@ def get_milk_report_data(date_str=None):
     # Today's Records (1 Query)
     # -------------------------------------------------------
 
+    today_query = MilkRegistry.query.filter(
+        MilkRegistry.date == selected_date
+    )
+
+    if farm_id:
+        today_query = today_query.filter(
+            MilkRegistry.farm_id == int(farm_id)
+        )
+
     records = (
-        MilkRegistry.query
-        .filter(MilkRegistry.date == selected_date)
+        today_query
         .order_by(MilkRegistry.total.desc())
         .all()
     )
@@ -1532,13 +1875,16 @@ def get_milk_report_data(date_str=None):
     # Entire Year's Records (1 Query)
     # -------------------------------------------------------
 
-    year_records = (
-        MilkRegistry.query
-        .filter(
-            extract("year", MilkRegistry.date) == selected_date.year
-        )
-        .all()
+    year_query = MilkRegistry.query.filter(
+        extract("year", MilkRegistry.date) == selected_date.year
     )
+
+    if farm_id:
+        year_query = year_query.filter(
+            MilkRegistry.farm_id == int(farm_id)
+        )
+
+    year_records = year_query.all()
 
     monthly_total = 0
     quarterly_total = 0
@@ -1775,15 +2121,15 @@ def get_transactions_data(
     # BASE DATE
     # =========================================
 
-    base_date = None
+    base_date_str = None
 
     if selected_date:
 
-        base_date = selected_date
+        base_date_str = selected_date
 
     elif selected_month:
 
-        base_date = selected_month
+        base_date_str = selected_month
 
     # =========================================
     # PERIOD TOTALS
@@ -1811,10 +2157,10 @@ def get_transactions_data(
     # PERIOD CALCULATIONS
     # =========================================
 
-    if base_date:
+    if base_date_str:
 
         quarter = (
-            (base_date.month - 1) // 3
+            (base_date_str.month - 1) // 3
         ) + 1
 
         # =====================================
@@ -1858,12 +2204,12 @@ def get_transactions_data(
             extract(
                 'month',
                 Payment.date_paid
-            ) == base_date.month,
+            ) == base_date_str.month,
 
             extract(
                 'year',
                 Payment.date_paid
-            ) == base_date.year
+            ) == base_date_str.year
 
         ).all()
 
@@ -1881,7 +2227,7 @@ def get_transactions_data(
             extract(
                 'year',
                 Payment.date_paid
-            ) == base_date.year
+            ) == base_date_str.year
 
         ).all()
 
@@ -1912,7 +2258,7 @@ def get_transactions_data(
 
         feed_daily_records = Payment.query.filter(
 
-            Payment.date_paid == base_date,
+            Payment.date_paid == base_date_str,
 
             Payment.purpose_type.ilike("%feed%")
 
@@ -1928,12 +2274,12 @@ def get_transactions_data(
             extract(
                 'month',
                 Payment.date_paid
-            ) == base_date.month,
+            ) == base_date_str.month,
 
             extract(
                 'year',
                 Payment.date_paid
-            ) == base_date.year,
+            ) == base_date_str.year,
 
             Payment.purpose_type.ilike("%feed%")
 
@@ -1949,7 +2295,7 @@ def get_transactions_data(
             extract(
                 'year',
                 Payment.date_paid
-            ) == base_date.year,
+            ) == base_date_str.year,
 
             Payment.purpose_type.ilike("%feed%")
 
@@ -1978,7 +2324,7 @@ def get_transactions_data(
 
         other_daily_records = Payment.query.filter(
 
-            Payment.date_paid == base_date,
+            Payment.date_paid == base_date_str,
 
             ~Payment.purpose_type.ilike("%feed%")
 
@@ -1994,12 +2340,12 @@ def get_transactions_data(
             extract(
                 'month',
                 Payment.date_paid
-            ) == base_date.month,
+            ) == base_date_str.month,
 
             extract(
                 'year',
                 Payment.date_paid
-            ) == base_date.year,
+            ) == base_date_str.year,
 
             ~Payment.purpose_type.ilike("%feed%")
 
@@ -2015,7 +2361,7 @@ def get_transactions_data(
             extract(
                 'year',
                 Payment.date_paid
-            ) == base_date.year,
+            ) == base_date_str.year,
 
             ~Payment.purpose_type.ilike("%feed%")
 
@@ -2091,9 +2437,9 @@ def get_monthly_cow_analysis(date_str=None):
     if date_str:
         selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     else:
-        selected_date = date.today()
+        from datetime import date; selected_date = __import__('datetime').date.today()
 
-    # ✅ FIXED: use cow_id + direct relationship
+    # Created admin FIXED: use cow_id + direct relationship
     monthly_cows = db.session.query(
         AnimalRegistry.name.label("cow_name"),
         func.sum(MilkRegistry.total).label("total_milk"),
@@ -2117,11 +2463,15 @@ def get_monthly_cow_analysis(date_str=None):
     }
 
 
-def get_animals_data(category=None):
+def get_animals_data(category=None, farm_id=None):
     base_query = AnimalRegistry.query.filter(
         AnimalRegistry.category.ilike("nolonger_exist") == False
     )
     query = AnimalRegistry.query
+
+    if farm_id:
+        query = query.filter(AnimalRegistry.farm_id == int(farm_id))
+        base_query = base_query.filter(AnimalRegistry.farm_id == int(farm_id))
 
     # HANDLE EMPTY / NONE / ALL
     if (
@@ -2133,59 +2483,58 @@ def get_animals_data(category=None):
         )
 
     animals = query.all()
+
+    # -------------------------------------------------------
+    # FARM-AWARE COUNTS
+    # -------------------------------------------------------
+
+    def count_cat(cat):
+        q = AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike(cat)
+        )
+        if farm_id:
+            q = q.filter(AnimalRegistry.farm_id == int(farm_id))
+        return q.count()
+
     return {
         "animals": animals,
         "existing": base_query,
-        "total_animals": AnimalRegistry.query.count(),
+        "total_animals": count_cat("%") if not farm_id else AnimalRegistry.query.filter_by(farm_id=farm_id).count(),
         "existing_animals": base_query.count(),
-        "milkers": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("milker")
-        ).count(),
+        "milkers": count_cat("milker"),
 
-        "dry_cows": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("dry")
-        ).count(),
+        "dry_cows": count_cat("dry"),
 
-        "calves": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("calf")
-        ).count(),
+        "calves": count_cat("calf"),
 
-        "bulls": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("bull")
-        ).count(),
+        "bulls": count_cat("bull"),
 
-        "incalf_heifers": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("incalf-heifer")
-        ).count(),
+        "incalf_heifers": count_cat("incalf-heifer"),
 
-        "yearlings": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("yearing")
-        ).count(),
+        "yearlings": count_cat("yearing"),
 
-        "weaners": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("weaner")
-        ).count(),
+        "weaners": count_cat("weaner"),
 
-        "Bullying_heifer": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("Bullying-Heifer")
-        ).count(),
+        "Bullying_heifer": count_cat("Bullying-Heifer"),
 
-        "steamers": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("steamer")
-        ).count(),
+        "steamers": count_cat("steamer"),
 
-        "nolonger_exist": AnimalRegistry.query.filter(
-            AnimalRegistry.category.ilike("nolonger_exist")
-        ).count(),
+        "nolonger_exist": count_cat("nolonger_exist"),
 
     }
 
 
-def get_insemination_data(status=None, month=None, year=None):
+def get_insemination_data(status=None, month=None, year=None, farm_id=None):
 
     from datetime import datetime
 
     query = db.session.query(Insemination).join(AnimalRegistry)
+
+    # =========================
+    # 🔹 DEFAULT TO CONFIRMED (EXPECTANT MOTHERS)
+    # =========================
+    if status is None:
+        status = "confirmed"
 
     # =========================
     # 🔹 STATUS FILTER
@@ -2206,6 +2555,12 @@ def get_insemination_data(status=None, month=None, year=None):
 
         elif status == "aborted":
             query = query.filter(Insemination.status == "aborted")
+
+    # =========================
+    # 🔹 FARM FILTER
+    # =========================
+    if farm_id:
+        query = query.filter(Insemination.farm_id == int(farm_id))
 
     # =========================
     # 🔹 MONTH FILTER (YYYY-MM)
@@ -2278,11 +2633,20 @@ def normalize_date(date_str=None):
 
     return date.today()
 
-def load_milk_data():
+def load_milk_data(farm_id=None):
 
-    production = MilkRegistry.query.all()
+    if farm_id:
+        production = MilkRegistry.query.filter_by(
+            farm_id=farm_id
+        ).all()
 
-    sales = MilkSalesRegistry.query.all()
+        sales = MilkSalesRegistry.query.filter_by(
+            farm_id=farm_id
+        ).all()
+    else:
+        production = MilkRegistry.query.all()
+
+        sales = MilkSalesRegistry.query.all()
 
     remaining = (
         MilkDailyRemaining.query
@@ -2632,12 +2996,12 @@ def calculate_stock(
     # BUILD DAILY PRODUCTION
     # ==========================================
 
-    production_by_date = {}
+    production_by_date_str = {}
 
     for p in production:
 
-        production_by_date[p.date] = (
-            production_by_date.get(p.date, 0)
+        production_by_date_str[p.date] = (
+            production_by_date_str.get(p.date, 0)
             + to_float(p.total)
         )
 
@@ -2645,7 +3009,7 @@ def calculate_stock(
     # BUILD DAILY USAGE
     # ==========================================
 
-    usage_by_date = {}
+    usage_by_date_str = {}
 
     for s in sales:
 
@@ -2663,8 +3027,8 @@ def calculate_stock(
 
         )
 
-        usage_by_date[s.date] = (
-            usage_by_date.get(s.date, 0)
+        usage_by_date_str[s.date] = (
+            usage_by_date_str.get(s.date, 0)
             + used
         )
 
@@ -2672,11 +3036,11 @@ def calculate_stock(
     # BUILD ACTUAL REMAINING
     # ==========================================
 
-    actual_remaining_by_date = {}
+    actual_remaining_by_date_str = {}
 
     for r in remaining:
 
-        actual_remaining_by_date[r.date] = (
+        actual_remaining_by_date_str[r.date] = (
             to_float(r.actual_remaining)
         )
     # ==========================================
@@ -2686,7 +3050,7 @@ def calculate_stock(
     previous_actual_remaining = 0
 
     previous_dates = [
-        d for d in actual_remaining_by_date.keys()
+        d for d in actual_remaining_by_date_str.keys()
         if d < selected_date
     ]
 
@@ -2694,7 +3058,7 @@ def calculate_stock(
 
         latest_previous = max(previous_dates)
 
-        previous_actual_remaining = actual_remaining_by_date.get(
+        previous_actual_remaining = actual_remaining_by_date_str.get(
             latest_previous,
             0
         )
@@ -2704,11 +3068,11 @@ def calculate_stock(
 
     all_dates = sorted(
 
-        set(production_by_date.keys())
+        set(production_by_date_str.keys())
 
-        | set(usage_by_date.keys())
+        | set(usage_by_date_str.keys())
 
-        | set(actual_remaining_by_date.keys())
+        | set(actual_remaining_by_date_str.keys())
 
     )
 
@@ -2726,9 +3090,9 @@ def calculate_stock(
 
     for day in all_dates:
 
-        produced = production_by_date.get(day, 0)
+        produced = production_by_date_str.get(day, 0)
 
-        used = usage_by_date.get(day, 0)
+        used = usage_by_date_str.get(day, 0)
 
         previous_system_remaining = running_system
 
@@ -2748,7 +3112,7 @@ def calculate_stock(
 
             actual_available_today = (
 
-                actual_remaining_by_date.get(
+                actual_remaining_by_date_str.get(
                     day,
                     0
                 )
@@ -2848,7 +3212,7 @@ def calculate_stock(
 
     }
 
-def get_milk_sales(date_str=None):
+def get_milk_sales(date_str=None, farm_id=None):
     """
     Main Milk Analytics Engine
 
@@ -2866,7 +3230,7 @@ def get_milk_sales(date_str=None):
     # LOAD ALL DATA (ONLY 4 DATABASE QUERIES)
     # =====================================================
 
-    data = load_milk_data()
+    data = load_milk_data(farm_id)
 
     production = data["production"]
     sales = data["sales"]
@@ -3045,15 +3409,15 @@ def get_shed_report_data():
 
 
 
-def get_milk_sales_monthly(selected_date_str=None):
+def get_milk_sales_monthly(selected_date=None):
 
     from datetime import datetime, date
     from sqlalchemy import extract, func
 
-    if selected_date_str:
-        selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
+    if selected_date:
+        selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
     else:
-        selected_date = date.today()
+        from datetime import date; selected_date = __import__('datetime').date.today()
 
     month = selected_date.month
     year = selected_date.year
@@ -3133,7 +3497,7 @@ def get_financial_dashboard_data(selected_date=None):
     # =====================================
 
     if not selected_date:
-        selected_date = date.today().strftime("%Y-%m-%d")
+        from datetime import date; selected_date = __import__('datetime').date.today().strftime("%Y-%m-%d")
 
     # =====================================
     # LOAD ALL MODULES
@@ -3303,9 +3667,9 @@ app.config['MAIL_DEFAULT_SENDER'] = 'MY FARM <magicdevelopers9@gmail.com>'
 mail = Mail(app)
 
 #PDFKit configuration
-# config = pdfkit.configuration(
-#     wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-# )
+config = pdfkit.configuration(
+    wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+)
 
 def get_employees_data():
 
@@ -3327,57 +3691,57 @@ def get_employees_data():
 
 # ================= UNIVERSAL REPORT ENGINE ================= #
 
-# def generate_pdf(template_name, context, filename):
-#     """Generate PDF from HTML template"""
-#     rendered_html = render_template(template_name, **context)
-
-#     folder = os.path.join("static", "reports")
-#     os.makedirs(folder, exist_ok=True)
-
-#     file_path = os.path.join(folder, filename)
-
-#     pdfkit.from_string(
-#         rendered_html,
-#         file_path,
-#         configuration=config
-#     )
-    
-#     return file_path
-
-from weasyprint import HTML
-from flask import render_template, current_app
-import os
-
-
 def generate_pdf(template_name, context, filename):
-    """Generate PDF from HTML template using WeasyPrint"""
+    """Generate PDF from HTML template"""
+    rendered_html = render_template(template_name, **context)
 
-    rendered_html = render_template(
-        template_name,
-        **context
+    folder = os.path.join("static", "reports")
+    os.makedirs(folder, exist_ok=True)
+
+    file_path = os.path.join(folder, filename)
+
+    pdfkit.from_string(
+        rendered_html,
+        file_path,
+        configuration=config
     )
-
-    reports_dir = os.path.join(
-        current_app.root_path,
-        "static",
-        "reports"
-    )
-
-    os.makedirs(reports_dir, exist_ok=True)
-
-    file_path = os.path.join(
-        reports_dir,
-        filename
-    )
-
-    HTML(
-        string=rendered_html,
-        base_url=current_app.root_path
-    ).write_pdf(
-        target=file_path
-    )
-
+    
     return file_path
+
+# from weasyprint import HTML
+# from flask import render_template, current_app
+# import os
+
+
+# def generate_pdf(template_name, context, filename):
+#     """Generate PDF from HTML template using WeasyPrint"""
+
+#     rendered_html = render_template(
+#         template_name,
+#         **context
+#     )
+
+#     reports_dir = os.path.join(
+#         current_app.root_path,
+#         "static",
+#         "reports"
+#     )
+
+#     os.makedirs(reports_dir, exist_ok=True)
+
+#     file_path = os.path.join(
+#         reports_dir,
+#         filename
+#     )
+
+#     HTML(
+#         string=rendered_html,
+#         base_url=current_app.root_path
+#     ).write_pdf(
+#         target=file_path
+#     )
+
+#     return file_path
 
 @app.route('/send_report/<report_type>')
 @login_required
@@ -3416,7 +3780,7 @@ def send_report(report_type):
 
     elif report_type == "treatment":
 
-        date = request.args.get("date")
+        date_str = request.args.get("date")
         status = request.args.get("status")
 
         data = get_treatment_data(date, status)
@@ -3450,13 +3814,13 @@ def send_report(report_type):
 
     elif report_type == "transactions":
 
-        filter_date = request.args.get("filter_date")
+        filter_date_str = request.args.get("filter_date")
         month = request.args.get("month")
         purpose = request.args.get("purpose")
         farm_id = request.args.get("farm_id")
 
         data = get_transactions_data(
-            filter_date,
+            filter_date_str,
             month,
             purpose,
             farm_id
@@ -3464,7 +3828,7 @@ def send_report(report_type):
 
         template = "transactions_pdf.html"
 
-        filename = f"transactions_{month or filter_date or 'all'}.pdf"
+        filename = f"transactions_{month or filter_date_str or 'all'}.pdf"
 
     elif report_type == "cow_analysis":
 
@@ -3696,6 +4060,9 @@ def send_report(report_type):
 def cow_registry():
     message = None
 
+    # Farm context: list only cows of the current farm
+    farm_id = session.get("farm_id")
+
     if request.method == "POST":
         new_name = request.form.get("name")
         breed = request.form.get("breed")
@@ -3738,15 +4105,20 @@ def cow_registry():
             category=category,
             sex=sex,
             mother=mother,
-            
-                      
+            farm_id=current_entry_farm_id()
         )
 
         db.session.add(new_registry)
         db.session.commit()
         message="Succesifully added"
         
-    return render_template("cow_registry.html", message=message)
+    # List cows of current farm only
+    if farm_id:
+        cows = AnimalRegistry.query.filter_by(farm_id=farm_id).all()
+    else:
+        cows = AnimalRegistry.query.all()
+
+    return render_template("cow_registry.html", message=message, cows=cows)
 
 
 @app.route("/animals")
@@ -3755,7 +4127,7 @@ def animals():
 
     category = request.args.get("category")
 
-    data = get_animals_data(category)
+    data = get_animals_data(category, session.get("farm_id"))
 
     return render_template(
         "animals.html",
@@ -3767,7 +4139,6 @@ def animals():
 
 @app.route("/delete_cow/<int:id>", methods=["GET", "POST"])
 @login_required
-@role_required("admin")
 def delete_animal(id):
 
     animal = AnimalRegistry.query.get_or_404(id)
@@ -3784,7 +4155,6 @@ def delete_animal(id):
 
     # ================= POST =================
 @app.route("/edit_animal_record/<int:id>", methods=["GET", "POST"])
-@role_required("admin")
 @login_required
 def edit_animal_record(id):
 
@@ -4066,10 +4436,14 @@ def shed_report():
     )
 
 
-
 @app.route("/treatment", methods=["GET", "POST"])
+
 @login_required
 def treatment():
+
+    # Farm permission check: non-admin users are locked to their farm,
+    # admin follows the farm context selected in the switcher
+    farm_id = session.get("farm_id")
 
     if request.method == "POST":
 
@@ -4079,6 +4453,10 @@ def treatment():
             for rid in selected_ids:
                 rec = Treatment.query.get(int(rid))
                 if rec:
+                    # Check farm permission
+                    if farm_id and rec.farm_id != farm_id:
+                        flash("Access denied. You don't have permission for this treatment.", "error")
+                        return redirect(url_for("treatment"))
                     db.session.delete(rec)
 
             db.session.commit()
@@ -4086,9 +4464,19 @@ def treatment():
         return redirect(url_for("treatment"))
 
     date_str = request.args.get("date")
-    status = request.args.get("status")
+    status = request.args.get("status")  # Status navigation
 
-    data = get_treatment_data(date_str, status)
+    # Farm filtering
+    if farm_id:
+        if status:
+            data = get_treatment_data(date_str, status, farm_id=farm_id)
+        else:
+            data = get_treatment_data(date_str, farm_id=farm_id)
+    else:
+        if status:
+            data = get_treatment_data(date_str, status)
+        else:
+            data = get_treatment_data(date_str)
 
     return render_template("treatment.html", **data)
 
@@ -4096,7 +4484,13 @@ def treatment():
 @login_required
 def add_treatment():
 
+    # Farm filtering for non-admin users
     animals = AnimalRegistry.query.all()
+
+    if session.get("role") != "admin":
+        farm_id = session.get("farm_id")
+        if farm_id:
+            animals = [a for a in animals if a.farm_id == farm_id]
 
     if request.method == "POST":
 
@@ -4106,7 +4500,8 @@ def add_treatment():
             illness=request.form.get("illness"),
             cost=float(request.form.get("cost")),
             vet=request.form.get("vet"),
-            status=request.form.get("status")
+            status=request.form.get("status"),
+            farm_id=current_entry_farm_id()
         )
 
         db.session.add(record)
@@ -4121,6 +4516,12 @@ def add_treatment():
 def edit_treatment(id):
 
     rec = Treatment.query.get_or_404(id)
+
+    # Farm permission check
+    if session.get("role") != "admin" and session.get("farm_id"):
+        if rec.animal.farm_id != session["farm_id"]:
+            flash("Access denied. You don't have permission for this treatment.", "error")
+            return redirect(url_for("treatment"))
 
     if request.method == "POST":
         rec.status = request.form.get("status")
@@ -4145,6 +4546,8 @@ def delete_treatment(id):
 @login_required
 def calf_registry():
     message = None
+
+    farm_id = session.get("farm_id")
 
     if request.method == "POST":
         calf_name = request.form.get("name")
@@ -4174,14 +4577,25 @@ def calf_registry():
             breed=breed,
             dob=date_bought_obj,
             category=level,
-            mother=mother         
+            mother=mother,
+            farm_id=current_entry_farm_id()
         )
 
         db.session.add(new_registry)
         db.session.commit()
         message="Succesifully added"
         
-    return render_template("calf_registry.html", message=message)
+    # List calves of current farm only
+    if farm_id:
+        calves = AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("calf")
+        ).filter_by(farm_id=farm_id).all()
+    else:
+        calves = AnimalRegistry.query.filter(
+            AnimalRegistry.category.ilike("calf")
+        ).all()
+
+    return render_template("calf_registry.html", message=message, calves=calves)
 
 
 @app.route("/insemination/add", methods=["GET","POST"])
@@ -4189,6 +4603,12 @@ def calf_registry():
 def add_insemination():
 
     animals = AnimalRegistry.query.all()
+
+    # Set farm filtering for non-admin users
+    if session.get("role") != "admin":
+        farm_id = session.get("farm_id")
+        if farm_id:
+            animals = [a for a in animals if a.farm_id == farm_id]
 
     if request.method == "POST":
 
@@ -4198,15 +4618,20 @@ def add_insemination():
 
         days = CONFIRMATION_METHODS.get(method, 30)
 
-        confirmation_date = date_served + timedelta(days=days)
+        confirmation_date_str = date_served + timedelta(days=days)
+
+        # Get the animal to set farm_id
+        animal = AnimalRegistry.query.get(animal_id)
+        record_farm_id = animal.farm_id if animal else None
 
         record = Insemination(
             animal_id=animal_id,
             date_served=date_served,
             confirmation_method=method,
-            confirmation_date=confirmation_date,
+            confirmation_date=confirmation_date_str,
             status="pending",
-            calving_date=None
+            calving_date=None,
+            farm_id=record_farm_id
         )
 
         db.session.add(record)
@@ -4222,15 +4647,18 @@ from datetime import datetime
 @login_required
 def insemination():
 
-    status = request.args.get("status")
+    # Default to showing confirmed/expectant mothers
+    status = request.args.get("status") or "confirmed"
     month = request.args.get("month")
     year = request.args.get("year")
 
-    data = get_insemination_data(status, month, year)
+    # Farm filtering: non-admin locked to own farm, admin follows switcher
+    farm_id = session.get("farm_id")
+
+    data = get_insemination_data(status, month, year, farm_id)
 
     return render_template("insemination_list.html", **data)
 @app.route("/insemination/delete/<int:id>")
-@role_required("admin")
 @login_required
 def delete_insemination(id):
 
@@ -4244,21 +4672,28 @@ def delete_insemination(id):
 from datetime import datetime, timedelta
 
 @app.route("/insemination/edit/<int:id>", methods=["GET","POST"])
-@role_required("admin")
 @login_required
 def edit_insemination(id):
 
     record = Insemination.query.get_or_404(id)
-    animals = AnimalRegistry.query.all()  # 🔥 for dropdown
+    animals = AnimalRegistry.query.all()
+
+    # Farm filtering for non-admin users
+    if session.get("role") != "admin":
+        farm_id = session.get("farm_id")
+        if farm_id:
+            animals = [a for a in animals if a.farm_id == farm_id]
 
     if request.method == "POST":
 
-        # 🔹 Get form data
         animal_id = request.form.get("animal_id")
         date_served = request.form.get("date_served")
         status = request.form.get("status")
 
-        # 🔹 Update fields
+        # 🔹 Get the animal to set farm_id
+        animal = AnimalRegistry.query.get(animal_id) if animal_id else None
+        record_farm_id = animal.farm_id if animal else session.get("farm_id")
+
         record.animal_id = animal_id
         record.status = status
 
@@ -4280,6 +4715,8 @@ def edit_insemination(id):
         else:
             # pending or empty
             record.calving_date = None
+
+        record.farm_id = record_farm_id
 
         db.session.commit()
 
@@ -4356,12 +4793,12 @@ def Assets():
 
     # ================= GET =================
     Assets = AssetsRegistry.query.all()
-    current_date = date.today()
+    current_date_str = date.today()
 
     return render_template(
         "Assets.html",
         Assets=Assets,
-        current_date=current_date
+        current_date=current_date_str
     )
 
 
@@ -4422,15 +4859,15 @@ def Employees():
 
     # 🔥 GET DATA
     Employees = EmployeesRegistry.query.all()
-    current_date = date.today()
+    current_date_str = date.today()
 
-    # ✅ CALCULATE TOTAL SALARY
+    # Created admin CALCULATE TOTAL SALARY
     total = sum(float(e.salary or 0) for e in Employees)
 
     return render_template(
         "Employees.html",
         Employees=Employees,
-        current_date=current_date,
+        current_date=current_date_str,
         total=total   # 🔥 FIX
     )
 
@@ -4554,11 +4991,15 @@ def farms():
 from sqlalchemy import extract
 
 @app.route("/feeds_v2/orders")
-@role_required("admin", "finance")
+@role_required("admin")
 def orders_v2():
 
     month = request.args.get("month")
     farm_id = request.args.get("farm_id")
+
+    # Non-admin users only see their own farm orders
+    if session.get("role") != "admin":
+        farm_id = session.get("farm_id")
 
     query = FeedsOrderV2.query
 
@@ -4594,7 +5035,7 @@ def orders_v2():
 
 
 @app.route("/feeds_v2/delete/<int:id>", methods=["POST"])
-@role_required("admin", "finance")
+@role_required("admin")
 def delete_order(id):
 
     order = FeedsOrderV2.query.get_or_404(id)
@@ -4609,8 +5050,7 @@ def delete_order(id):
 # DELIVERY REPORT ROUTE
 # =========================================================
 @app.route("/feeds_v2/delivery_report")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def delivery_report():
 
     date_filter = request.args.get("date")
@@ -4715,8 +5155,7 @@ def delivery_report():
 # =========================================================
 
 @app.route("/feeds_v2/delivery/edit/<int:id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def edit_delivery(id):
 
     delivery = FeedsDeliveryV2.query.get_or_404(id)
@@ -4795,7 +5234,7 @@ def edit_delivery(id):
 
         db.session.commit()
 
-        flash("✅ Delivery updated successfully", "success")
+        flash("Created admin Delivery updated successfully", "success")
 
         return redirect(url_for(
             "delivery_report",
@@ -4813,8 +5252,7 @@ def edit_delivery(id):
 # =========================================================
 
 @app.route("/feeds_v2/delivery/delete/<int:id>", methods=["POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def delete_delivery(id):
 
     delivery = FeedsDeliveryV2.query.get_or_404(id)
@@ -4824,7 +5262,7 @@ def delete_delivery(id):
     db.session.delete(delivery)
     db.session.commit()
 
-    flash("✅ Delivery deleted successfully", "success")
+    flash("Created admin Delivery deleted successfully", "success")
 
     return redirect(url_for(
         "delivery_report",
@@ -4832,7 +5270,7 @@ def delete_delivery(id):
     ))
 
 @app.route("/feeds_v2/search_feed")
-@login_required
+@role_required("admin")
 def search_feed():
 
     term = request.args.get("q", "").strip().lower()
@@ -4846,17 +5284,19 @@ def search_feed():
     return {"results": results}
 
 @app.route("/feeds_v2/create", methods=["GET", "POST"])
-@role_required("admin", "finance")
+@role_required("admin")
 def create_order():
 
     farms = Farm.query.all()
 
     if request.method == "POST":
 
+        farm_id = request.form.get("farm_id") or current_entry_farm_id()
+
         order = FeedsOrderV2(
             order_ref=generate_order_ref(),
             date_ordered=datetime.strptime(request.form["date"], "%Y-%m-%d"),
-            farm_id=int(request.form["farm_id"])
+            farm_id=int(farm_id)
         )
 
         db.session.add(order)
@@ -4884,8 +5324,7 @@ def create_order():
     return render_template("v2/create_order.html", farms=farms)
 
 @app.route("/feeds_v2/delivery/<int:order_id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def delivery_v2(order_id):
 
     order = FeedsOrderV2.query.get_or_404(order_id)
@@ -4924,8 +5363,7 @@ def delivery_v2(order_id):
     return render_template("v2/delivery.html", order=order, item=item, remaining=remaining)
 
 @app.route("/feeds_v2/payment/<int:order_id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def payment(order_id):
 
     order = FeedsOrderV2.query.get_or_404(order_id)
@@ -4959,11 +5397,11 @@ def payment(order_id):
     )
 
 @app.route("/feeds_v2/payment_report")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def payment_report():
 
     order_id = request.args.get("order_id")
+    order = None
     query = Payment.query
 
     if order_id:
@@ -4983,7 +5421,7 @@ def payment_report():
     )
 
 @app.route("/feeds_v2/payment/delete/<int:id>", methods=["POST"])
-@role_required("admin", "finance")
+@role_required("admin")
 def delete_payment(id):
 
     payment = Payment.query.get_or_404(id)
@@ -4996,7 +5434,6 @@ from datetime import datetime
 
 @app.route("/feeds_v2/payment/<int:order_id>", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "finance")
 def add_feeds_payment(order_id):
 
     order = FeedsOrderV2.query.get_or_404(order_id)
@@ -5041,8 +5478,7 @@ def add_feeds_payment(order_id):
     )
 
 @app.route("/feeds_v2/payment/edit/<int:id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def edit_payment(id):
 
     # 🔹 GET PAYMENT
@@ -5083,7 +5519,7 @@ def edit_payment(id):
 
         db.session.commit()
 
-        flash("✅ Payment updated successfully", "success")
+        flash("Created admin Payment updated successfully", "success")
 
         # 🔥 GO BACK TO SAME PAYMENT REPORT
         if order:
@@ -5105,8 +5541,7 @@ def edit_payment(id):
 
 
 @app.route("/feeds_v2/view/<int:id>")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def view_order(id):
 
     order = FeedsOrderV2.query.get_or_404(id)
@@ -5144,8 +5579,7 @@ def view_order(id):
         **summary
     )
 @app.route("/feeds_v2/item/add/<int:order_id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def add_item(order_id):
 
     order = FeedsOrderV2.query.get_or_404(order_id)
@@ -5170,8 +5604,7 @@ def add_item(order_id):
     return render_template("v2/add_item.html", order=order)
 
 @app.route("/feeds_v2/item/delete/<int:id>", methods=["POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def delete_item(id):
 
     item = FeedsOrderItemV2.query.get_or_404(id)
@@ -5182,8 +5615,7 @@ def delete_item(id):
     return redirect(request.referrer or "/feeds_v2/orders")
 
 @app.route("/feeds_v2/item/edit/<int:id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def edit_item(id):
 
     item = FeedsOrderItemV2.query.get_or_404(id)
@@ -5257,6 +5689,19 @@ def manage_milking():
     ).all()
 
     milking_cows = MilkingHerd.query.all()
+
+    # Farm context: only cows belonging to the active farm
+    farm_id = session.get("farm_id")
+
+    if farm_id:
+        animals = [
+            a for a in animals
+            if a.farm_id == farm_id
+        ]
+        milking_cows = [
+            mh for mh in milking_cows
+            if mh.animal and mh.animal.farm_id == farm_id
+        ]
 
     return render_template(
         "manage_milking.html",
@@ -5352,7 +5797,8 @@ def milk_registry():
                             morning=morning or 0,
                             noon=noon or 0,
                             evening=evening or 0,
-                            total=total
+                            total=total,
+                            farm_id=current_entry_farm_id()
                         )
 
                         db.session.add(record)
@@ -5373,12 +5819,21 @@ def milk_registry():
 
     cows = MilkingHerd.query.all()
 
-    current_date = date.today()
+    # Farm context: only cows belonging to the active farm
+    farm_id = session.get("farm_id")
+
+    if farm_id:
+        cows = [
+            mh for mh in cows
+            if mh.animal and mh.animal.farm_id == farm_id
+        ]
+
+    current_date_str = date.today()
 
     return render_template(
         "milk_registry.html",
         cows=cows,
-        current_date=current_date
+        current_date=current_date_str
     )
 
 
@@ -5535,7 +5990,7 @@ def confirm_import_milk():
 
             existing = MilkRegistry.query.filter_by(
                 cow_id=cow_id,
-                date=selected_date
+                date_str=selected_date
             ).first()
 
             if existing:
@@ -5550,7 +6005,7 @@ def confirm_import_milk():
                 record = MilkRegistry(
 
                     cow_id=cow_id,
-                    date=selected_date,
+                    date_str=selected_date,
                     morning=morning,
                     noon=noon,
                     evening=evening,
@@ -5591,10 +6046,10 @@ def milk():
 
         return redirect(url_for("milk"))
 
-    # ✅ USE SHARED FUNCTION
+    # Created admin USE SHARED FUNCTION
     date_str = request.args.get("filter_date")
 
-    data = get_milk_report_data(date_str)
+    data = get_milk_report_data(date_str, session.get("farm_id"))
 
     return render_template("milk.html", **data)
 
@@ -5607,7 +6062,7 @@ def delete_milk(id):
     db.session.delete(record)
     db.session.commit()
 
-    return redirect(url_for("milk", filter_date=selected_date))
+    return redirect(url_for("milk", filter_date_str=selected_date))
 
 from decimal import Decimal
 
@@ -5632,7 +6087,7 @@ def edit_milk(id):
 
         db.session.commit()
 
-        return redirect(url_for("milk", filter_date=selected_date))
+        return redirect(url_for("milk", filter_date_str=selected_date))
 
     return render_template("edit_milk.html", record=record)
 
@@ -5664,7 +6119,7 @@ def cow_analysis():
     return render_template(
         "cow_analysis.html",
         cow_report=cow_report,
-        data=data,              # ✅ THIS FIXES YOUR ERROR
+        data=data,              # Created admin THIS FIXES YOUR ERROR
         date_str=date_str
     )
 
@@ -5677,6 +6132,8 @@ def milk_sales_entry():
     if request.method == "POST":
 
         date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
+
+        entry_farm_id = current_entry_farm_id()
 
         def create_session(session_name, prefix):
             return MilkSalesRegistry(
@@ -5691,6 +6148,7 @@ def milk_sales_entry():
                 calf=Decimal(request.form.get(f"{prefix}_calf", 0) or 0),
 
                 price=Decimal(request.form.get(f"{prefix}_price", 0) or 0),
+                farm_id=entry_farm_id,
             )
 
         sessions = [
@@ -5746,7 +6204,7 @@ def delete_milk_sale(id):
     db.session.delete(sale)
     db.session.commit()
 
-    return redirect(url_for("milk_sales_report", date=selected_date))
+    return redirect(url_for("milk_sales_report", date_str=selected_date))
 
 @app.route("/edit_milk_sale/<int:id>", methods=["GET", "POST"])
 @login_required
@@ -5756,7 +6214,7 @@ def edit_milk_sale_record(id):   # 👈 changed function name
 
     if request.method == "POST":
 
-        sale.date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
+        sale.date_str = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
         sale.session = request.form["session"]
         sale.shop1 = Decimal(request.form.get("shop1", 0) or 0)
         sale.shop2 = Decimal(request.form.get("shop2", 0) or 0)
@@ -5782,20 +6240,20 @@ def update_actual_remaining():
 
     value = float(request.form['actual_remaining'])
 
-    record = MilkDailyRemaining.query.filter_by(date=selected_date).first()
+    record = MilkDailyRemaining.query.filter_by(date_str=selected_date).first()
 
     if record:
         record.actual_remaining = value
     else:
         record = MilkDailyRemaining(
-            date=selected_date,
+            date_str=selected_date,
             actual_remaining=value
         )
         db.session.add(record)
 
     db.session.commit()
 
-    return redirect(url_for("milk_sales_report", date=selected_date))
+    return redirect(url_for("milk_sales_report", date_str=selected_date))
 
 # =========================
 # MILK PRICE ROUTES
@@ -5805,7 +6263,6 @@ from datetime import datetime
 
 @app.route("/milk_prices", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "finance")
 def milk_prices():
 
     # ---------------- ADD / UPDATE ----------------
@@ -5814,12 +6271,12 @@ def milk_prices():
         price_id = request.form.get("price_id")
 
         price = request.form.get("price")
-        effective_date = request.form.get("effective_date")
+        effective_date_str = request.form.get("effective_date")
 
-        if price and effective_date:
+        if price and effective_date_str:
 
-            effective_date = datetime.strptime(
-                effective_date,
+            effective_date_str = datetime.strptime(
+                effective_date_str,
                 "%Y-%m-%d"
             ).date()
 
@@ -5830,14 +6287,14 @@ def milk_prices():
 
                 if record:
                     record.price = price
-                    record.effective_date = effective_date
+                    record.effective_date = effective_date_str
 
             # -------- ADD --------
             else:
 
                 new_price = MilkPrice(
                     price=price,
-                    effective_date=effective_date
+                    effective_date=effective_date_str
                 )
 
                 db.session.add(new_price)
@@ -5865,7 +6322,6 @@ def milk_prices():
 
 @app.route("/delete_milk_price/<int:id>")
 @login_required
-@role_required("admin", "finance")
 def delete_milk_price(id):
 
     record = MilkPrice.query.get_or_404(id)
@@ -5880,7 +6336,6 @@ def delete_milk_price(id):
 
 @app.route("/milk_sales_monthly")
 @login_required
-@role_required("admin")
 def milk_sales_monthly():
 
     selected_date = request.args.get("date")
@@ -5904,8 +6359,7 @@ def milk_sales_monthly():
         total_use=data["total_use"]
     )
 @app.route("/car_registry", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def car_registry():
 
     if request.method == "POST":
@@ -5916,7 +6370,8 @@ def car_registry():
         new_car = CarRegistry(
             plate_number=plate_number,
             model=model,
-            driver=driver
+            driver=driver,
+            active=True
         )
 
         db.session.add(new_car)
@@ -5924,13 +6379,62 @@ def car_registry():
 
         return redirect(url_for("car_registry"))
 
-    cars = CarRegistry.query.all()
+    active_cars = CarRegistry.query.filter_by(active=True).all()
+    inactive_cars = CarRegistry.query.filter_by(active=False).all()
 
-    return render_template("car_registry.html", cars=cars)
+    return render_template(
+        "car_registry.html",
+        active_cars=active_cars,
+        inactive_cars=inactive_cars
+    )
+
+
+@app.route("/cars/edit/<int:id>", methods=["POST"])
+@role_required("admin")
+def edit_car(id):
+
+    car = CarRegistry.query.get_or_404(id)
+
+    car.plate_number = request.form.get("plate_number") or car.plate_number
+    car.model = request.form.get("model") or car.model
+    car.driver = request.form.get("driver") or car.driver
+
+    db.session.commit()
+
+    flash("Vehicle updated successfully", "success")
+
+    return redirect(url_for("car_registry"))
+
+
+@app.route("/cars/deactivate/<int:id>", methods=["POST"])
+@role_required("admin")
+def deactivate_car(id):
+
+    car = CarRegistry.query.get_or_404(id)
+
+    car.active = False
+    db.session.commit()
+
+    flash(f"Vehicle {car.plate_number} deactivated", "success")
+
+    return redirect(url_for("car_registry"))
+
+
+@app.route("/cars/reactivate/<int:id>", methods=["POST"])
+@role_required("admin")
+def reactivate_car(id):
+
+    car = CarRegistry.query.get_or_404(id)
+
+    car.active = True
+    db.session.commit()
+
+    flash(f"Vehicle {car.plate_number} reactivated", "success")
+
+    return redirect(url_for("car_registry"))
 
 @app.route("/add_car_expense", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def add_car_expense():
 
     if request.method == "POST":
@@ -5956,13 +6460,12 @@ def add_car_expense():
 
         return redirect(url_for("add_car_expense"))
 
-    cars = CarRegistry.query.all()
+    cars = CarRegistry.query.filter_by(active=True).all()
 
     return render_template("add_car_expense.html", cars=cars)
 
 @app.route("/car_expense_report")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def car_expense_report():
 
     selected_date = request.args.get("date")
@@ -5972,8 +6475,7 @@ def car_expense_report():
     return render_template("car_expense_report.html", **data)
 
 @app.route("/delete_car_expense/<int:id>")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def delete_car_expense(id):
     expense = CarExpense.query.get_or_404(id)
 
@@ -5983,8 +6485,7 @@ def delete_car_expense(id):
     return redirect(url_for("car_expense_report"))
 
 @app.route("/edit_car_expense/<int:id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def edit_car_expense(id):
 
     expense = CarExpense.query.get_or_404(id)
@@ -6000,13 +6501,18 @@ def edit_car_expense(id):
         db.session.commit()
         return redirect(url_for("car_expense_report"))
 
+    return render_template(
+        "edit_car_expense.html",
+        expense=expense,
+        cars=cars
+    )
+
 @app.route("/car_sales/add", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def add_car_sale():
 
-    # GET ALL CARS
-    cars = CarRegistry.query.all()
+    # GET ALL ACTIVE CARS
+    cars = CarRegistry.query.filter_by(active=True).all()
 
     if request.method == "POST":
 
@@ -6021,7 +6527,7 @@ def add_car_sale():
                 return redirect(url_for("add_car_sale"))
 
             # ================= DATE =================
-            sale_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            sale_date_str = datetime.strptime(date_str, "%Y-%m-%d").date()
 
             # ================= AUTO AMOUNT =================
             if length == "FULL":
@@ -6037,7 +6543,7 @@ def add_car_sale():
             # ================= SAVE =================
             new_sale = CarSales(
                 car_id=int(car_id),
-                date=sale_date,
+                date=sale_date_str,
                 length=length,
                 amount=amount
             )
@@ -6058,8 +6564,7 @@ def add_car_sale():
         cars=cars
     )
 @app.route("/car_sales_report")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def car_sales_report():
 
     selected_date = request.args.get("date")
@@ -6070,8 +6575,7 @@ def car_sales_report():
 
 
 @app.route("/delete_car_sale/<int:id>")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def delete_car_sale(id):
     sale = CarSales.query.get_or_404(id)
     db.session.delete(sale)
@@ -6079,8 +6583,7 @@ def delete_car_sale(id):
     return redirect(url_for("car_sales_report"))
 
 @app.route("/edit_car_sale/<int:id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def edit_car_sale(id):
 
     sale = CarSales.query.get_or_404(id)
@@ -6088,7 +6591,7 @@ def edit_car_sale(id):
 
     if request.method == "POST":
         sale.car_id = request.form.get("car_id")
-        sale.date = datetime.strptime(request.form.get("date"), "%Y-%m-%d").date()
+        sale.date_str = datetime.strptime(request.form.get("date"), "%Y-%m-%d").date()
         sale.length = request.form.get("day_length")
 
         if sale.length == "HALF":
@@ -6102,14 +6605,140 @@ def edit_car_sale(id):
     return render_template("edit_car_sale.html", sale=sale, cars=cars)
 
 
+# =========================================================
+# VEHICLE ANALYTICS
+# =========================================================
+
+@app.route("/vehicle_analytics")
+@role_required("admin")
+def vehicle_analytics():
+
+    # Month filter: default = current month
+    month_str = request.args.get("month")
+
+    if month_str and month_str.strip():
+        try:
+            year, month = [int(x) for x in month_str.split("-")]
+        except Exception:
+            month, year = date.today().month, date.today().year
+    else:
+        month, year = date.today().month, date.today().year
+
+    # Car filter: default = first active car (or all)
+    car_filter = request.args.get("car_id")
+    selected_car = None
+    cars = CarRegistry.query.all()
+
+    if car_filter and str(car_filter).strip():
+        selected_car = CarRegistry.query.get(int(car_filter))
+
+    # -------- FILTERS --------
+    start_date = datetime(year, month, 1).date()
+
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1).date()
+    else:
+        end_date = datetime(year, month + 1, 1).date()
+
+    def in_month(q, column):
+        return q.filter(
+            column >= start_date,
+            column < end_date
+        )
+
+    # -------- PER-CAR ANALYTICS --------
+    car_rows = []
+
+    for car in cars:
+
+        sales_q = in_month(CarSales.query.filter_by(car_id=car.id), CarSales.date)
+        exp_q = in_month(CarExpense.query.filter_by(car_id=car.id), CarExpense.date)
+
+        month_sales = sum(s.amount or 0 for s in sales_q.all())
+        month_expenses = sum(e.amount or 0 for e in exp_q.all())
+
+        month_sales_count = sales_q.count()
+        month_expenses_count = exp_q.count()
+
+        car_rows.append({
+            "car": car,
+            "sales": month_sales,
+            "expenses": month_expenses,
+            "profit": round(month_sales - month_expenses, 2),
+            "sales_count": month_sales_count,
+            "expenses_count": month_expenses_count
+        })
+
+    # -------- SELECTED CAR BREAKDOWN --------
+    breakdown_sales = []
+    breakdown_expenses = []
+    totals = {
+        "sales": 0,
+        "expenses": 0,
+        "profit": 0,
+        "full_days": 0,
+        "half_days": 0
+    }
+
+    if selected_car:
+
+        breakdown_sales = (
+            in_month(
+                CarSales.query.filter_by(car_id=selected_car.id),
+                CarSales.date
+            )
+            .order_by(CarSales.date.desc())
+            .all()
+        )
+
+        breakdown_expenses = (
+            in_month(
+                CarExpense.query.filter_by(car_id=selected_car.id),
+                CarExpense.date
+            )
+            .order_by(CarExpense.date.desc())
+            .all()
+        )
+
+        totals["sales"] = round(sum(s.amount or 0 for s in breakdown_sales), 2)
+        totals["expenses"] = round(sum(e.amount or 0 for e in breakdown_expenses), 2)
+        totals["profit"] = round(totals["sales"] - totals["expenses"], 2)
+        totals["full_days"] = sum(1 for s in breakdown_sales if (s.length or "").upper() == "FULL")
+        totals["half_days"] = sum(1 for s in breakdown_sales if (s.length or "").upper() == "HALF")
+
+    # Overall totals across all cars for the month
+    overall = {
+        "sales": round(sum(r["sales"] for r in car_rows), 2),
+        "expenses": round(sum(r["expenses"] for r in car_rows), 2),
+        "profit": round(sum(r["profit"] for r in car_rows), 2)
+    }
+
+    return render_template(
+        "vehicle_analytics.html",
+        cars=cars,
+        selected_car=selected_car,
+        car_rows=car_rows,
+        breakdown_sales=breakdown_sales,
+        breakdown_expenses=breakdown_expenses,
+        totals=totals,
+        overall=overall,
+        month_str=f"{year:04d}-{month:02d}",
+        month_name=datetime(year, month, 1).strftime("%B %Y")
+    )
+
+
 
 
 @app.route("/payments", methods=["GET", "POST"])
 @login_required
-@role_required("admin", "finance", "user")
 def payments():
     message = None
     farms = Farm.query.all()
+
+    is_admin = session.get("role") == "admin"
+
+    # Non-admin users locked to their farm
+    user_farm_id = session.get("farm_id") if not is_admin else None
 
     if request.method == "POST":
         date_str = request.form.get("date_paid")
@@ -6117,7 +6746,7 @@ def payments():
         account = request.form.get("account")
         purpose = request.form.get("purpose")
         purpose_type = request.form.get("purpose_type")
-        farm_id = request.form.get("farm_id")
+        farm_id = request.form.get("farm_id") or current_entry_farm_id()
 
         if not date_str or not amount or not account or not purpose or not purpose_type:
             message = "All fields required"
@@ -6135,22 +6764,36 @@ def payments():
             db.session.commit()
             message = "Payment added successfully"
 
-    payments = Payment.query.order_by(Payment.date_paid.desc()).all()
+    # History is ADMIN ONLY - farm users may only ADD transactions
+    if is_admin:
+        payments_query = Payment.query
 
-    return render_template("payments.html", payments=payments, farms=farms, message=message)
+        if user_farm_id:
+            payments_query = payments_query.filter_by(farm_id=user_farm_id)
+
+        payments = payments_query.order_by(Payment.date_paid.desc()).all()
+    else:
+        payments = []
+
+    return render_template(
+        "payments.html",
+        payments=payments,
+        farms=farms,
+        message=message,
+        show_history=is_admin
+    )
 
 @app.route("/transactions")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def transactions():
 
-    filter_date = request.args.get("filter_date")
+    filter_date_str = request.args.get("filter_date")
     month = request.args.get("month")
     purpose = request.args.get("purpose")
     farm_id = request.args.get("farm_id")
-    order_id = request.args.get("order_id")   # ✅ ADD THIS
+    order_id = request.args.get("order_id")   # Created admin ADD THIS
 
-    data = get_transactions_data(filter_date, month, purpose, farm_id, order_id)
+    data = get_transactions_data(filter_date_str, month, purpose, farm_id, order_id)
 
     farms = Farm.query.all()
 
@@ -6161,8 +6804,7 @@ def transactions():
         **data
     )
 @app.route("/edit_transaction/<int:id>", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def edit_transaction(id):
 
     transaction = Payment.query.get_or_404(id)
@@ -6214,12 +6856,12 @@ def edit_transaction(id):
 
         db.session.commit()
 
-        flash("✅ Transaction updated successfully", "success")
+        flash("Created admin Transaction updated successfully", "success")
 
         # 🔥 RETURN TO SAME PAGE WITH FILTERS
         return redirect(url_for(
             "transactions",
-            filter_date=selected_date,
+            filter_date_str=selected_date,
             month=selected_month,
             purpose=purpose,
             farm_id=farm_filter
@@ -6244,8 +6886,7 @@ def edit_transaction(id):
     )
 
 @app.route("/delete_transaction/<int:id>")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def delete_transaction(id):
 
     transaction = Payment.query.get_or_404(id)
@@ -6259,7 +6900,7 @@ def delete_transaction(id):
 
     return redirect(url_for(
         "transactions",
-        filter_date=selected_date,
+        filter_date_str=selected_date,
         purpose=purpose,
         farm_id=farm_id
     ))
@@ -6269,13 +6910,17 @@ def delete_transaction(id):
 # def list_routes():
 #     return "<br>".join([str(r) for r in app.url_map.iter_rules()])
 @app.route("/milk_dashboard")
+@login_required
 def milk_dashboard():
 
     date_str = request.args.get("filter_date")
 
-    milk_data = get_milk_report_data(date_str)
+    # Farm context: non-admin locked to own farm, admin follows switcher
+    farm_id = session.get("farm_id")
 
-    sales_data = get_milk_sales(date_str)
+    milk_data = get_milk_report_data(date_str, farm_id)
+
+    sales_data = get_milk_sales(date_str, farm_id)
 
     combined_data = {
         **milk_data,
@@ -6291,7 +6936,7 @@ def milk_dashboard():
 @login_required
 def cow_dashboard():
 
-    data = get_animals_data()
+    data = get_animals_data(farm_id=session.get("farm_id"))
 
     return render_template(
         "cow_dashboard.html",
@@ -6300,8 +6945,7 @@ def cow_dashboard():
 
 
 @app.route("/financial_dashboard")
-@login_required
-@role_required("admin", "finance")
+@role_required("admin")
 def financial_dashboard():
 
     # =========================================
@@ -6315,19 +6959,19 @@ def financial_dashboard():
     # =========================================
 
     # MILK FILTER
-    milk_date = request.args.get(
+    milk_date_str = request.args.get(
         "milk_date",
         today_str
     )
 
     # VEHICLE SALES FILTER
     # OPTIONAL -> SHOW ALL IF EMPTY
-    vehicle_date = request.args.get(
+    vehicle_date_str = request.args.get(
         "vehicle_date"
     )
 
     # GENERAL EXPENSE FILTER
-    expense_date = request.args.get(
+    expense_date_str = request.args.get(
         "expense_date",
         today_str
     )
@@ -6336,8 +6980,11 @@ def financial_dashboard():
     # MILK SALES
     # =========================================
 
+    farm_id = session.get("farm_id")
+
     milk_sales_data = get_milk_sales(
-        milk_date
+        milk_date_str,
+        farm_id
     )
 
     # =========================================
@@ -6345,11 +6992,11 @@ def financial_dashboard():
     # COMPLETELY INDEPENDENT
     # =========================================
 
-    if vehicle_date and vehicle_date.strip():
+    if vehicle_date_str and vehicle_date_str.strip():
 
         # FILTER VEHICLE SALES ONLY
         car_sales_data = get_sales_report_data(
-            vehicle_date
+            vehicle_date_str
         )
 
     else:
@@ -6363,11 +7010,11 @@ def financial_dashboard():
     # NOT AFFECTED BY expense_date
     # =========================================
 
-    if vehicle_date and vehicle_date.strip():
+    if vehicle_date_str and vehicle_date_str.strip():
 
         # FILTER CAR EXPENSES ONLY
         car_expense_data = get_car_expense_report_data(
-            vehicle_date
+            vehicle_date_str
         )
 
     else:
@@ -6381,7 +7028,7 @@ def financial_dashboard():
     # =========================================
 
     transaction_data = get_transactions_data(
-        expense_date
+        expense_date_str
     )
 
     # =========================================
@@ -6412,11 +7059,11 @@ def financial_dashboard():
         **salary_data,
 
         # FILTER VALUES
-        "milk_date": milk_date,
+        "milk_date": milk_date_str,
 
-        "vehicle_date": vehicle_date,
+        "vehicle_date": vehicle_date_str,
 
-        "expense_date": expense_date
+        "expense_date": expense_date_str
 
     }
 
@@ -6429,7 +7076,6 @@ def financial_dashboard():
         **combined_data
     )
     
-@app.route("/")
 @login_required
 def main_dashboard():
 

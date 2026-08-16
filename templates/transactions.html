@@ -1,16 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Transactions</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Transactions{% endblock %}
+{% block page_title %}Transactions{% endblock %}
+{% block content %}
 <style>
 
-body{
-    font-family: Arial, sans-serif;
-    background:#f4f6f9;
-    margin:0;
-    padding:20px;
-}
 
 /* MAIN CONTAINER */
 .container{
@@ -187,10 +180,8 @@ td{
     }
 }
 
-</style>
-</head>
 
-<body>
+</style>
 
 <div class="container">
 
@@ -387,8 +378,25 @@ td{
 </div>
 
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
 
+function addEmail(btn){
 
+    let input = document.createElement("input");
 
-</body>
-</html>
+    input.type = "text";
+    input.name = "emails";
+    input.placeholder = "Another email";
+
+    input.style.padding = "10px";
+    input.style.border = "1px solid #ccc";
+    input.style.borderRadius = "6px";
+
+    btn.parentNode.insertBefore(input, btn);
+
+}
+
+</script>
+{% endblock %}

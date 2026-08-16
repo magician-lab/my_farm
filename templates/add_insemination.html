@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Add Insemination</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Add Insemination{% endblock %}
+{% block page_title %}Add Insemination{% endblock %}
+{% block content %}
 <style>
-body{
-    font-family: Arial;
-    background:#f5f7fb;
-    margin:0;
-    padding:40px;
-}
 
 .container{
     width:450px;
@@ -121,11 +114,8 @@ button:hover{
             text-decoration: none;
             border-radius: 4px;}
 
+
 </style>
-
-</head>
-
-<body>
 
 <div class="container">
     <a href="/insemination" class="btn_dashboard">← Back</a>
@@ -160,7 +150,8 @@ button:hover{
 </form>
 
 </div>
-
+{% endblock %}
+{% block scripts %}
 <script>
 const animals = [
     {% for animal in animals %}
@@ -220,6 +211,4 @@ document.addEventListener("click", function(e){
     }
 });
 </script>
-
-</body>
-</html>
+{% endblock %}

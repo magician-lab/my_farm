@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Milk Sales Entry</title>
+{% extends "base_erp.html" %}
+{% block title %}Milk Sales Entry{% endblock %}
+{% block page_title %}Milk Sales Entry{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body {
             font-family: Arial;
             background: #f4f6f8;
@@ -118,10 +118,8 @@
     }
 
 }
-    </style>
-</head>
-
-<body>
+    
+</style>
 
 <div class="container">
     <div class="top-actions">
@@ -200,6 +198,4 @@
 </form>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

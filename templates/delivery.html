@@ -1,3 +1,8 @@
+{% extends "base_erp.html" %}
+{% block title %}Delivery{% endblock %}
+{% block page_title %}Delivery{% endblock %}
+{% block content %}
+<div class="card">
 <h2>Delivery - {{ order.order_ref }}</h2>
 
 <p>Ordered: {{ order.quantity_ordered }}</p>
@@ -9,3 +14,5 @@
     <input type="number" name="pieces" placeholder="Pieces">
     <button>Add Delivery</button>
 </form>
+</div>
+{% endblock %}

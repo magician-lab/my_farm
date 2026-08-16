@@ -1,0 +1,225 @@
+{% extends "base_erp.html" %}
+{% block title %}Vehicle Analytics{% endblock %}
+{% block page_title %}Vehicle Analytics{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-car"></i> Vehicle Analytics</h1>
+        <p class="sub">Monthly sales, expenses and profit per vehicle.</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn btn-blue" href="/car_registry"><i class="fa-solid fa-list"></i> Vehicles</a>
+        <a class="btn btn-green" href="/car_sales/add"><i class="fa-solid fa-plus"></i> Add Sale</a>
+        <a class="btn btn-orange" href="/add_car_expense"><i class="fa-solid fa-wrench"></i> Add Expense</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fa-solid fa-filter"></i> Filters</h2>
+    <form method="GET" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group" style="margin:0;min-width:200px;">
+            <label>Month</label>
+            <input type="month" name="month" value="{{ month_str }}">
+        </div>
+        <div class="form-group" style="margin:0;min-width:240px;">
+            <label>Vehicle</label>
+            <select name="car_id">
+                <option value="">-- All Vehicles --</option>
+                {% for car in cars %}
+                <option value="{{ car.id }}"
+                    {% if selected_car and selected_car.id == car.id %}selected{% endif %}>
+                    {{ car.plate_number }} ({{ car.driver or 'No driver' }}){% if not car.active %} - INACTIVE{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-green"><i class="fa-solid fa-filter"></i> Apply</button>
+    </form>
+</div>
+
+<!-- ============ OVERALL MONTH TOTALS ============ -->
+<div class="cards-grid">
+    <div class="stat-card green">
+        <i class="fa-solid fa-money-bill icon"></i>
+        <div class="label">Month Sales</div>
+        <div class="value">KSh {{ "{:,}".format(overall.sales) }}</div>
+        <div class="sub">{{ month_name }}</div>
+    </div>
+    <div class="stat-card red">
+        <i class="fa-solid fa-wrench icon"></i>
+        <div class="label">Month Expenses</div>
+        <div class="value">KSh {{ "{:,}".format(overall.expenses) }}</div>
+        <div class="sub">{{ month_name }}</div>
+    </div>
+    <div class="stat-card {% if overall.profit >= 0 %}blue{% else %}red{% endif %}">
+        <i class="fa-solid fa-scale-balanced icon"></i>
+        <div class="label">Month Profit</div>
+        <div class="value">KSh {{ "{:,}".format(overall.profit) }}</div>
+        <div class="sub">All Vehicles</div>
+    </div>
+</div>
+
+<!-- ============ PER-VEHICLE TABLE ============ -->
+<div class="card">
+    <h2><i class="fa-solid fa-table"></i> Per-Vehicle Summary ({{ month_name }})</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Plate</th>
+                    <th>Driver</th>
+                    <th>Status</th>
+                    <th>Sales</th>
+                    <th>Expenses</th>
+                    <th>Profit</th>
+                    <th>Entries</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in car_rows %}
+                <tr>
+                    <td><strong>{{ row.car.plate_number }}</strong></td>
+                    <td>{{ row.car.driver or '-' }}</td>
+                    <td>
+                        {% if row.car.active %}
+                        <span class="badge badge-green">Active</span>
+                        {% else %}
+                        <span class="badge badge-red">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>KSh {{ "{:,}".format(row.sales) }}</td>
+                    <td>KSh {{ "{:,}".format(row.expenses) }}</td>
+                    <td>
+                        {% if row.profit >= 0 %}
+                        <span class="badge badge-green">KSh {{ "{:,}".format(row.profit) }}</span>
+                        {% else %}
+                        <span class="badge badge-red">KSh {{ "{:,}".format(row.profit) }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ row.sales_count }} sales / {{ row.expenses_count }} expenses</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if selected_car %}
+<!-- ============ SELECTED CAR BREAKDOWN ============ -->
+<div class="card">
+    <h2>
+        <i class="fa-solid fa-car"></i>
+        {{ selected_car.plate_number }} — {{ selected_car.model or 'Vehicle' }}
+        <span class="badge {% if selected_car.active %}badge-green{% else %}badge-red{% endif %}" style="margin-left:8px;">
+            {% if selected_car.active %}ACTIVE{% else %}INACTIVE{% endif %}
+        </span>
+    </h2>
+    <p class="sub" style="margin-bottom:16px;">
+        Driver: <strong>{{ selected_car.driver or 'No driver assigned' }}</strong> · Month: <strong>{{ month_name }}</strong>
+    </p>
+
+    <div class="cards-grid">
+        <div class="stat-card green">
+            <i class="fa-solid fa-store icon"></i>
+            <div class="label">Total Sales</div>
+            <div class="value">KSh {{ "{:,}".format(totals.sales) }}</div>
+            <div class="sub">{{ totals.full_days }} Full Days · {{ totals.half_days }} Half Days</div>
+        </div>
+        <div class="stat-card red">
+            <i class="fa-solid fa-wrench icon"></i>
+            <div class="label">Total Expenses</div>
+            <div class="value">KSh {{ "{:,}".format(totals.expenses) }}</div>
+            <div class="sub">{{ month_name }}</div>
+        </div>
+        <div class="stat-card {% if totals.profit >= 0 %}blue{% else %}red{% endif %}">
+            <i class="fa-solid fa-scale-balanced icon"></i>
+            <div class="label">Profit</div>
+            <div class="value">KSh {{ "{:,}".format(totals.profit) }}</div>
+            <div class="sub">Sales - Expenses</div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="breakdown-grid">
+        <div>
+            <h3 style="margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-store"></i> Sales Breakdown</h3>
+            {% if breakdown_sales %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in breakdown_sales %}
+                        <tr>
+                            <td>{{ s.date }}</td>
+                            <td>
+                                {% if (s.length or '').upper() == 'FULL' %}
+                                <span class="badge badge-green">Full Day</span>
+                                {% else %}
+                                <span class="badge badge-orange">Half Day</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>KSh {{ "{:,}".format(s.amount or 0) }}</strong></td>
+                            <td>
+                                <a class="btn btn-blue" style="padding:4px 10px;" href="/edit_car_sale/{{ s.id }}"><i class="fa-solid fa-pen"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="color:var(--muted);">No sales this month.</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <h3 style="margin-bottom:12px;color:var(--danger);"><i class="fa-solid fa-wrench"></i> Expense Breakdown</h3>
+            {% if breakdown_expenses %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in breakdown_expenses %}
+                        <tr>
+                            <td>{{ e.date }}</td>
+                            <td>{{ e.expense_type }}</td>
+                            <td>{{ e.description or '-' }}</td>
+                            <td><strong>KSh {{ "{:,}".format(e.amount or 0) }}</strong></td>
+                            <td>
+                                <a class="btn btn-blue" style="padding:4px 10px;" href="/edit_car_expense/{{ e.id }}"><i class="fa-solid fa-pen"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="color:var(--muted);">No expenses this month.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    @media(max-width:900px){
+        .breakdown-grid{grid-template-columns:1fr !important;}
+    }
+</style>
+
+{% endblock %}

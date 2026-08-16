@@ -1,25 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Milk Prices</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Milk Prices{% endblock %}
+{% block page_title %}Milk Prices{% endblock %}
+{% block content %}
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Arial, sans-serif;
-    background:#f4f6f9;
-    padding:20px;
-    color:#333;
-}
 
 /* CONTAINER */
 
@@ -186,9 +170,8 @@ table tbody tr:hover{
 
 }
 
+
 </style>
-</head>
-<body>
 
 <div class="container">
 
@@ -208,19 +191,7 @@ table tbody tr:hover{
 
     <!-- FLASH MESSAGES -->
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-
-            {% for category, message in messages %}
-
-                <div class="flash {{ category }}">
-                    {{ message }}
-                </div>
-
-            {% endfor %}
-
-        {% endif %}
-    {% endwith %}
+    
 
     <!-- FORM -->
 
@@ -343,7 +314,8 @@ table tbody tr:hover{
 </div>
 
 <!-- SCRIPT -->
-
+{% endblock %}
+{% block scripts %}
 <script>
 
 function editPrice(id, price, date){
@@ -362,6 +334,4 @@ function editPrice(id, price, date){
 }
 
 </script>
-
-</body>
-</html>
+{% endblock %}

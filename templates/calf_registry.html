@@ -1,83 +1,89 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Farm | calf_registry</title>
+{% extends "base_erp.html" %}
+{% block title %}Calf Registry{% endblock %}
+{% block page_title %}Calf Registry{% endblock %}
+{% block content %}
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f2f6f9;
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            width: 400px;
-            margin: 80px auto;
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            text-align: center;
-            color: #2c3e50;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        button {
-            width: 100%;
-            margin-top: 20px;
-            padding: 12px;
-            background: #2c7be5;
-            border: none;
-            color: white;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #1a68d1;
-        }
-         .btn_dashboard {
-            display: inline-block;
-            margin-bottom: 15px;
-            padding: 8px 14px;
-            background: green;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;}
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <a href="/cow_dashboard" class="btn_dashboard">← Back</a>
-    <h2>Calf Registry</h2>
-{% if message %}
-<p style="color:#1500ff; font-weight:bold;">{{ message }}</p>
-{% endif %}
-
-    <form method="POST" action="/calf_registry">
-        <input type="text" name="name" placeholder="calf name" required>
-        <input type="text" name="breed" placeholder="breed type" required>
-        <input type="date" name="birth_day" placeholder="date_of_birth (yyyy-m-d)" required>
-        <input type="text" name="level" placeholder="category" required >
-        <input type="text" name="mother" placeholder="mother" >
-        <button type="submit">Submit</button>
-    </form>
-
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-baby"></i> Calf Registry</h1>
+        <p class="sub">Register calves for {{ current_farm.name if current_farm else 'your farm' }}.</p>
+    </div>
+    <a href="/cow_dashboard" class="btn btn-green"><i class="fa-solid fa-arrow-left"></i> Back to Animals</a>
 </div>
 
-</body>
-</html>
+{% if message %}
+<div class="flash" style="position:static;margin-bottom:18px;">
+    <i class="fa-solid fa-circle-info"></i> {{ message }}
+</div>
+{% endif %}
+
+<div class="cards-grid">
+    <div class="card">
+        <h2><i class="fa-solid fa-plus-circle"></i> Register New Calf</h2>
+        <form method="POST" action="/calf_registry">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Calf Name</label>
+                    <input type="text" name="name" placeholder="e.g. Spotty" required>
+                </div>
+                <div class="form-group">
+                    <label>Breed</label>
+                    <input type="text" name="breed" placeholder="e.g. Jersey" required>
+                </div>
+                <div class="form-group">
+                    <label>Birth Date</label>
+                    <input type="date" name="birth_day" required>
+                </div>
+                <div class="form-group">
+                    <label>Level</label>
+                    <select name="level" required>
+                        <option value="Calf">Calf</option>
+                        <option value="Weaner">Weaner</option>
+                        <option value="Yearling">Yearling</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Mother's Name</label>
+                    <input type="text" name="mother" placeholder="Mother's name" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-green"><i class="fa-solid fa-check"></i> Register Calf</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fa-solid fa-list"></i> Calves ({{ calves|length }})</h2>
+    {% if calves %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Breed</th>
+                    <th>Level</th>
+                    <th>Birth Date</th>
+                    <th>Mother</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in calves %}
+                <tr>
+                    <td>{{ c.id }}</td>
+                    <td><strong>{{ c.name }}</strong></td>
+                    <td>{{ c.breed }}</td>
+                    <td><span class="badge badge-blue">{{ c.category }}</span></td>
+                    <td>{{ c.dob or '-' }}</td>
+                    <td>{{ c.mother or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color:var(--muted);">No calves registered for this farm yet.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

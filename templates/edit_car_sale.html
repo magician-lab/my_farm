@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Sale</title>
+{% extends "base_erp.html" %}
+{% block title %}Edit Sale{% endblock %}
+{% block page_title %}Edit Sale{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body { font-family: Arial; background: #f4f6f9; padding: 20px; }
 
         form {
@@ -27,9 +27,8 @@
             color: white;
             border: none;
         }
-    </style>
-</head>
-<body>
+    
+</style>
 
 <h2>Edit Sale</h2>
 
@@ -53,6 +52,4 @@
     <button type="submit">Update Sale</button>
 
 </form>
-
-</body>
-</html>
+{% endblock %}

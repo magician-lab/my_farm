@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriERP | Smart Farm Management System</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+    --green:#1b5e20;
+    --green-light:#2e7d32;
+    --green-lighter:#4caf50;
+    --cream:#f8faf5;
+    --dark:#0d2411;
+    --text:#263238;
+    --muted:#607d68;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--cream);color:var(--text);}
+
+/* ============ NAV ============ */
+.navbar{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 5%;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);
+    box-shadow:0 2px 12px rgba(0,0,0,.06);
+}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand i{font-size:30px;color:var(--green);}
+.brand h1{font-size:22px;color:var(--green);font-weight:800;letter-spacing:.5px;}
+.brand small{display:block;font-size:10.5px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{text-decoration:none;color:var(--text);font-size:14px;font-weight:600;transition:.2s;}
+.nav-links a:hover{color:var(--green);}
+.nav-cta{
+    background:var(--green);color:#fff !important;
+    padding:10px 22px;border-radius:30px;
+}
+.nav-cta:hover{background:var(--green-light);}
+
+/* ============ HERO ============ */
+.hero{
+    min-height:100vh;
+    display:flex;align-items:center;
+    padding:120px 5% 80px;
+    background:
+        radial-gradient(ellipse at 80% 20%, rgba(76,175,80,.12), transparent 50%),
+        radial-gradient(ellipse at 15% 85%, rgba(27,94,32,.10), transparent 50%),
+        linear-gradient(160deg,#f4f9f2,#eaf4e8);
+    position:relative;overflow:hidden;
+}
+.hero::before{
+    content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;
+    border-radius:50%;background:radial-gradient(circle,rgba(76,175,80,.18),transparent 65%);
+}
+.hero-content{max-width:620px;position:relative;z-index:2;}
+.hero-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    background:#e8f5e9;color:var(--green);
+    font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+    padding:8px 16px;border-radius:30px;margin-bottom:22px;
+}
+.hero h1{
+    font-size:52px;line-height:1.12;color:var(--dark);font-weight:800;margin-bottom:20px;
+}
+.hero h1 span{color:var(--green);}
+.hero p{font-size:17px;color:var(--muted);line-height:1.7;margin-bottom:32px;}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;}
+.btn-primary{
+    background:var(--green);color:#fff;text-decoration:none;
+    padding:15px 32px;border-radius:12px;font-size:15px;font-weight:700;
+    display:inline-flex;align-items:center;gap:10px;transition:.25s;box-shadow:0 6px 18px rgba(27,94,32,.3);
+}
+.btn-primary:hover{background:var(--green-light);transform:translateY(-2px);}
+.btn-outline{
+    border:2px solid var(--green);color:var(--green);text-decoration:none;
+    padding:13px 30px;border-radius:12px;font-size:15px;font-weight:700;
+    display:inline-flex;align-items:center;gap:10px;transition:.25s;
+}
+.btn-outline:hover{background:var(--green);color:#fff;}
+.hero-stats{display:flex;gap:40px;margin-top:44px;flex-wrap:wrap;}
+.hstat .num{font-size:30px;font-weight:800;color:var(--green);}
+.hstat .lbl{font-size:13px;color:var(--muted);font-weight:600;}
+
+/* ============ HERO IMAGE ============ */
+.hero-visual{
+    position:relative;z-index:2;
+    display:flex;justify-content:center;flex:1;min-width:340px;
+}
+.dashboard-mock{
+    background:#fff;border-radius:22px;box-shadow:0 25px 60px rgba(13,36,17,.18);
+    width:480px;padding:22px;border:1px solid #e3eee0;
+}
+.mock-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.mock-title{font-size:15px;font-weight:800;color:var(--dark);}
+.mock-pill{background:#e8f5e9;color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;}
+.mock-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.mock-card{background:#f6faf5;border-radius:12px;padding:14px;border:1px solid #e8f0e5;}
+.mock-card .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;}
+.mock-card .val{font-size:20px;font-weight:800;color:var(--dark);margin-top:5px;}
+.mock-card.green .val{color:var(--green);}
+.mock-card.blue .val{color:#1565c0;}
+.mock-card.orange .val{color:#ef6c00;}
+.mock-bar{height:10px;background:#eef3ec;border-radius:6px;margin-bottom:7px;overflow:hidden;}
+.mock-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--green-lighter));border-radius:6px;}
+
+/* ============ FEATURES ============ */
+.section{padding:90px 5%;}
+.section-header{text-align:center;max-width:640px;margin:0 auto 55px;}
+.section-header .tag{
+    display:inline-block;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+    color:var(--green);background:#e8f5e9;padding:7px 16px;border-radius:30px;margin-bottom:16px;
+}
+.section-header h2{font-size:36px;color:var(--dark);font-weight:800;margin-bottom:14px;}
+.section-header p{color:var(--muted);font-size:15.5px;line-height:1.7;}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px;max-width:1200px;margin:auto;}
+.feature{
+    background:#fff;border-radius:18px;padding:28px;border:1px solid #e6efe3;
+    transition:.25s;
+}
+.feature:hover{transform:translateY(-5px);box-shadow:0 14px 34px rgba(27,94,32,.12);}
+.feature .ficon{
+    width:54px;height:54px;border-radius:14px;background:#e8f5e9;color:var(--green);
+    display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px;
+}
+.feature h3{font-size:17px;color:var(--dark);margin-bottom:9px;}
+.feature p{font-size:13.5px;color:var(--muted);line-height:1.65;}
+
+/* ============ FARMS ============ */
+.farms-section{background:#fff;border-top:1px solid #e6efe3;border-bottom:1px solid #e6efe3;}
+.farms-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:1100px;margin:auto;}
+.farm-card{
+    background:linear-gradient(160deg,#f6faf5,#eef6ec);
+    border:1px solid #ddebd8;border-radius:18px;padding:26px;
+    display:flex;align-items:center;gap:18px;transition:.25s;
+}
+.farm-card:hover{box-shadow:0 12px 30px rgba(27,94,32,.14);transform:translateY(-3px);}
+.farm-card .fico{
+    width:58px;height:58px;border-radius:16px;background:var(--green);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;
+}
+.farm-card h4{font-size:17px;color:var(--dark);margin-bottom:5px;}
+.farm-card p{font-size:12.5px;color:var(--muted);}
+
+/* ============ CTA ============ */
+.cta{
+    text-align:center;padding:90px 5%;
+    background:linear-gradient(135deg,var(--dark),var(--green));
+}
+.cta h2{color:#fff;font-size:34px;font-weight:800;margin-bottom:14px;}
+.cta p{color:#c8e6c9;font-size:15.5px;margin-bottom:30px;max-width:560px;margin-left:auto;margin-right:auto;}
+.cta .btn-primary{background:#fff;color:var(--green);}
+.cta .btn-primary:hover{background:#e8f5e9;}
+
+/* ============ FOOTER ============ */
+.footer{background:var(--dark);color:#a5d6a7;padding:35px 5%;text-align:center;font-size:13px;}
+.footer i{color:#81c784;margin-right:6px;}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:1000px){
+    .hero{flex-direction:column;text-align:center;padding-top:110px;}
+    .hero-content{margin:auto;}
+    .hero-actions,.hero-stats{justify-content:center;}
+    .dashboard-mock{width:100%;max-width:480px;margin-top:50px;}
+    .nav-links{display:none;}
+    .hero h1{font-size:38px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="navbar">
+    <div class="brand">
+        <i class="fa-solid fa-cow"></i>
+        <div>
+            <h1>AgriERP</h1>
+            <small>Farm Management System</small>
+        </div>
+    </div>
+    <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#farms">Our Farms</a>
+        <a href="/login" class="nav-cta"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a>
+    </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-badge"><i class="fa-solid fa-leaf"></i> Smart Dairy Farm Management</div>
+        <h1>Manage Every Farm, <span>One System.</span></h1>
+        <p>
+            Track milk production, livestock health, feeds, and finances across all your farms
+            in one modern platform. Each farm gets its own workspace, while admins oversee everything.
+        </p>
+        <div class="hero-actions">
+            <a href="/login" class="btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Login to Dashboard</a>
+            <a href="#farms" class="btn-outline"><i class="fa-solid fa-building"></i> Explore Farms</a>
+        </div>
+        <div class="hero-stats">
+            <div class="hstat"><div class="num">2+</div><div class="lbl">Farms Managed</div></div>
+            <div class="hstat"><div class="num">24/7</div><div class="lbl">Data Access</div></div>
+            <div class="hstat"><div class="num">100%</div><div class="lbl">Farm Control</div></div>
+        </div>
+    </div>
+
+    <div class="hero-visual">
+        <div class="dashboard-mock">
+            <div class="mock-top">
+                <div class="mock-title"><i class="fa-solid fa-cow" style="color:#2e7d32;margin-right:6px;"></i>Farm Dashboard</div>
+                <span class="mock-pill"><i class="fa-solid fa-building"></i> Murang'a</span>
+            </div>
+            <div class="mock-grid">
+                <div class="mock-card green"><div class="lbl">Today's Production</div><div class="val">184.50 L</div></div>
+                <div class="mock-card blue"><div class="lbl">Milked Cows</div><div class="val">42</div></div>
+                <div class="mock-card orange"><div class="lbl">Monthly Revenue</div><div class="val">KES 128,400</div></div>
+                <div class="mock-card green"><div class="lbl">Sales Conversion</div><div class="val">94%</div></div>
+            </div>
+            <div class="mock-card" style="padding:14px;">
+                <div class="lbl" style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:#607d68;font-weight:700;margin-bottom:10px;">Weekly Production Trend</div>
+                <div class="mock-bar"><span style="width:65%;"></span></div>
+                <div class="mock-bar"><span style="width:78%;"></span></div>
+                <div class="mock-bar"><span style="width:70%;"></span></div>
+                <div class="mock-bar"><span style="width:92%;"></span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="section" id="features">
+    <div class="section-header">
+        <span class="tag">Features</span>
+        <h2>Everything Your Farm Needs</h2>
+        <p>From the milking shed to the balance sheet — a complete ERP for dairy operations.</p>
+    </div>
+    <div class="features-grid">
+        <div class="feature">
+            <div class="ficon"><i class="fa-solid fa-droplet"></i></div>
+            <h3>Milk Production</h3>
+            <p>Daily morning, noon and evening milk recording with automatic totals, averages and production trends per farm.</p>
+        </div>
+        <div class="feature">
+            <div class="ficon"><i class="fa-solid fa-cow"></i></div>
+            <h3>Livestock Management</h3>
+            <p>Animal registry, sheds, insemination and calving tracking, treatment history and health status monitoring.</p>
+        </div>
+        <div class="feature">
+            <div class="ficon"><i class="fa-solid fa-wheat-awn"></i></div>
+            <h3>Feed &amp; Orders</h3>
+            <p>Order feeds per farm, track deliveries, payments and balances with full order-to-payment visibility.</p>
+        </div>
+        <div class="feature">
+            <div class="ficon"><i class="fa-solid fa-money-bill"></i></div>
+            <h3>Finance &amp; Reporting</h3>
+            <p>Revenue, expenses, transactions and car sales analytics. Export professional PDF reports anytime.</p>
+        </div>
+        <div class="feature">
+            <div class="ficon"><i class="fa-solid fa-building"></i></div>
+            <h3>Multi-Farm Support</h3>
+            <p>Add unlimited farms. Each farm works independently with its own records, users and dashboards.</p>
+        </div>
+        <div class="feature">
+            <div class="ficon"><i class="fa-solid fa-user-shield"></i></div>
+            <h3>Role-Based Access</h3>
+            <p>Farm users see only their farm. Admins manage everything — users, farms and all records.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ============ FARMS ============ -->
+<section class="section farms-section" id="farms">
+    <div class="section-header">
+        <span class="tag">Our Farms</span>
+        <h2>Farms Under Management</h2>
+        <p>Each farm operates with its own workspace, records and assigned users.</p>
+    </div>
+    <div class="farms-grid">
+        {% for f in farms %}
+        <div class="farm-card">
+            <div class="fico"><i class="fa-solid fa-building"></i></div>
+            <div>
+                <h4>{{ f.name }}</h4>
+                <p><i class="fa-solid fa-cow" style="margin-right:4px;"></i>Dairy Farm</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="farm-card">
+            <div class="fico"><i class="fa-solid fa-building"></i></div>
+            <div><h4>Murang'a Farm</h4><p>Dairy Farm</p></div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="cta">
+    <h2>Ready to Manage Your Farms?</h2>
+    <p>Sign in to access your farm dashboard. New farms are added by the administrator.</p>
+    <a href="/login" class="btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Sign In Now</a>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+    <i class="fa-solid fa-cow"></i> AgriERP Farm Management System &copy; 2026. All rights reserved.
+</footer>
+
+</body>
+</html>

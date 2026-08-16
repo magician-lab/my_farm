@@ -1,24 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Shed Management</title>
-
+{% extends "base_erp.html" %}
+{% block title %}Shed Management{% endblock %}
+{% block page_title %}Shed Management{% endblock %}
+{% block content %}
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family:Segoe UI, sans-serif;
-    background:#f3f4f6;
-    padding:20px;
-}
 
 .container{
     max-width:1400px;
@@ -191,10 +176,8 @@ button:hover{
 
 }
 
-</style>
-</head>
 
-<body>
+</style>
 
 <div class="container">
 
@@ -723,6 +706,11 @@ button:hover{
      LIVE SEARCH SCRIPT
 ========================= -->
 
+
+
+{% endif %}
+{% endblock %}
+{% block scripts %}
 <script>
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -764,7 +752,4 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 </script>
-
-{% endif %}
-</body>
-</html>
+{% endblock %}

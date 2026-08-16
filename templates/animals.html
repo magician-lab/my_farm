@@ -1,27 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head>
-
-<title>Livestock List</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+{% extends "base_erp.html" %}
+{% block title %}Livestock List{% endblock %}
+{% block page_title %}Livestock List{% endblock %}
+{% block content %}
 <style>
 
+
 /* ================= RESET ================= */
-
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
-
-body{
-    font-family:Arial, sans-serif;
-    background:#f4f6f9;
-    padding:20px;
-    color:#333;
-}
 
 .container{
     max-width:1400px;
@@ -320,25 +304,14 @@ tr:hover{
     }
 }
 
+
 </style>
-
-</head>
-
-<body>
 
 <div class="container">
 
 <!-- FLASH -->
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-    {% for category, message in messages %}
-        <div class="flash {{ category }}">
-            {{ message }}
-        </div>
-    {% endfor %}
-{% endif %}
-{% endwith %}
+
 
 <!-- TITLE -->
 
@@ -519,7 +492,8 @@ tr:hover{
 </div>
 
 <!-- LIVE SEARCH SCRIPT -->
-
+{% endblock %}
+{% block scripts %}
 <script>
 
 document.getElementById("searchInput").addEventListener("keyup", function() {
@@ -537,6 +511,4 @@ document.getElementById("searchInput").addEventListener("keyup", function() {
 });
 
 </script>
-
-</body>
-</html>
+{% endblock %}

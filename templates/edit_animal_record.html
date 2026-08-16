@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Farm | animal_edit</title>
+{% extends "base_erp.html" %}
+{% block title %}My Farm | animal_edit{% endblock %}
+{% block page_title %}My Farm | animal_edit{% endblock %}
+{% block content %}
+<style>
 
-    <style>
         body {
             font-family: Arial, sans-serif;
             background: #f2f6f9;
@@ -57,9 +57,8 @@
             color: white;
             text-decoration: none;
             border-radius: 4px;}
-    </style>
-</head>
-<body>
+    
+</style>
 
 <div class="container">
     <h2>Livestock Registry_edit</h2>
@@ -96,6 +95,4 @@
     </form>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

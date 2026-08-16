@@ -1,8 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Asset List</title>
-    <style>
+{% extends "base_erp.html" %}
+{% block title %}Asset List{% endblock %}
+{% block page_title %}Asset List{% endblock %}
+{% block content %}
+<style>
+
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -48,11 +49,10 @@
             text-decoration: none;
             border-radius: 4px;}
 
-    </style>
-</head>
-<body>
-      
-    <h2>Registered Assets</h2>
+    
+</style>
+
+<h2>Registered Assets</h2>
     <p>Today's Date: {{ current_date }}</p>
 
     <form method="POST">
@@ -93,6 +93,4 @@
 
 
     </form>
-
-</body>
-</html>
+{% endblock %}
