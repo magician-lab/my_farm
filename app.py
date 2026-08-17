@@ -3660,7 +3660,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = 'magicdevelopers9@gmail.com'
-app.config['MAIL_PASSWORD'] = 'rjgp cifh gqim wkln'
+app.config['MAIL_PASSWORD'] = 'rhif qhmm hvnk tjhv'
 app.config['MAIL_DEFAULT_SENDER'] = 'MY FARM <magicdevelopers9@gmail.com>'
 
 mail = Mail(app)
