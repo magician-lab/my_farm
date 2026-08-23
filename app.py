@@ -6166,7 +6166,7 @@ def delete_milk_sale(id):
     db.session.delete(sale)
     db.session.commit()
 
-    return redirect(url_for("milk_sales_report", date_str=selected_date))
+    return redirect(url_for("milk_sales_report", date=selected_date))
 
 @app.route("/edit_milk_sale/<int:id>", methods=["GET", "POST"])
 @login_required
@@ -6176,7 +6176,7 @@ def edit_milk_sale_record(id):   # 👈 changed function name
 
     if request.method == "POST":
 
-        sale.date_str = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
+        sale.date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
         sale.session = request.form["session"]
         sale.shop1 = Decimal(request.form.get("shop1", 0) or 0)
         sale.shop2 = Decimal(request.form.get("shop2", 0) or 0)
@@ -6202,20 +6202,20 @@ def update_actual_remaining():
 
     value = float(request.form['actual_remaining'])
 
-    record = MilkDailyRemaining.query.filter_by(date_str=selected_date).first()
+    record = MilkDailyRemaining.query.filter_by(date=selected_date).first()
 
     if record:
         record.actual_remaining = value
     else:
         record = MilkDailyRemaining(
-            date_str=selected_date,
+            date=selected_date,
             actual_remaining=value
         )
         db.session.add(record)
 
     db.session.commit()
 
-    return redirect(url_for("milk_sales_report", date_str=selected_date))
+    return redirect(url_for("milk_sales_report", date=selected_date))
 
 # =========================
 # MILK PRICE ROUTES

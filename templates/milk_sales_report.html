@@ -2,385 +2,464 @@
 {% block title %}Milk Sales Module{% endblock %}
 {% block page_title %}Milk Sales Module{% endblock %}
 {% block content %}
+{% set expected_remaining = ((previous_actual_remaining|float) + (grand_total|float) - (total_used|float))|round(2) %}
+{% set variance = ((actual_available_today|float) - expected_remaining)|round(2) %}
 <style>
 
-:root{
+.msm{
     --green:#1b5e20;
     --green2:#2e7d32;
     --red:#c62828;
     --blue:#1565c0;
-    --bg:#f4f7fb;
-    --card:#ffffff;
-    --soft:#e8f5e9;
-    --warn:#fff8e1;
+    --amber:#ef6c00;
+    --line:#e5e9f0;
+    --txt:#263238;
+    --muted:#78909c;
 }
 
-h2{text-align:center;color:var(--green);}
+.msm .page-title{
+    text-align:center;
+    color:var(--green);
+    font-size:22px;
+    margin:8px 0 16px;
+}
 
-.top-bar{
-    display:flex;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    background:white;
-    padding:10px;
-    border-radius:10px;
+.msm .card{
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.07);
+    padding:16px;
+    margin-bottom:16px;
+}
+
+.msm .card-title{
+    font-size:15px;
+    font-weight:bold;
+    color:var(--green);
+    margin:0 0 12px;
+}
+
+.msm input[type=date],
+.msm input[type=number]{
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:14px;
+    background:#fafbfc;
+    max-width:100%;
+}
+
+.msm input:focus{
+    outline:none;
+    border-color:var(--green2);
+    background:#fff;
+}
+
+.msm .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:9px 16px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    color:#fff;
+    font-size:14px;
+    font-weight:bold;
+    text-decoration:none;
+    transition:filter .15s ease;
+}
+
+.msm .btn:hover{ filter:brightness(1.12); }
+.msm .btn-green{ background:var(--green2); }
+.msm .btn-blue{ background:var(--blue); }
+.msm .btn-amber{ background:var(--amber); }
+
+.msm .back-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    color:var(--green);
+    font-weight:bold;
+    text-decoration:none;
+    font-size:14px;
     margin-bottom:12px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+.msm .back-btn:hover{ text-decoration:underline; }
+
+.msm .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
     gap:10px;
 }
+.msm .toolbar form{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+}
+.msm .spacer{ flex:1; }
 
-input{
-    padding:6px;
-    border:1px solid #ccc;
-    border-radius:6px;
+/* ---------- KPI chips ---------- */
+.msm .kpis{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
+    margin-bottom:16px;
 }
 
-button{
-    padding:6px 12px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
+.msm .kpi{
+    background:#fff;
+    border-radius:12px;
+    padding:12px 14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    border-left:4px solid var(--green2);
+}
+.msm .kpi.blue{ border-left-color:var(--blue); }
+.msm .kpi.amber{ border-left-color:var(--amber); }
+.msm .kpi.red{ border-left-color:var(--red); }
+
+.msm .kpi .label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:var(--muted);
+    font-weight:bold;
+}
+.msm .kpi .value{
+    font-size:20px;
+    font-weight:bold;
+    color:var(--txt);
+    margin-top:4px;
+}
+.msm .kpi .unit{ font-size:12px; color:var(--muted); font-weight:normal; }
+
+/* ---------- stock check ---------- */
+.msm .stock-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
 }
 
-.btn-primary{background:var(--green2);color:white;}
-.btn-export{background:var(--blue);color:white;}
-.btn-edit{background:#ff9800;color:white;}
+.msm .entry-box form{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+.msm .entry-box label{ font-size:13px; color:var(--muted); font-weight:bold; }
+.msm .entry-box input{ width:100%; box-sizing:border-box; font-size:16px; }
+.msm .entry-hint{ font-size:12px; color:var(--muted); }
 
-.table-card{
-    background:white;
-    padding:10px;
+.msm .compare-box{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:10px;
+    background:#f8faf8;
+    border:1px dashed var(--line);
     border-radius:10px;
-    overflow-x:auto;
-    box-shadow:0 2px 6px rgba(0,0,0,0.08);
+    padding:14px;
+    box-sizing:border-box;
 }
 
-table{
+.msm .compare-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:14px;
+    color:var(--txt);
+}
+.msm .compare-row b{ font-size:17px; }
+
+.msm .badge{
+    align-self:center;
+    padding:8px 18px;
+    border-radius:999px;
+    font-size:15px;
+    font-weight:bold;
+}
+.msm .badge.ok{ background:#c8e6c9; color:#1b5e20; }
+.msm .badge.pos{ background:#fff3cd; color:#8a6d00; }
+.msm .badge.neg{ background:#ffcdd2; color:#b71c1c; }
+
+/* ---------- flow list ---------- */
+.msm .flow-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 4px;
+    border-bottom:1px solid #f0f2f5;
+    font-size:14px;
+    color:var(--txt);
+}
+.msm .flow-row:last-child{ border-bottom:none; }
+.msm .flow-row .name{ display:flex; align-items:center; gap:8px; }
+.msm .flow-row .sign{
+    width:22px;height:22px;border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:bold;color:#fff;background:#b0bec5;
+}
+.msm .flow-row .sign.plus{ background:var(--green2); }
+.msm .flow-row .sign.minus{ background:var(--red); }
+.msm .flow-row .val{ font-weight:bold; }
+.msm .flow-row.total{
+    background:#e8f5e9;
+    border-radius:8px;
+    padding:10px;
+    font-weight:bold;
+}
+.msm .flow-row.total .name{ color:var(--green); }
+.msm .litres{ color:var(--muted); font-size:12px; font-weight:normal; }
+
+/* ---------- records table ---------- */
+.msm table{
     width:100%;
     border-collapse:collapse;
     font-size:13px;
 }
-
-th{
+.msm th{
     background:var(--green);
-    color:white;
-    padding:10px;
+    color:#fff;
+    padding:10px 6px;
+    text-align:center;
+    white-space:nowrap;
 }
-
-td{
-    padding:8px;
-    border:1px solid #ddd;
+.msm td{
+    padding:9px 6px;
+    border-bottom:1px solid #f0f2f5;
     text-align:center;
 }
+.msm tbody tr:hover{ background:#f6faf6; }
+.msm .table-wrap{ overflow-x:auto; }
 
-.metric{
-    font-weight:bold;
-    text-align:left;
-    background:#fafafa;
-}
-
-.system{background:var(--soft);}
-.actual{background:var(--warn);}
-
-.pos{background:#c8e6c9;color:#1b5e20;font-weight:bold;}
-.neg{background:#ffcdd2;color:#b71c1c;font-weight:bold;}
-.neutral{background:#eee;color:#555;}
-
-.actions{
-    display:flex;
-    gap:6px;
-    justify-content:center;
-}
-
-.edit{background:var(--green2);color:white;}
-.delete{background:var(--red);color:white;}
-.top-actions{
-    display:flex;
-    flex-wrap:wrap;
-    gap:12px;
-    margin-bottom:25px;
-    background:white;
-    padding:18px;
-    border-radius:14px;
-    box-shadow:0 3px 10px rgba(0,0,0,0.08);
-}
-
-.action-btn{
+.msm .row-actions{ display:flex; gap:6px; justify-content:center; }
+.msm .mini-btn{
+    padding:5px 12px;
+    border:none;
+    border-radius:6px;
+    color:#fff;
+    font-size:12px;
+    cursor:pointer;
     text-decoration:none;
-    background:#1b5e20;
-    color:white;
-    padding:12px 18px;
-    border-radius:10px;
+    white-space:nowrap;
+}
+.msm .edit{ background:var(--green2); }
+.msm .delete{ background:var(--red); }
+
+.msm .empty{
+    text-align:center;
+    color:var(--muted);
+    padding:24px 10px;
     font-size:14px;
-    font-weight:bold;
-    transition:0.3s;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    min-width:140px;
 }
 
-.action-btn:hover{
-    background:#2e7d32;
-    transform:translateY(-2px);
-}
+/* ---------- MOBILE ---------- */
+@media (max-width:700px){
 
-/* MOBILE */
+    .msm .stock-grid{ grid-template-columns:1fr; }
 
-@media(max-width:768px){
+    .msm .toolbar form,
+    .msm .toolbar input,
+    .msm .toolbar .btn,
+    .msm .entry-box .btn{ flex:1 1 auto; width:100%; }
 
-    .top-actions{
-        padding:14px;
+    /* records table -> stacked cards */
+    .msm .records thead{ display:none; }
+    .msm .records tr{
+        display:block;
+        background:#fff;
+        border:1px solid var(--line);
+        border-radius:10px;
+        margin-bottom:10px;
+        padding:6px 10px;
     }
-
-    .action-btn{
-        width:100%;
-        min-width:100%;
-        text-align:center;
+    .msm .records td{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        text-align:right;
+        border-bottom:1px dashed #eceff1;
+        padding:7px 2px;
     }
+    .msm .records td:last-child{ border-bottom:none; }
+    .msm .records td::before{
+        content:attr(data-label);
+        font-weight:bold;
+        color:var(--muted);
+        font-size:12px;
+        text-transform:uppercase;
+        letter-spacing:.3px;
+    }
+    .msm .records td.empty-cell::before{ content:none; }
 
+    .msm .page-title{ font-size:18px; }
+    .msm .kpi .value{ font-size:17px; }
 }
 
 </style>
+<div class="msm">
 
-<h2>🥛 MILK SALES MODULE</h2>
-    <a href="/milk_dashboard" class="action-btn">
-        back
-    </a>
-<!-- FILTER + EMAIL SEND -->
-<div class="top-bar">
+<a href="/milk_dashboard" class="back-btn">&#8592; Back to Dashboard</a>
 
-<form method="GET">
-<input type="date" name="date" value="{{ selected_date }}">
-<button class="btn-primary">Filter</button>
-</form>
+<h2 class="page-title">MILK SALES MODULE</h2>
 
-<!-- 🔥 EMAIL SEND FORM -->
-<form method="GET" action="{{ url_for('send_report', report_type='milk_sale') }}">
-
-<input type="hidden" name="date" value="{{ selected_date }}">
-
-
-<button class="btn-export">Download PDF</button>
-
-</form>
-
+<!-- KPI CHIPS -->
+<div class="kpis">
+    <div class="kpi">
+        <div class="label">Production</div>
+        <div class="value">{{ grand_total|round(2) }} <span class="unit">L</span></div>
+    </div>
+    <div class="kpi blue">
+        <div class="label">Sold (Shops)</div>
+        <div class="value">{{ total_sold_shops|round(2) }} <span class="unit">L</span></div>
+    </div>
+    <div class="kpi amber">
+        <div class="label">Home + Calf Use</div>
+        <div class="value">{{ (total_home|float + total_calf|float)|round(2) }} <span class="unit">L</span></div>
+    </div>
+    <div class="kpi red">
+        <div class="label">Day Revenue</div>
+        <div class="value">{{ daily_revenue }} <span class="unit"></span></div>
+    </div>
 </div>
 
-<!-- ACTUAL ENTRY -->
-<div class="top-bar">
-<form method="POST" action="{{ url_for('update_actual_remaining') }}">
-<input type="hidden" name="date" value="{{ selected_date }}">
-
-<label>Actual Remaining:</label>
-<input type="number" step="0.01" name="actual_remaining" value="{{ actual_available_today }}">
-
-<button class="btn-edit">Save</button>
-</form>
+<!-- FILTERS -->
+<div class="card">
+    <div class="toolbar">
+        <form method="GET">
+            <input type="date" name="date" value="{{ selected_date }}">
+            <button class="btn btn-green">Filter</button>
+        </form>
+        <span class="spacer"></span>
+        <form method="GET" action="{{ url_for('send_report', report_type='milk_sale') }}">
+            <input type="hidden" name="date" value="{{ selected_date }}">
+            <button class="btn btn-blue">Download PDF</button>
+        </form>
+    </div>
 </div>
 
-<!-- MAIN TABLE -->
-<div class="table-card">
-<table>
+<!-- STOCK CHECK: EXPECTED vs ACTUAL -->
+<div class="card">
+    <p class="card-title">Stock Check</p>
+    <div class="stock-grid">
 
-<tr>
-<th>Metric</th>
-<th>System Flow</th>
-<th>Actual Flow</th>
-<th>Discrepancy</th>
-</tr>
+        <div class="entry-box">
+            <form method="POST" action="{{ url_for('update_actual_remaining') }}">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+                <label for="actual_remaining">Actual Remaining (End of Day)</label>
+                <input type="number" step="0.01" min="0" id="actual_remaining"
+                       name="actual_remaining" value="{{ actual_available_today|round(2) }}"
+                       placeholder="Enter litres counted physically">
+                <span class="entry-hint">Count the milk physically and enter it here.</span>
+                <button class="btn btn-amber">Save</button>
+            </form>
+        </div>
 
-<tr>
-<td class="metric">Previous Remaining</td>
+        <div class="compare-box">
+            <div class="compare-row">
+                <span>Expected Remaining</span>
+                <b>{{ expected_remaining }} L</b>
+            </div>
+            <div class="compare-row">
+                <span>Actual Remaining (Entered)</span>
+                <b>{{ actual_available_today|round(2) }} L</b>
+            </div>
+            {% if variance == 0 %}
+                <span class="badge ok">Balanced &#10003;</span>
+            {% elif variance > 0 %}
+                <span class="badge pos">+{{ variance }} L surplus</span>
+            {% else %}
+                <span class="badge neg">{{ variance }} L shortage</span>
+            {% endif %}
+        </div>
 
-<td class="system">
-{{ previous_system_remaining|round(2) }}
-</td>
+    </div>
+</div>
 
-<td class="actual">
-{{ previous_actual_remaining|round(2) }}
-</td>
+<!-- MILK FLOW (ACTUAL) -->
+<div class="card">
+    <p class="card-title">Milk Flow &mdash; {{ selected_date }}</p>
 
-<td class="{% if pavail_variance>=0 %}pos{% else %}neg{% endif %}">
-{{ pavail_variance|round(2) }}
-</td>
-</tr>
-
-
-<tr>
-<td class="metric">Today's Production</td>
-
-<td class="system">
-{{ grand_total|round(2) }}
-</td>
-
-<td class="actual">
-{{ grand_total|round(2) }}
-</td>
-
-<td class="neutral">0</td>
-</tr>
-
-
-<tr>
-<td class="metric">Milk Available</td>
-
-<td class="system">
-{{ total_system_available|round(2) }}
-</td>
-
-<td class="actual">
-{{ total_available|round(2) }}
-</td>
-
-<td class="{% if pavail_variance>=0 %}pos{% else %}neg{% endif %}">
-{{ pavail_variance|round(2) }}
-</td>
-</tr>
-
-
-<tr>
-<td class="metric">Milk Sold</td>
-
-<td class="system">
-{{ total_sold_shops|round(2) }}
-</td>
-
-<td class="actual">
-{{ total_sold_shops|round(2) }}
-</td>
-
-<td class="neutral">0</td>
-</tr>
-
-
-<tr>
-<td class="metric">Home Use</td>
-
-<td class="system">
-{{ total_home|round(2) }}
-</td>
-
-<td class="actual">
-{{ total_home|round(2) }}
-</td>
-
-<td class="neutral">0</td>
-</tr>
-
-
-<tr>
-<td class="metric">Calf Use</td>
-
-<td class="system">
-{{ total_calf|round(2) }}
-</td>
-
-<td class="actual">
-{{ total_calf|round(2) }}
-</td>
-
-<td class="neutral">0</td>
-</tr>
-
-
-<tr>
-<td class="metric">Total Used</td>
-
-<td class="system">
-{{ total_used|round(2) }}
-</td>
-
-<td class="actual">
-{{ total_used|round(2) }}
-</td>
-
-<td class="neutral">0</td>
-</tr>
-
-
-<tr>
-<td class="metric">Remaining Stock</td>
-
-<td class="system">
-{{ remaining_system|round(2) }}
-</td>
-
-<td class="actual">
-{{ actual_available_today|round(2) }}
-</td>
-
-<td class="{% if pavail_variance>=0 %}pos{% else %}neg{% endif %}">
-{{ pavail_variance|round(2) }}
-</td>
-</tr>
-
-</table>
+    <div class="flow-row">
+        <span class="name"><span class="sign">&#8630;</span> Previous Day Remaining</span>
+        <span class="val">{{ previous_actual_remaining|round(2) }} <span class="litres">L</span></span>
+    </div>
+    <div class="flow-row">
+        <span class="name"><span class="sign plus">+</span> Today's Production</span>
+        <span class="val">{{ grand_total|round(2) }} <span class="litres">L</span></span>
+    </div>
+    <div class="flow-row total">
+        <span class="name">Milk Available</span>
+        <span class="val">{{ ((previous_actual_remaining|float) + (grand_total|float))|round(2) }} <span class="litres">L</span></span>
+    </div>
+    <div class="flow-row">
+        <span class="name"><span class="sign minus">&minus;</span> Sold to Shops</span>
+        <span class="val">{{ total_sold_shops|round(2) }} <span class="litres">L</span></span>
+    </div>
+    <div class="flow-row">
+        <span class="name"><span class="sign minus">&minus;</span> Home Use</span>
+        <span class="val">{{ total_home|round(2) }} <span class="litres">L</span></span>
+    </div>
+    <div class="flow-row">
+        <span class="name"><span class="sign minus">&minus;</span> Calf Use</span>
+        <span class="val">{{ total_calf|round(2) }} <span class="litres">L</span></span>
+    </div>
+    <div class="flow-row">
+        <span class="name"><span class="sign minus">&minus;</span> Total Used</span>
+        <span class="val">{{ total_used|round(2) }} <span class="litres">L</span></span>
+    </div>
+    <div class="flow-row total">
+        <span class="name">Expected Remaining</span>
+        <span class="val">{{ expected_remaining }} <span class="litres">L</span></span>
+    </div>
 </div>
 
 <!-- SALES RECORDS -->
-<h3>Sales Records</h3>
+<div class="card">
+    <p class="card-title">Sales Records</p>
 
-<div class="table-card">
-<table>
-
-<tr>
-<th>#</th>
-<th>Session</th>
-<th>Shop1</th>
-<th>Shop2</th>
-<th>Shop3</th>
-<th>Calf</th>
-<th>Home</th>
-<th>Price</th>
-<th>Actions</th>
-</tr>
-
-{% for s in daily_records %}
-<tr>
-<td>{{ loop.index }}</td>
-<td>{{ s.session }}</td>
-<td>{{ s.shop1 }}</td>
-<td>{{ s.shop2 }}</td>
-<td>{{ s.shop3 }}</td>
-<td>{{ s.calf }}</td>
-<td>{{ s.home }}</td>
-<td>{{ s.price }}</td>
-
-<td>
-<div class="actions">
-
-<a href="{{ url_for('edit_milk_sale_record', id=s.id) }}">
-<button class="edit">Edit</button>
-</a>
-
-<a href="{{ url_for('delete_milk_sale', id=s.id) }}"
-onclick="return confirm('Delete?')">
-<button class="delete">Delete</button>
-</a>
-
-</div>
-</td>
-</tr>
-{% endfor %}
-
-</table>
+    {% if daily_records %}
+    <div class="table-wrap">
+        <table class="records">
+            <thead>
+                <tr>
+                    <th>#</th><th>Session</th><th>Shop1</th><th>Shop2</th>
+                    <th>Shop3</th><th>Calf</th><th>Home</th><th>Price</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in daily_records %}
+                <tr>
+                    <td data-label="#">{{ loop.index }}</td>
+                    <td data-label="Session">{{ s.session }}</td>
+                    <td data-label="Shop1">{{ s.shop1 }}</td>
+                    <td data-label="Shop2">{{ s.shop2 }}</td>
+                    <td data-label="Shop3">{{ s.shop3 }}</td>
+                    <td data-label="Calf">{{ s.calf }}</td>
+                    <td data-label="Home">{{ s.home }}</td>
+                    <td data-label="Price">{{ s.price }}</td>
+                    <td data-label="Actions">
+                        <div class="row-actions">
+                            <a href="{{ url_for('edit_milk_sale_record', id=s.id) }}">
+                                <button class="mini-btn edit">Edit</button>
+                            </a>
+                            <a href="{{ url_for('delete_milk_sale', id=s.id) }}"
+                               onclick="return confirm('Delete this record?')">
+                                <button class="mini-btn delete">Delete</button>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="empty">No sales recorded for {{ selected_date }}.</p>
+    {% endif %}
 </div>
 
-<!-- 🔥 EMAIL SCRIPT -->
-{% endblock %}
-{% block scripts %}
-<script>
-function addEmail() {
-    let container = document.getElementById("email-container");
-
-    let div = document.createElement("div");
-
-    div.innerHTML = `
-        <input type="email" name="emails" placeholder="Enter email">
-        <button type="button" onclick="this.parentElement.remove()">X</button>
-    `;
-
-    container.appendChild(div);
-}
-</script>
+</div>
 {% endblock %}
