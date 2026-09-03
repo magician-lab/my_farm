@@ -187,6 +187,9 @@ button:hover{
         </a>
         <div class="title">
             Cow Shed Management
+            {% if current_farm %}
+            <span style="font-size:14px;background:#2e7d32;color:#fff;padding:4px 10px;border-radius:10px;margin-left:10px;">{{ current_farm.name }}</span>
+            {% endif %}
         </div>
 
     </div>

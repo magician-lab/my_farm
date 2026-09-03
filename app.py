@@ -3712,7 +3712,7 @@ def send_report(report_type):
     selected_date = request.args.get("date")
 
     if report_type == "milk":
-        data = get_milk_report_data(selected_date)
+        data = get_milk_report_data(selected_date, session.get("farm_id"))
         template = "milk_pdf.html"
         filename = f"milk_{selected_date or 'today'}.pdf"
 
@@ -3768,7 +3768,60 @@ def send_report(report_type):
 
     elif report_type == "milk_sale":
 
-        data = get_milk_sales(selected_date)
+        data = get_milk_sales(selected_date, session.get("farm_id"))
+
+        # --- Session breakdown for PDF ---
+        farm_id_pdf = session.get("farm_id")
+        sales_q = MilkSalesRegistry.query.filter(MilkSalesRegistry.date == selected_date)
+        if farm_id_pdf:
+            sales_q = sales_q.filter(MilkSalesRegistry.farm_id == farm_id_pdf)
+        day_sales = sales_q.all()
+
+        morning_shop_total = 0
+        morning_calf = 0
+        morning_home = 0
+        noon_shop_total = 0
+        noon_calf = 0
+        noon_home = 0
+        evening_shop_total = 0
+        evening_calf = 0
+        evening_home = 0
+
+        for s in day_sales:
+            s_shop = float(s.shop1 or 0) + float(s.shop2 or 0) + float(s.shop3 or 0)
+            s_calf = float(s.calf or 0)
+            s_home = float(s.home or 0)
+            if s.session == "Morning":
+                morning_shop_total += s_shop
+                morning_calf += s_calf
+                morning_home += s_home
+            elif s.session == "Noon":
+                noon_shop_total += s_shop
+                noon_calf += s_calf
+                noon_home += s_home
+            elif s.session == "Evening":
+                evening_shop_total += s_shop
+                evening_calf += s_calf
+                evening_home += s_home
+
+        # --- Missing variable aliases for PDF template ---
+        data["total_production"] = data.get("grand_total", 0)
+        data["total_calf_used"] = data.get("total_calf", 0)
+        data["total_home_used"] = data.get("total_home", 0)
+        data["avail_variance"] = data.get("pavail_variance", 0)
+        data["system_remaining"] = data.get("remaining_system", 0)
+        data["sales_records"] = data.get("daily_records", [])
+        data["variance"] = round(float(data.get("actual_remaining", 0)) - (float(data.get("actual_available_today", 0)) - float(data.get("total_used", 0))), 2)
+        data["prev_variance"] = round(float(data.get("previous_actual_remaining", 0)) - float(data.get("previous_system_remaining", 0)), 2)
+        data["morning_shop_total"] = round(morning_shop_total, 2)
+        data["morning_calf"] = round(morning_calf, 2)
+        data["morning_home"] = round(morning_home, 2)
+        data["noon_shop_total"] = round(noon_shop_total, 2)
+        data["noon_calf"] = round(noon_calf, 2)
+        data["noon_home"] = round(noon_home, 2)
+        data["evening_shop_total"] = round(evening_shop_total, 2)
+        data["evening_calf"] = round(evening_calf, 2)
+        data["evening_home"] = round(evening_home, 2)
 
         template = "milk_sales_reportpdf.html"
 
@@ -4289,13 +4342,15 @@ def sheds():
 
         # cows NOT in any shed OR in different shed
         available_cows = AnimalRegistry.query.filter(
+            AnimalRegistry.category != "nolonger_exist",
             (AnimalRegistry.current_shed_id == None) |
             (AnimalRegistry.current_shed_id != manage_shed.id)
         ).all()
 
         # cows currently in this shed
-        shed_cows = AnimalRegistry.query.filter_by(
-            current_shed_id=manage_shed.id
+        shed_cows = AnimalRegistry.query.filter(
+            AnimalRegistry.category != "nolonger_exist",
+            AnimalRegistry.current_shed_id == manage_shed.id
         ).all()
     return render_template(
         "sheds.html",
@@ -4447,7 +4502,7 @@ def treatment():
 def add_treatment():
 
     # Farm filtering for non-admin users
-    animals = AnimalRegistry.query.all()
+    animals = AnimalRegistry.query.filter(AnimalRegistry.category != "nolonger_exist").all()
 
     if session.get("role") != "admin":
         farm_id = session.get("farm_id")
@@ -4564,7 +4619,7 @@ def calf_registry():
 @login_required
 def add_insemination():
 
-    animals = AnimalRegistry.query.all()
+    animals = AnimalRegistry.query.filter(AnimalRegistry.category != "nolonger_exist").all()
 
     # Set farm filtering for non-admin users
     if session.get("role") != "admin":
@@ -4638,7 +4693,7 @@ from datetime import datetime, timedelta
 def edit_insemination(id):
 
     record = Insemination.query.get_or_404(id)
-    animals = AnimalRegistry.query.all()
+    animals = AnimalRegistry.query.filter(AnimalRegistry.category != "nolonger_exist").all()
 
     # Farm filtering for non-admin users
     if session.get("role") != "admin":
@@ -5779,7 +5834,7 @@ def milk_registry():
             url_for("milk_registry")
         )
 
-    cows = MilkingHerd.query.all()
+    cows = [mh for mh in MilkingHerd.query.all() if mh.animal and mh.animal.category != "nolonger_exist"]
 
     # Farm context: only cows belonging to the active farm
     farm_id = session.get("farm_id")
@@ -6151,7 +6206,7 @@ def milk_sales_report():
 
     selected_date = request.args.get("date")
 
-    data = get_milk_sales(selected_date)
+    data = get_milk_sales(selected_date, session.get("farm_id"))
 
     return render_template("milk_sales_report.html", **data)
 

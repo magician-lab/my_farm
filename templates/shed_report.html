@@ -222,11 +222,13 @@ RESPONSIVE
 
 <div class="container">
 
-```
 <div class="page-header">
 
     <h1 class="page-title">
-        🏠 Shed Occupancy Report
+        <i class="fa-solid fa-warehouse"></i> Shed Occupancy Report
+        {% if current_farm %}
+        <span style="font-size:14px;background:#2563eb;color:#fff;padding:4px 10px;border-radius:10px;margin-left:10px;">{{ current_farm.name }}</span>
+        {% endif %}
     </h1>
 
     <div class="header-actions">
@@ -236,28 +238,12 @@ RESPONSIVE
             Dashboard
         </a>
 
-    </div>
-
-</div>
-
-<!-- EMAIL SECTION -->
-
-<div class="email-section">
-
-
-    <form
-    action="{{ url_for('send_report', report_type='shed_report') }}"
-    method="GET">
-
-        <button
-        type="submit"
-        class="btn btn-send">
-
+        <a href="{{ url_for('send_report', report_type='shed_report') }}"
+           class="btn btn-send">
             Download Report
+        </a>
 
-        </button>
-
-    </form>
+    </div>
 
 </div>
 
@@ -388,7 +374,6 @@ RESPONSIVE
     </div>
 
 </div>
-```
 
 </div>
 {% endblock %}

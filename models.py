@@ -218,7 +218,7 @@ class CowShed(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    name = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
 
     category_allowed = db.Column(db.String(50))
 
@@ -227,6 +227,8 @@ class CowShed(db.Model):
     color = db.Column(db.String(20), default="primary")
 
     description = db.Column(db.Text)
+
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
 
     created_at = db.Column(
         db.DateTime,
@@ -324,8 +326,10 @@ class Payment(db.Model):
 
 class MilkDailyRemaining(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, unique=True, nullable=False)
+    date = db.Column(db.Date, nullable=False)
     actual_remaining = db.Column(db.Numeric(10,2), default=0)
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
+    __table_args__ = (db.UniqueConstraint('date', 'farm_id', name='uq_remaining_date_farm'),)
 
 # =========================================================
 # ADMIN MODEL

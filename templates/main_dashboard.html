@@ -112,16 +112,17 @@
 
 </div>
 
-<!-- ============ MILK DISTRIBUTION ============ -->
+<!-- ============ MILK DISTRIBUTION BREAKDOWN ============ -->
 <div class="cards-grid">
     <div class="card">
         <h2><i class="fa-solid fa-chart-pie"></i> Milk Distribution ({{ selected_date.strftime('%B %d, %Y') }})</h2>
         <div class="table-wrap">
             <table>
-                <tr><th>Destination</th><th>Litres</th><th style="width:40%;">Share</th></tr>
+                <tr><th>Destination</th><th>Litres</th><th>% of Production</th><th style="width:35%;">Share</th></tr>
                 <tr>
                     <td><i class="fa-solid fa-store" style="color:#1565c0;margin-right:6px;"></i> Shop 1</td>
-                    <td>{{ "{:,.2f}".format(total_shop1 or 0) }} L</td>
+                    <td><strong>{{ "{:,.2f}".format(total_shop1 or 0) }} L</strong></td>
+                    <td>{{ ((total_shop1 / grand_total * 100) if grand_total else 0)|round(1) }}%</td>
                     <td>
                         <div style="background:#e3f2fd;border-radius:8px;height:12px;">
                             <div style="background:#1565c0;height:12px;border-radius:8px;width:{{ (total_shop1 / grand_total * 100) if grand_total else 0 }}%;"></div>
@@ -130,7 +131,8 @@
                 </tr>
                 <tr>
                     <td><i class="fa-solid fa-store" style="color:#0d47a1;margin-right:6px;"></i> Shop 2</td>
-                    <td>{{ "{:,.2f}".format(total_shop2 or 0) }} L</td>
+                    <td><strong>{{ "{:,.2f}".format(total_shop2 or 0) }} L</strong></td>
+                    <td>{{ ((total_shop2 / grand_total * 100) if grand_total else 0)|round(1) }}%</td>
                     <td>
                         <div style="background:#e3f2fd;border-radius:8px;height:12px;">
                             <div style="background:#0d47a1;height:12px;border-radius:8px;width:{{ (total_shop2 / grand_total * 100) if grand_total else 0 }}%;"></div>
@@ -138,8 +140,9 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><i class="fa-solid fa-store" style="color:#1565c0;margin-right:6px;"></i> Shop 3</td>
-                    <td>{{ "{:,.2f}".format(total_shop3 or 0) }} L</td>
+                    <td><i class="fa-solid fa-store" style="color:#1976d2;margin-right:6px;"></i> Shop 3</td>
+                    <td><strong>{{ "{:,.2f}".format(total_shop3 or 0) }} L</strong></td>
+                    <td>{{ ((total_shop3 / grand_total * 100) if grand_total else 0)|round(1) }}%</td>
                     <td>
                         <div style="background:#e3f2fd;border-radius:8px;height:12px;">
                             <div style="background:#1976d2;height:12px;border-radius:8px;width:{{ (total_shop3 / grand_total * 100) if grand_total else 0 }}%;"></div>
@@ -148,7 +151,8 @@
                 </tr>
                 <tr>
                     <td><i class="fa-solid fa-house" style="color:#ef6c00;margin-right:6px;"></i> Home Use</td>
-                    <td>{{ "{:,.2f}".format(total_home or 0) }} L</td>
+                    <td><strong>{{ "{:,.2f}".format(total_home or 0) }} L</strong></td>
+                    <td>{{ ((total_home / grand_total * 100) if grand_total else 0)|round(1) }}%</td>
                     <td>
                         <div style="background:#fff3e0;border-radius:8px;height:12px;">
                             <div style="background:#ef6c00;height:12px;border-radius:8px;width:{{ (total_home / grand_total * 100) if grand_total else 0 }}%;"></div>
@@ -157,7 +161,8 @@
                 </tr>
                 <tr>
                     <td><i class="fa-solid fa-baby" style="color:#6a1b9a;margin-right:6px;"></i> Calves</td>
-                    <td>{{ "{:,.2f}".format(total_calf or 0) }} L</td>
+                    <td><strong>{{ "{:,.2f}".format(total_calf or 0) }} L</strong></td>
+                    <td>{{ ((total_calf / grand_total * 100) if grand_total else 0)|round(1) }}%</td>
                     <td>
                         <div style="background:#f3e5f5;border-radius:8px;height:12px;">
                             <div style="background:#6a1b9a;height:12px;border-radius:8px;width:{{ (total_calf / grand_total * 100) if grand_total else 0 }}%;"></div>
@@ -165,8 +170,9 @@
                     </td>
                 </tr>
                 <tr style="background:#e8f5e9;">
-                    <td><strong>Total Production</strong></td>
+                    <td><strong><i class="fa-solid fa-cubes" style="color:#2e7d32;margin-right:6px;"></i> Total Production</strong></td>
                     <td><strong>{{ "{:,.2f}".format(grand_total or 0) }} L</strong></td>
+                    <td><strong>100%</strong></td>
                     <td>
                         <div style="background:#e8f5e9;border-radius:8px;height:12px;">
                             <div style="background:#2e7d32;height:12px;border-radius:8px;width:100%;"></div>
@@ -182,26 +188,29 @@
         {% if recent_insem %}
         <div class="table-wrap">
             <table>
-                <tr><th>Animal</th><th>Date Served</th><th>Status</th></tr>
+                <tr><th>Animal</th><th>Date Served</th><th>Status</th><th>Calving Date</th></tr>
                 {% for ins in recent_insem %}
                 <tr>
-                    <td>{{ ins.animal.name if ins.animal else 'Unknown' }}</td>
+                    <td><strong>{{ ins.animal.name if ins.animal else 'Unknown' }}</strong></td>
                     <td>{{ ins.date_served or '-' }}</td>
                     <td>
                         {% if ins.status == 'confirmed' %}
-                        <span class="badge badge-green">Expectant</span>
+                        <span class="badge badge-green"><i class="fa-solid fa-check"></i> Expectant</span>
                         {% elif ins.status == 'delivered' %}
-                        <span class="badge badge-blue">Delivered</span>
+                        <span class="badge badge-blue"><i class="fa-solid fa-baby"></i> Delivered</span>
+                        {% elif ins.status == 'aborted' %}
+                        <span class="badge badge-red"><i class="fa-solid fa-xmark"></i> Aborted</span>
                         {% else %}
-                        <span class="badge badge-orange">{{ ins.status or 'Pending' }}</span>
+                        <span class="badge badge-orange"><i class="fa-solid fa-clock"></i> {{ ins.status or 'Pending' }}</span>
                         {% endif %}
                     </td>
+                    <td>{{ ins.calving_date or '-' }}</td>
                 </tr>
                 {% endfor %}
             </table>
         </div>
         {% else %}
-        <p style="color:var(--muted);">No insemination records yet.</p>
+        <p style="color:var(--muted);text-align:center;padding:20px;"><i class="fa-solid fa-inbox"></i> No insemination records yet.</p>
         {% endif %}
     </div>
 </div>
@@ -220,7 +229,7 @@
             </tr>
             {% for f in farms %}
             <tr>
-                <td><i class="fa-solid fa-building" style="color:#2e7d32;margin-right:6px;"></i>{{ f.name }}</td>
+                <td><i class="fa-solid fa-building" style="color:#2e7d32;margin-right:6px;"></i><strong>{{ f.name }}</strong></td>
                 <td>{{ animals_by_farm.get(f.id, {}).get('animals', 0) }}</td>
                 <td>{{ animals_by_farm.get(f.id, {}).get('milk', 0) }}</td>
                 <td>

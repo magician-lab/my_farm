@@ -6,7 +6,14 @@
 <div class="page-header">
     <div>
         <h1><i class="fa-solid fa-baby"></i> Calf Registry</h1>
-        <p class="sub">Register calves for {{ current_farm.name if current_farm else 'your farm' }}.</p>
+        <p class="sub">
+            Register calves for
+            {% if current_farm %}
+                <span style="background:#2e7d32;color:#fff;font-size:12px;font-weight:700;padding:3px 8px;border-radius:10px;">{{ current_farm.name }}</span>
+            {% else %}
+                <span style="background:#2e7d32;color:#fff;font-size:12px;font-weight:700;padding:3px 8px;border-radius:10px;">your farm</span>
+            {% endif %}
+        </p>
     </div>
     <a href="/cow_dashboard" class="btn btn-green"><i class="fa-solid fa-arrow-left"></i> Back to Animals</a>
 </div>
@@ -37,6 +44,7 @@
                 <div class="form-group">
                     <label>Level</label>
                     <select name="level" required>
+                        <option value="">-- Select Level --</option>
                         <option value="Calf">Calf</option>
                         <option value="Weaner">Weaner</option>
                         <option value="Yearling">Yearling</option>
@@ -59,12 +67,13 @@
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>#</th>
                     <th>Name</th>
                     <th>Breed</th>
                     <th>Level</th>
                     <th>Birth Date</th>
                     <th>Mother</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -76,13 +85,19 @@
                     <td><span class="badge badge-blue">{{ c.category }}</span></td>
                     <td>{{ c.dob or '-' }}</td>
                     <td>{{ c.mother or '-' }}</td>
+                    <td>
+                        <div style="display:flex;gap:6px;">
+                            <a href="{{ url_for('edit_animal_record', id=c.id) }}" class="btn btn-green" style="padding:5px 10px;font-size:12px;"><i class="fa-solid fa-pen"></i></a>
+                            <a href="{{ url_for('delete_animal', id=c.id) }}" class="btn btn-red" style="padding:5px 10px;font-size:12px;" onclick="return confirm('Delete this calf?')"><i class="fa-solid fa-trash"></i></a>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
     {% else %}
-    <p style="color:var(--muted);">No calves registered for this farm yet.</p>
+    <p style="color:var(--muted);text-align:center;padding:24px;"><i class="fa-solid fa-inbox"></i> No calves registered for this farm yet.</p>
     {% endif %}
 </div>
 
