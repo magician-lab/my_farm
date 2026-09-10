@@ -139,6 +139,48 @@
     </div>
 </div>
 
+<!-- SALES RECORDS (edit/delete) -->
+<div class="section">
+    <h2><i class="fa-solid fa-list"></i> Session Records</h2>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead>
+                <tr style="background:#f0f2f5;color:#263238;text-align:left;">
+                    <th style="padding:10px;border-bottom:2px solid #dce4dc;">Session</th>
+                    <th style="padding:10px;border-bottom:2px solid #dce4dc;">Shop 1</th>
+                    <th style="padding:10px;border-bottom:2px solid #dce4dc;">Shop 2</th>
+                    <th style="padding:10px;border-bottom:2px solid #dce4dc;">Shop 3</th>
+                    <th style="padding:10px;border-bottom:2px solid #dce4dc;">Home</th>
+                    <th style="padding:10px;border-bottom:2px solid #dce4dc;">Calf</th>
+                    <th style="padding:10px;border-bottom:2px solid #dce4dc;">Price</th>
+                    <th style="padding:10px;border-bottom:2px solid #dce4dc;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in session_records %}
+                <tr style="border-bottom:1px solid #f0f2f5;">
+                    <td style="padding:10px;font-weight:700;color:#1b5e20;">{{ r.session }}</td>
+                    <td style="padding:10px;">{{ r.shop1|round(2) }}</td>
+                    <td style="padding:10px;">{{ r.shop2|round(2) }}</td>
+                    <td style="padding:10px;">{{ r.shop3|round(2) }}</td>
+                    <td style="padding:10px;">{{ r.home|round(2) }}</td>
+                    <td style="padding:10px;">{{ r.calf|round(2) }}</td>
+                    <td style="padding:10px;">{{ r.price|round(2) }}</td>
+                    <td style="padding:10px;white-space:nowrap;">
+                        <a class="btn btn-blue" style="padding:5px 10px;font-size:12px;" href="/edit_milk_sale/{{ r.id }}"><i class="fa-solid fa-pen"></i> Edit</a>
+                        <a class="btn btn-amber" style="padding:5px 10px;font-size:12px;" href="/delete_milk_sale/{{ r.id }}" onclick="return confirm('Delete this {{ r.session }} sale record?');"><i class="fa-solid fa-trash"></i> Delete</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="empty">No sales records for this date.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- QUICK LINKS -->
 <div class="links">
     <a href="/milk_sales_entry" class="gl"><i class="fa-solid fa-plus"></i> Record Sales</a>

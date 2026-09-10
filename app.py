@@ -3280,6 +3280,17 @@ def get_milk_sales(date_str=None, farm_id=None):
     )
 
     # =====================================================
+    # PER-RECORD SALES (for edit/delete on report page)
+    # =====================================================
+
+    _order = {"Morning": 0, "Noon": 1, "Evening": 2}
+
+    session_records = sorted(
+        (s for s in sales if s.date == selected_date),
+        key=lambda s: _order.get(s.session, 99)
+    )
+
+    # =====================================================
     # PERFORMANCE METRICS
     # =====================================================
     total_used=sales_data["total_used"]
@@ -3329,7 +3340,13 @@ def get_milk_sales(date_str=None, farm_id=None):
         # Dashboard Extras
         # ----------------------------------------
 
-        "sales_percentage": sales_percentage
+        "sales_percentage": sales_percentage,
+
+        # ----------------------------------------
+        # Raw records (for edit/delete actions)
+        # ----------------------------------------
+
+        "session_records": session_records
 
     }
 
