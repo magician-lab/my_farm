@@ -1280,41 +1280,177 @@ def get_treatment_data(date_str=None, status=None, farm_id=None):
     }
 
 
-def get_car_expense_report_data(selected_date=None):
+def _parse_filter_date(value):
+    """Parse YYYY-MM-DD string to date or None (safe, never raises)."""
+    if not value:
+        return None
+    value = str(value).strip()
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except Exception:
+        return None
 
+
+def get_car_expense_report_data(selected_date=None, car_id=None, start_date=None, end_date=None):
+    # Back-compat: selected_date may be passed as kw or positional.
+    # New filters: car_id, start_date, end_date (YYYY-MM-DD strings or date objects).
     query = CarExpense.query.join(CarRegistry)
 
+    if isinstance(start_date, date) and not isinstance(start_date, datetime):
+        start_obj = start_date
+    else:
+        start_obj = _parse_filter_date(start_date)
+    if isinstance(end_date, date) and not isinstance(end_date, datetime):
+        end_obj = end_date
+    else:
+        end_obj = _parse_filter_date(end_date)
+
     if selected_date:
-        selected_date_obj = datetime.strptime(selected_date, "%Y-%m-%d").date()
-        query = query.filter(CarExpense.date == selected_date_obj)
+        selected_date_obj = _parse_filter_date(selected_date)
+        if selected_date_obj:
+            query = query.filter(CarExpense.date == selected_date_obj)
+    else:
+        if start_obj:
+            query = query.filter(CarExpense.date >= start_obj)
+        if end_obj:
+            query = query.filter(CarExpense.date <= end_obj)
 
-    expenses = query.order_by(CarRegistry.plate_number.asc()).all()
+    if car_id:
+        try:
+            query = query.filter(CarExpense.car_id == int(car_id))
+        except Exception:
+            pass
 
-    total = sum(e.amount for e in expenses)
+    expenses = query.order_by(CarExpense.date.desc(), CarRegistry.plate_number.asc()).all()
+
+    total = sum(float(e.amount or 0) for e in expenses)
+
+    # Per-vehicle breakdown + per-type breakdown for PDF totals
+    by_vehicle = {}
+    by_type = {}
+    for e in expenses:
+        plate = e.car.plate_number if e.car else f"Car #{e.car_id}"
+        by_vehicle[plate] = by_vehicle.get(plate, 0) + float(e.amount or 0)
+        etype = (e.expense_type or "Other").strip() or "Other"
+        by_type[etype] = by_type.get(etype, 0) + float(e.amount or 0)
 
     return {
         "expenses": expenses,
-        "total_expense": total,
-        "selected_date": selected_date
+        "total_expense": round(total, 2),
+        "selected_date": selected_date,
+        "car_id": str(car_id) if car_id else "",
+        "start_date": start_date if isinstance(start_date, str) else (start_obj.isoformat() if start_obj else ""),
+        "end_date": end_date if isinstance(end_date, str) else (end_obj.isoformat() if end_obj else ""),
+        "by_vehicle": by_vehicle,
+        "by_type": by_type,
+        "count": len(expenses),
     }
 
 
-def get_sales_report_data(selected_date=None):
-
+def get_sales_report_data(selected_date=None, car_id=None, start_date=None, end_date=None):
     query = CarSales.query.join(CarRegistry)
 
+    if isinstance(start_date, date) and not isinstance(start_date, datetime):
+        start_obj = start_date
+    else:
+        start_obj = _parse_filter_date(start_date)
+    if isinstance(end_date, date) and not isinstance(end_date, datetime):
+        end_obj = end_date
+    else:
+        end_obj = _parse_filter_date(end_date)
+
     if selected_date:
-        selected_date_obj = datetime.strptime(selected_date, "%Y-%m-%d").date()
-        query = query.filter(CarSales.date == selected_date_obj)
+        selected_date_obj = _parse_filter_date(selected_date)
+        if selected_date_obj:
+            query = query.filter(CarSales.date == selected_date_obj)
+    else:
+        if start_obj:
+            query = query.filter(CarSales.date >= start_obj)
+        if end_obj:
+            query = query.filter(CarSales.date <= end_obj)
 
-    sales = query.order_by(CarRegistry.plate_number.asc()).all()
+    if car_id:
+        try:
+            query = query.filter(CarSales.car_id == int(car_id))
+        except Exception:
+            pass
 
-    total = sum(s.amount for s in sales)
+    sales = query.order_by(CarSales.date.desc(), CarRegistry.plate_number.asc()).all()
+
+    total = sum(float(s.amount or 0) for s in sales)
+
+    by_vehicle = {}
+    full_days = 0
+    half_days = 0
+    for s in sales:
+        plate = s.car.plate_number if s.car else f"Car #{s.car_id}"
+        by_vehicle[plate] = by_vehicle.get(plate, 0) + float(s.amount or 0)
+        if (s.length or "").upper() == "FULL":
+            full_days += 1
+        elif (s.length or "").upper() == "HALF":
+            half_days += 1
 
     return {
         "sales": sales,
-        "total_sales": total,
-        "selected_date": selected_date
+        "total_sales": round(total, 2),
+        "selected_date": selected_date,
+        "car_id": str(car_id) if car_id else "",
+        "start_date": start_date if isinstance(start_date, str) else (start_obj.isoformat() if start_obj else ""),
+        "end_date": end_date if isinstance(end_date, str) else (end_obj.isoformat() if end_obj else ""),
+        "by_vehicle": by_vehicle,
+        "full_days": full_days,
+        "half_days": half_days,
+        "count": len(sales),
+    }
+
+
+def get_vehicle_report_data(car_id=None, start_date=None, end_date=None, report_type="both"):
+    """Unified vehicle report: sales + expenses with breakdowns and totals.
+
+    report_type: 'sales' | 'expenditure' | 'expenses' | 'both'
+    """
+    rt = (report_type or "both").strip().lower()
+    if rt in ("expenditure", "expense", "expenses"):
+        rt_norm = "expenditure"
+    elif rt in ("sale", "sales", "revenue"):
+        rt_norm = "sales"
+    else:
+        rt_norm = "both"
+
+    car = None
+    if car_id:
+        try:
+            car = CarRegistry.query.get(int(car_id))
+        except Exception:
+            car = None
+
+    sales_data = get_sales_report_data(None, car_id=car_id, start_date=start_date, end_date=end_date)
+    exp_data = get_car_expense_report_data(None, car_id=car_id, start_date=start_date, end_date=end_date)
+
+    total_sales = sales_data["total_sales"]
+    total_expenses = exp_data["total_expense"]
+    profit = round(total_sales - total_expenses, 2)
+
+    return {
+        "car": car,
+        "car_id": str(car_id) if car_id else "",
+        "start_date": sales_data.get("start_date") or "",
+        "end_date": sales_data.get("end_date") or "",
+        "report_type": rt_norm,
+        "sales": sales_data["sales"],
+        "expenses": exp_data["expenses"],
+        "total_sales": total_sales,
+        "total_expense": total_expenses,
+        "profit": profit,
+        "sales_count": sales_data.get("count", 0),
+        "expenses_count": exp_data.get("count", 0),
+        "full_days": sales_data.get("full_days", 0),
+        "half_days": sales_data.get("half_days", 0),
+        "sales_by_vehicle": sales_data.get("by_vehicle", {}),
+        "expenses_by_vehicle": exp_data.get("by_vehicle", {}),
+        "expenses_by_type": exp_data.get("by_type", {}),
     }
 
 from datetime import datetime, date
@@ -3702,25 +3838,152 @@ def get_employees_data():
 
 # ================= UNIVERSAL REPORT ENGINE ================= #
 
-def generate_pdf(template_name, context, filename):
-    """Generate PDF from HTML template using WeasyPrint"""
-    from weasyprint import HTML
+def _safe_filename(name):
+    keep = []
+    for ch in (name or "report"):
+        if ch.isalnum() or ch in ("-", "_", "."):
+            keep.append(ch)
+        elif ch in (" ",):
+            keep.append("_")
+    out = "".join(keep).strip("._") or "report.pdf"
+    if not out.lower().endswith(".pdf"):
+        out += ".pdf"
+    return out
 
-    rendered_html = render_template(template_name, **context)
+
+def _reportlab_fallback_vehicle_pdf(data, filename, title="Vehicle Report"):
+    """Minimal ReportLab fallback so vehicle PDFs never break when WeasyPrint is missing/fails."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
 
     folder = os.path.join("static", "reports")
     os.makedirs(folder, exist_ok=True)
+    file_path = os.path.join(folder, _safe_filename(filename))
 
+    doc = SimpleDocTemplate(file_path, pagesize=A4, topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    story = [Paragraph(title, styles["Title"]), Spacer(1, 6)]
+
+    meta = []
+    if data.get("car"):
+        try:
+            meta.append(f"Vehicle: {data['car'].plate_number} ({data['car'].driver or 'No driver'})")
+        except Exception:
+            pass
+    rng = f"{data.get('start_date') or '...'} to {data.get('end_date') or '...'}"
+    meta.append(f"Period: {rng}")
+    meta.append(f"Type: {data.get('report_type', 'both')}")
+    for m in meta:
+        story.append(Paragraph(m, styles["Normal"]))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(
+        f"Totals — Sales: KES {data.get('total_sales', 0):,.2f} | "
+        f"Expenses: KES {data.get('total_expense', 0):,.2f} | "
+        f"Profit: KES {data.get('profit', 0):,.2f}", styles["Normal"]))
+    story.append(Spacer(1, 12))
+
+    rt = (data.get("report_type") or "both").lower()
+    if rt in ("sales", "both"):
+        story.append(Paragraph("Sales breakdown", styles["Heading2"]))
+        rows = [["Date", "Vehicle", "Type", "Amount (KES)"]]
+        for s in data.get("sales", [])[:500]:
+            try:
+                plate = s.car.plate_number if getattr(s, "car", None) else ""
+            except Exception:
+                plate = ""
+            rows.append([str(getattr(s, "date", "")), plate, str(getattr(s, "length", "") or ""),
+                         f"{float(getattr(s, 'amount', 0) or 0):,.2f}"])
+        if len(rows) == 1:
+            rows.append(["-", "No sales in period", "-", "-"])
+        t = Table(rows, repeatRows=1)
+        t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
+                               ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                               ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                               ("FONTSIZE", (0, 0), (-1, -1), 8)]))
+        story.append(t)
+        story.append(Spacer(1, 12))
+
+    if rt in ("expenditure", "expenses", "both"):
+        story.append(Paragraph("Expenditure breakdown", styles["Heading2"]))
+        rows = [["Date", "Vehicle", "Type", "Description", "Amount (KES)"]]
+        for e in data.get("expenses", [])[:500]:
+            try:
+                plate = e.car.plate_number if getattr(e, "car", None) else ""
+            except Exception:
+                plate = ""
+            rows.append([str(getattr(e, "date", "")), plate,
+                         str(getattr(e, "expense_type", "") or ""),
+                         str(getattr(e, "description", "") or "")[:40],
+                         f"{float(getattr(e, 'amount', 0) or 0):,.2f}"])
+        if len(rows) == 1:
+            rows.append(["-", "No expenses in period", "-", "-", "-"])
+        t = Table(rows, repeatRows=1)
+        t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#7c2d12")),
+                               ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                               ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                               ("FONTSIZE", (0, 0), (-1, -1), 8)]))
+        story.append(t)
+
+    doc.build(story)
+    return file_path
+
+
+def generate_pdf(template_name, context, filename):
+    """Generate PDF from HTML template using WeasyPrint, with ReportLab fallback.
+
+    Never raises for vehicle reports — falls back so the PDF does not break.
+    """
+    safe_context = dict(context or {})
+    # Ensure totals are numbers so "{:,}".format() never breaks in templates
+    for k in ("total_expense", "total_sales", "total_revenue", "profit", "total_all"):
+        if k in safe_context and safe_context[k] is None:
+            safe_context[k] = 0
+    # Ensure 'now' exists for templates that expect it
+    if "now" not in safe_context:
+        safe_context["now"] = datetime.now()
+
+    filename = _safe_filename(filename)
+    folder = os.path.join("static", "reports")
+    os.makedirs(folder, exist_ok=True)
     file_path = os.path.join(folder, filename)
 
-    HTML(
-        string=rendered_html,
-        base_url=os.getcwd()
-    ).write_pdf(
-        target=file_path
-    )
-
-    return file_path
+    try:
+        from weasyprint import HTML
+        rendered_html = render_template(template_name, **safe_context)
+        HTML(string=rendered_html, base_url=os.path.abspath(".")).write_pdf(target=file_path)
+        return file_path
+    except Exception as e:
+        # Fallback for vehicle reports; re-raise for others with a clear message
+        is_vehicle = any(x in (template_name or "") for x in ("car_", "vehicle")) or \
+            ("sales" in safe_context and "expenses" in safe_context)
+        if is_vehicle:
+            try:
+                title = "Vehicle Report"
+                if "car_sales" in (template_name or ""):
+                    title = "Vehicle Sales Report"
+                elif "car_expense" in (template_name or ""):
+                    title = "Vehicle Expenditure Report"
+                elif "vehicle" in (template_name or ""):
+                    title = "Vehicle Report (Sales & Expenditure)"
+                # Build a unified data dict for fallback
+                fb_data = {
+                    "sales": safe_context.get("sales", []),
+                    "expenses": safe_context.get("expenses", []),
+                    "total_sales": float(safe_context.get("total_sales", 0) or 0),
+                    "total_expense": float(safe_context.get("total_expense", 0) or 0),
+                    "profit": float(safe_context.get("profit",
+                        float(safe_context.get("total_sales", 0) or 0) - float(safe_context.get("total_expense", 0) or 0)) or 0),
+                    "start_date": safe_context.get("start_date", "") or safe_context.get("selected_date", ""),
+                    "end_date": safe_context.get("end_date", "") or safe_context.get("selected_date", ""),
+                    "report_type": safe_context.get("report_type", "both"),
+                    "car": safe_context.get("car") or safe_context.get("selected_car"),
+                }
+                return _reportlab_fallback_vehicle_pdf(fb_data, filename, title=title)
+            except Exception as e2:
+                raise RuntimeError(f"PDF generation failed (weasyprint: {e}; fallback: {e2})")
+        raise RuntimeError(f"PDF generation failed: {e}")
 
 @app.route('/send_report/<report_type>')
 @login_required
@@ -3734,14 +3997,63 @@ def send_report(report_type):
         filename = f"milk_{selected_date or 'today'}.pdf"
 
     elif report_type == "car_expenses":
-        data = get_car_expense_report_data(selected_date)
+        car_id = request.args.get("car_id") or request.args.get("car")
+        start_date = request.args.get("start_date") or request.args.get("from_date")
+        end_date = request.args.get("end_date") or request.args.get("to_date")
+        # legacy single-date support
+        if not start_date and not end_date:
+            selected_date = request.args.get("date")
+        else:
+            selected_date = None
+        data = get_car_expense_report_data(selected_date, car_id=car_id, start_date=start_date, end_date=end_date)
+        # Attach selected car object for PDF header (never breaks if missing)
+        try:
+            data["car"] = CarRegistry.query.get(int(car_id)) if car_id else None
+        except Exception:
+            data["car"] = None
+        data["report_type"] = "expenditure"
         template = "car_expenses_reportpdf.html"
-        filename = f"car_expenses_{selected_date or 'all'}.pdf"
+        label = f"{car_id or 'all'}_{start_date or 'start'}_to_{end_date or 'end'}"
+        filename = f"car_expenses_{label}.pdf"
 
     elif report_type == "car_sales":
-        data = get_sales_report_data(selected_date)
+        car_id = request.args.get("car_id") or request.args.get("car")
+        start_date = request.args.get("start_date") or request.args.get("from_date")
+        end_date = request.args.get("end_date") or request.args.get("to_date")
+        if not start_date and not end_date:
+            selected_date = request.args.get("date")
+        else:
+            selected_date = None
+        data = get_sales_report_data(selected_date, car_id=car_id, start_date=start_date, end_date=end_date)
+        try:
+            data["car"] = CarRegistry.query.get(int(car_id)) if car_id else None
+        except Exception:
+            data["car"] = None
+        data["report_type"] = "sales"
         template = "car_sales_reportpdf.html"
-        filename = f"sales_{selected_date or 'all'}.pdf"
+        label = f"{car_id or 'all'}_{start_date or 'start'}_to_{end_date or 'end'}"
+        filename = f"sales_{label}.pdf"
+
+    elif report_type == "vehicle_report":
+        car_id = request.args.get("car_id") or request.args.get("car")
+        start_date = request.args.get("start_date") or request.args.get("from_date")
+        end_date = request.args.get("end_date") or request.args.get("to_date")
+        # support legacy month=YYYY-MM filter
+        month_str = request.args.get("month")
+        if not start_date and not end_date and month_str:
+            try:
+                y, m = [int(x) for x in str(month_str).split("-")[:2]]
+                import calendar as _cal
+                start_date = f"{y:04d}-{m:02d}-01"
+                end_date = f"{y:04d}-{m:02d}-{_cal.monthrange(y, m)[1]:02d}"
+            except Exception:
+                pass
+        report_kind = request.args.get("report_type") or request.args.get("type") or "both"
+        data = get_vehicle_report_data(car_id=car_id, start_date=start_date, end_date=end_date, report_type=report_kind)
+        data["month_name"] = f"{start_date or '...'} to {end_date or '...'}"
+        template = "vehicle_report_pdf.html"
+        label = f"{car_id or 'all'}_{start_date or 'start'}_to_{end_date or 'end'}_{data['report_type']}"
+        filename = f"vehicle_report_{label}.pdf"
 
     elif report_type == "animals":
         category = request.args.get("category")
@@ -6509,10 +6821,17 @@ def add_car_expense():
 def car_expense_report():
 
     selected_date = request.args.get("date")
+    car_id = request.args.get("car_id")
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    # If new range filters present, ignore legacy single date
+    if start_date or end_date:
+        selected_date = None
 
-    data = get_car_expense_report_data(selected_date)
+    data = get_car_expense_report_data(selected_date, car_id=car_id, start_date=start_date, end_date=end_date)
+    cars = CarRegistry.query.order_by(CarRegistry.plate_number.asc()).all()
 
-    return render_template("car_expense_report.html", **data)
+    return render_template("car_expense_report.html", cars=cars, **data)
 
 @app.route("/delete_car_expense/<int:id>")
 @role_required("admin")
@@ -6608,10 +6927,16 @@ def add_car_sale():
 def car_sales_report():
 
     selected_date = request.args.get("date")
+    car_id = request.args.get("car_id")
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    if start_date or end_date:
+        selected_date = None
 
-    data = get_sales_report_data(selected_date)
+    data = get_sales_report_data(selected_date, car_id=car_id, start_date=start_date, end_date=end_date)
+    cars = CarRegistry.query.order_by(CarRegistry.plate_number.asc()).all()
 
-    return render_template("car_sales_report.html", **data)
+    return render_template("car_sales_report.html", cars=cars, **data)
 
 
 @app.route("/delete_car_sale/<int:id>")
@@ -6630,16 +6955,24 @@ def edit_car_sale(id):
     cars = CarRegistry.query.all()
 
     if request.method == "POST":
-        sale.car_id = request.form.get("car_id")
-        sale.date_str = datetime.strptime(request.form.get("date"), "%Y-%m-%d").date()
-        sale.length = request.form.get("day_length")
+        try:
+            car_id = request.form.get("car_id")
+            if car_id:
+                sale.car_id = int(car_id)
+            date_val = request.form.get("date")
+            if date_val:
+                sale.date = datetime.strptime(date_val, "%Y-%m-%d").date()
+            sale.length = request.form.get("day_length") or sale.length
 
-        if sale.length == "HALF":
-            sale.amount = 5000
-        else:
-            sale.amount = 10000
+            if (sale.length or "").upper() == "HALF":
+                sale.amount = 5000
+            else:
+                sale.amount = 10000
 
-        db.session.commit()
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error updating sale: {e}", "error")
         return redirect(url_for("car_sales_report"))
 
     return render_template("edit_car_sale.html", sale=sale, cars=cars)
@@ -6653,49 +6986,92 @@ def edit_car_sale(id):
 @role_required("admin")
 def vehicle_analytics():
 
-    # Month filter: default = current month
+    # New filters: start_date / end_date (range) take precedence over legacy month.
+    # Also: car_id (vehicle) + report_type (sales | expenditure | both).
+    start_arg = (request.args.get("start_date") or "").strip()
+    end_arg = (request.args.get("end_date") or "").strip()
+    report_type = (request.args.get("report_type") or request.args.get("type") or "both").strip().lower()
+    if report_type not in ("sales", "expenditure", "expenses", "both"):
+        report_type = "both"
+    if report_type == "expenses":
+        report_type = "expenditure"
+
     month_str = request.args.get("month")
 
-    if month_str and month_str.strip():
-        try:
-            year, month = [int(x) for x in month_str.split("-")]
-        except Exception:
-            month, year = date.today().month, date.today().year
+    if start_arg or end_arg:
+        start_obj = _parse_filter_date(start_arg)
+        end_obj = _parse_filter_date(end_arg)
+        # Defaults: open-ended
+        if not start_obj and not end_obj:
+            # fall back to current month if unparsable
+            today = date.today()
+            year, month = today.year, today.month
+            start_date = datetime(year, month, 1).date()
+            if month == 12:
+                end_date_excl = datetime(year + 1, 1, 1).date()
+            else:
+                end_date_excl = datetime(year, month + 1, 1).date()
+            month_str_out = f"{year:04d}-{month:02d}"
+            month_name = datetime(year, month, 1).strftime("%B %Y")
+            use_range = False
+        else:
+            use_range = True
+            # For queries we need inclusive end; convert to exclusive by +1 day
+            from datetime import timedelta as _td
+            start_date = start_obj
+            end_date_excl = (end_obj + _td(days=1)) if end_obj else None
+            month_str_out = month_str or ""
+            month_name = f"{start_arg or '...'} to {end_arg or '...'}"
+            year, month = (start_obj.year, start_obj.month) if start_obj else (end_obj.year, end_obj.month)
     else:
-        month, year = date.today().month, date.today().year
+        use_range = False
+        if month_str and month_str.strip():
+            try:
+                year, month = [int(x) for x in month_str.split("-")]
+            except Exception:
+                month, year = date.today().month, date.today().year
+        else:
+            month, year = date.today().month, date.today().year
+        start_date = datetime(year, month, 1).date()
+        if month == 12:
+            end_date_excl = datetime(year + 1, 1, 1).date()
+        else:
+            end_date_excl = datetime(year, month + 1, 1).date()
+        month_str_out = f"{year:04d}-{month:02d}"
+        month_name = datetime(year, month, 1).strftime("%B %Y")
 
     # Car filter: default = first active car (or all)
     car_filter = request.args.get("car_id")
     selected_car = None
-    cars = CarRegistry.query.all()
+    cars = CarRegistry.query.order_by(CarRegistry.plate_number.asc()).all()
 
     if car_filter and str(car_filter).strip():
-        selected_car = CarRegistry.query.get(int(car_filter))
+        try:
+            selected_car = CarRegistry.query.get(int(car_filter))
+        except Exception:
+            selected_car = None
 
     # -------- FILTERS --------
-    start_date = datetime(year, month, 1).date()
-
-    if month == 12:
-        end_date = datetime(year + 1, 1, 1).date()
-    else:
-        end_date = datetime(year, month + 1, 1).date()
-
-    def in_month(q, column):
-        return q.filter(
-            column >= start_date,
-            column < end_date
-        )
+    def in_period(q, column):
+        if use_range:
+            if start_date:
+                q = q.filter(column >= start_date)
+            if end_date_excl:
+                # end_date_excl is exclusive (end + 1 day); for range mode
+                q = q.filter(column < end_date_excl)
+            return q
+        return q.filter(column >= start_date, column < end_date_excl)
 
     # -------- PER-CAR ANALYTICS --------
     car_rows = []
 
     for car in cars:
 
-        sales_q = in_month(CarSales.query.filter_by(car_id=car.id), CarSales.date)
-        exp_q = in_month(CarExpense.query.filter_by(car_id=car.id), CarExpense.date)
+        sales_q = in_period(CarSales.query.filter_by(car_id=car.id), CarSales.date)
+        exp_q = in_period(CarExpense.query.filter_by(car_id=car.id), CarExpense.date)
 
-        month_sales = sum(s.amount or 0 for s in sales_q.all())
-        month_expenses = sum(e.amount or 0 for e in exp_q.all())
+        month_sales = sum(float(s.amount or 0) for s in sales_q.all())
+        month_expenses = sum(float(e.amount or 0) for e in exp_q.all())
 
         month_sales_count = sales_q.count()
         month_expenses_count = exp_q.count()
@@ -6723,7 +7099,7 @@ def vehicle_analytics():
     if selected_car:
 
         breakdown_sales = (
-            in_month(
+            in_period(
                 CarSales.query.filter_by(car_id=selected_car.id),
                 CarSales.date
             )
@@ -6732,7 +7108,7 @@ def vehicle_analytics():
         )
 
         breakdown_expenses = (
-            in_month(
+            in_period(
                 CarExpense.query.filter_by(car_id=selected_car.id),
                 CarExpense.date
             )
@@ -6740,18 +7116,24 @@ def vehicle_analytics():
             .all()
         )
 
-        totals["sales"] = round(sum(s.amount or 0 for s in breakdown_sales), 2)
-        totals["expenses"] = round(sum(e.amount or 0 for e in breakdown_expenses), 2)
+        totals["sales"] = round(sum(float(s.amount or 0) for s in breakdown_sales), 2)
+        totals["expenses"] = round(sum(float(e.amount or 0) for e in breakdown_expenses), 2)
         totals["profit"] = round(totals["sales"] - totals["expenses"], 2)
         totals["full_days"] = sum(1 for s in breakdown_sales if (s.length or "").upper() == "FULL")
         totals["half_days"] = sum(1 for s in breakdown_sales if (s.length or "").upper() == "HALF")
 
-    # Overall totals across all cars for the month
+    # Overall totals across all cars for the period
     overall = {
         "sales": round(sum(r["sales"] for r in car_rows), 2),
         "expenses": round(sum(r["expenses"] for r in car_rows), 2),
         "profit": round(sum(r["profit"] for r in car_rows), 2)
     }
+
+    # Apply report_type visibility (sales / expenditure / both) — totals stay complete
+    if report_type == "sales":
+        breakdown_expenses = []
+    elif report_type == "expenditure":
+        breakdown_sales = []
 
     return render_template(
         "vehicle_analytics.html",
@@ -6762,8 +7144,12 @@ def vehicle_analytics():
         breakdown_expenses=breakdown_expenses,
         totals=totals,
         overall=overall,
-        month_str=f"{year:04d}-{month:02d}",
-        month_name=datetime(year, month, 1).strftime("%B %Y")
+        month_str=month_str_out,
+        month_name=month_name,
+        start_date=start_arg,
+        end_date=end_arg,
+        report_type=report_type,
+        use_range=use_range,
     )
 
 

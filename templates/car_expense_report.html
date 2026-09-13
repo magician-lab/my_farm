@@ -187,8 +187,30 @@ tbody tr:hover{
 <form method="GET" class="filter-box">
 
     <div class="filter-group">
-        <label>Select Date</label>
-        <input type="date" name="date" value="{{ selected_date }}">
+        <label>Vehicle</label>
+        <select name="car_id" style="padding:10px;border-radius:8px;border:1px solid #ccc;">
+            <option value="">-- All Vehicles --</option>
+            {% for car in cars %}
+            <option value="{{ car.id }}" {% if car_id and car.id|string == car_id|string %}selected{% endif %}>
+                {{ car.plate_number }} ({{ car.driver or 'No driver' }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label>From date</label>
+        <input type="date" name="start_date" value="{{ start_date or '' }}">
+    </div>
+
+    <div class="filter-group">
+        <label>To date</label>
+        <input type="date" name="end_date" value="{{ end_date or '' }}">
+    </div>
+
+    <div class="filter-group">
+        <label>Single Date (legacy)</label>
+        <input type="date" name="date" value="{{ selected_date or '' }}">
     </div>
 
     <button type="submit" class="btn btn-filter">Filter</button>
@@ -198,7 +220,10 @@ tbody tr:hover{
 <!-- ================= EMAIL + EXPORT (UNLIMITED EMAILS) ================= -->
 <form method="GET" action="{{ url_for('send_report', report_type='car_expenses') }}">
 
-    <input type="hidden" name="date" value="{{ selected_date }}">
+    <input type="hidden" name="car_id" value="{{ car_id or '' }}">
+    <input type="hidden" name="start_date" value="{{ start_date or '' }}">
+    <input type="hidden" name="end_date" value="{{ end_date or '' }}">
+    <input type="hidden" name="date" value="{{ selected_date or '' }}">
      <a href="/car_sales_report" class="action-btn">
         back
     </a>
@@ -206,7 +231,7 @@ tbody tr:hover{
         add expense
     </a>
     <button type="submit" class="btn btn-export" style="margin-top:10px;">
-        📄 Dowload PDF
+        📄 Dowload PDF (uses filters above)
     </button>
 
 </form>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Vehicle Report</title>
+    <style>
+        @page { size: A4; margin: 14mm; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 0; }
+        h1 { text-align: center; font-size: 20px; margin: 0 0 2px 0; }
+        h2 { font-size: 14px; margin: 14px 0 6px 0; padding: 6px; background: #eee; border: 1px solid #ccc; }
+        .sub { text-align: center; color: #333; font-size: 12px; margin-bottom: 8px; }
+        .meta { margin: 8px 0; }
+        .meta div { margin: 2px 0; }
+        .totals { width: 100%; border-collapse: collapse; margin: 8px 0; }
+        .totals th { background: #111827; color: #fff; padding: 8px; border: 1px solid #111827; font-size: 11px; }
+        .totals td { padding: 8px; border: 1px solid #999; text-align: center; font-weight: bold; font-size: 12px; }
+        table.data { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        table.data th { background: #374151; color: #fff; padding: 6px; border: 1px solid #374151; font-size: 10px; }
+        table.data td { padding: 5px; border: 1px solid #aaa; text-align: center; font-size: 10px; }
+        table.summary { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        table.summary th { background: #555; color: #fff; padding: 6px; font-size: 10px; }
+        table.summary td { border: 1px solid #aaa; padding: 5px; font-size: 10px; }
+        table.summary td:last-child { text-align: right; font-weight: bold; }
+        .footer { margin-top: 12px; font-size: 9px; color: #666; text-align: center; }
+    </style>
+</head>
+<body>
+<h1>Vehicle Report — {% if report_type == 'sales' %}Sales{% elif report_type == 'expenditure' %}Expenditure{% else %}Sales &amp; Expenditure{% endif %}</h1>
+<div class="sub">
+    {% if car %}{{ car.plate_number }} — {{ car.model or 'Vehicle' }} ({{ car.driver or 'No driver' }}) · {% elif car_id %}Vehicle ID {{ car_id }} · {% else %}All Vehicles · {% endif %}
+    {{ start_date or '...' }} to {{ end_date or '...' }}
+</div>
+
+<div class="meta">
+    <div><strong>Type:</strong> {{ report_type }}</div>
+    <div><strong>Period:</strong> {{ start_date or 'start' }} to {{ end_date or 'end' }}</div>
+    <div><strong>Generated:</strong> {{ now.strftime('%Y-%m-%d %H:%M') if now else '' }}</div>
+</div>
+
+<table class="totals">
+    <tr>
+        <th>Total Sales (KES)</th>
+        <th>Total Expenditure (KES)</th>
+        <th>Profit (KES)</th>
+    </tr>
+    <tr>
+        <td>{{ "{:,.2f}".format(total_sales or 0) }}</td>
+        <td>{{ "{:,.2f}".format(total_expense or 0) }}</td>
+        <td>{{ "{:,.2f}".format(profit or 0) }}</td>
+    </tr>
+    <tr>
+        <td colspan="3" style="font-weight:normal;font-size:10px;">
+            {{ sales_count or 0 }} sales ({{ full_days or 0 }} Full · {{ half_days or 0 }} Half) · {{ expenses_count or 0 }} expenses
+        </td>
+    </tr>
+</table>
+
+{% if sales_by_vehicle and (report_type == 'sales' or report_type == 'both') %}
+<h2>Sales by Vehicle</h2>
+<table class="summary">
+    {% for k, v in sales_by_vehicle.items() %}
+    <tr><td>{{ k }}</td><td>KES {{ "{:,.2f}".format(v or 0) }}</td></tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if expenses_by_type and (report_type == 'expenditure' or report_type == 'both') %}
+<h2>Expenditure by Type</h2>
+<table class="summary">
+    {% for k, v in expenses_by_type.items() %}
+    <tr><td>{{ k }}</td><td>KES {{ "{:,.2f}".format(v or 0) }}</td></tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if expenses_by_vehicle and (report_type == 'expenditure' or report_type == 'both') %}
+<h2>Expenditure by Vehicle</h2>
+<table class="summary">
+    {% for k, v in expenses_by_vehicle.items() %}
+    <tr><td>{{ k }}</td><td>KES {{ "{:,.2f}".format(v or 0) }}</td></tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if report_type == 'sales' or report_type == 'both' %}
+<h2>Sales Breakdown</h2>
+<table class="data">
+    <thead><tr><th>#</th><th>Date</th><th>Vehicle</th><th>Type</th><th>Amount (KES)</th></tr></thead>
+    <tbody>
+    {% if sales %}
+        {% for s in sales %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.date }}</td>
+            <td>{{ s.car.plate_number if s.car else '-' }}</td>
+            <td>{{ s.length or '-' }}</td>
+            <td>{{ "{:,.2f}".format(s.amount or 0) }}</td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr><td colspan="5">No sales in selected period</td></tr>
+    {% endif %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if report_type == 'expenditure' or report_type == 'both' %}
+<h2>Expenditure Breakdown</h2>
+<table class="data">
+    <thead><tr><th>#</th><th>Date</th><th>Vehicle</th><th>Type</th><th>Description</th><th>Amount (KES)</th></tr></thead>
+    <tbody>
+    {% if expenses %}
+        {% for e in expenses %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ e.date }}</td>
+            <td>{{ e.car.plate_number if e.car else '-' }}</td>
+            <td>{{ e.expense_type or '-' }}</td>
+            <td>{{ e.description or '-' }}</td>
+            <td>{{ "{:,.2f}".format(e.amount or 0) }}</td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr><td colspan="6">No expenditure in selected period</td></tr>
+    {% endif %}
+    </tbody>
+</table>
+{% endif %}
+
+<div class="footer">My Farm — Vehicle Report · Filters applied: vehicle={{ car.plate_number if car else (car_id or 'all') }}, {{ start_date or '...' }} to {{ end_date or '...' }}, type={{ report_type }}</div>
+</body>
+</html>

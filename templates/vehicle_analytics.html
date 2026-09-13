@@ -19,8 +19,16 @@
     <h2><i class="fa-solid fa-filter"></i> Filters</h2>
     <form method="GET" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
         <div class="form-group" style="margin:0;min-width:200px;">
-            <label>Month</label>
+            <label>Month (legacy)</label>
             <input type="month" name="month" value="{{ month_str }}">
+        </div>
+        <div class="form-group" style="margin:0;min-width:180px;">
+            <label>From date</label>
+            <input type="date" name="start_date" value="{{ start_date or '' }}">
+        </div>
+        <div class="form-group" style="margin:0;min-width:180px;">
+            <label>To date</label>
+            <input type="date" name="end_date" value="{{ end_date or '' }}">
         </div>
         <div class="form-group" style="margin:0;min-width:240px;">
             <label>Vehicle</label>
@@ -34,8 +42,28 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="form-group" style="margin:0;min-width:180px;">
+            <label>Type</label>
+            <select name="report_type">
+                <option value="both" {% if (report_type or 'both') == 'both' %}selected{% endif %}>Sales + Expenditure</option>
+                <option value="sales" {% if report_type == 'sales' %}selected{% endif %}>Sales only</option>
+                <option value="expenditure" {% if report_type == 'expenditure' %}selected{% endif %}>Expenditure only</option>
+            </select>
+        </div>
         <button type="submit" class="btn btn-green"><i class="fa-solid fa-filter"></i> Apply</button>
+        {% if selected_car or start_date or end_date %}
+        <a class="btn btn-blue" style="text-decoration:none;"
+           href="{{ url_for('send_report', report_type='vehicle_report') }}?car_id={{ selected_car.id if selected_car else '' }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}&report_type={{ report_type or 'both' }}{% if not start_date and not end_date and month_str %}&month={{ month_str }}{% endif %}">
+            <i class="fa-solid fa-file-pdf"></i> Download PDF (applies filters)
+        </a>
+        {% else %}
+        <a class="btn btn-blue" style="text-decoration:none;"
+           href="{{ url_for('send_report', report_type='vehicle_report') }}?report_type={{ report_type or 'both' }}{% if month_str %}&month={{ month_str }}{% endif %}">
+            <i class="fa-solid fa-file-pdf"></i> Download PDF
+        </a>
+        {% endif %}
     </form>
+    <p class="sub" style="margin-top:10px;">Tip: pick a vehicle + From/To dates + Sales/Expenditure, then Download PDF — the PDF uses the same filters with breakdown + totals.</p>
 </div>
 
 <!-- ============ OVERALL MONTH TOTALS ============ -->

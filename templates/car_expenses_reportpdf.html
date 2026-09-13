@@ -2,138 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Car Expense Report</title>
-
+    <title>Vehicle Expenditure Report</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .filter-box {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        input[type="date"] {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            padding: 8px 15px;
-            border: none;
-            background-color: #007bff;
-            color: #fff;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .total-box {
-            margin: 15px 0;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: right;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table thead {
-            background-color: #007bff;
-            color: white;
-        }
-
-        table th, table td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-
-        table tbody tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 20px;
-            color: #777;
-        }
-        .edit-btn {
-    padding: 5px 10px;
-    background-color: #28a745;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    margin-right: 5px;
-}
-
-.edit-btn:hover {
-    background-color: #1e7e34;
-}
-
-.delete-btn {
-    padding: 5px 10px;
-    background-color: #dc3545;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-}
-
-.delete-btn:hover {
-    background-color: #a71d2a;
-}
+        @page { size: A4; margin: 15mm; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; margin: 0; padding: 0; }
+        h2 { text-align: center; margin: 0 0 4px 0; font-size: 20px; }
+        h3 { text-align: center; font-weight: normal; font-size: 13px; color: #333; margin: 0 0 10px 0; }
+        .meta { margin: 10px 0; font-size: 12px; }
+        .meta strong { display: inline-block; min-width: 110px; }
+        .total-box { margin: 12px 0; padding: 10px; background: #f3f4f6; border: 1px solid #ddd; font-size: 14px; font-weight: bold; text-align: right; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { background: #111827; color: #fff; padding: 8px; border: 1px solid #111827; font-size: 11px; }
+        td { padding: 7px; border: 1px solid #bbb; text-align: center; font-size: 11px; }
+        .summary-table td { text-align: left; }
+        .summary-table td:last-child { text-align: right; font-weight: bold; }
+        .footer { margin-top: 14px; font-size: 10px; color: #666; text-align: center; }
     </style>
 </head>
 <body>
+    <h2>Vehicle Expenditure Report</h2>
+    <h3>
+        {% if car %}{{ car.plate_number }} ({{ car.driver or 'No driver' }}) · {% endif %}
+        {% if start_date or end_date %}{{ start_date or '...' }} to {{ end_date or '...' }}
+        {% elif selected_date %}Report for {{ selected_date }}
+        {% else %}Full Report (All Dates){% endif %}
+    </h3>
 
-<div class="container">
-
-    <h2>🚗 Car Expense Report</h2>
-
-    <h3 style="text-align:center;">
-    {% if selected_date %}
-        Report for {{ selected_date }}
-    {% else %}
-        Full Report (All Dates)
-    {% endif %}
-</h3>
-    <div class="total-box">
-        Total Expense: KES <strong>{{ "{:,}".format(total_expense) }}</strong>
+    <div class="meta">
+        <div><strong>Vehicle:</strong> {% if car %}{{ car.plate_number }} — {{ car.model or 'Vehicle' }} ({{ car.driver or 'No driver' }}){% elif car_id %}ID {{ car_id }}{% else %}All Vehicles{% endif %}</div>
+        <div><strong>Period:</strong> {% if start_date or end_date %}{{ start_date or 'start' }} to {{ end_date or 'end' }}{% elif selected_date %}{{ selected_date }}{% else %}All dates{% endif %}</div>
+        <div><strong>Records:</strong> {{ count or expenses|length }}</div>
+        <div><strong>Generated:</strong> {{ now.strftime('%Y-%m-%d %H:%M') if now else '' }}</div>
     </div>
 
-    <!-- TABLE -->
+    <div class="total-box">Total Expenditure: KES {{ "{:,.2f}".format(total_expense or 0) }}</div>
+
+    {% if by_type %}
+    <table class="summary-table">
+        <tr><th colspan="2">Breakdown by Expense Type</th></tr>
+        {% for k, v in by_type.items() %}
+        <tr><td>{{ k }}</td><td>KES {{ "{:,.2f}".format(v or 0) }}</td></tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if by_vehicle %}
+    <table class="summary-table" style="margin-top:8px;">
+        <tr><th colspan="2">Breakdown by Vehicle</th></tr>
+        {% for k, v in by_vehicle.items() %}
+        <tr><td>{{ k }}</td><td>KES {{ "{:,.2f}".format(v or 0) }}</td></tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
     <table>
         <thead>
             <tr>
-                <th>Plate Number</th>
+                <th>#</th>
+                <th>Plate</th>
                 <th>Date</th>
-                <th>Expense Type</th>
+                <th>Type</th>
                 <th>Description</th>
                 <th>Amount (KES)</th>
             </tr>
@@ -142,22 +70,20 @@
             {% if expenses %}
                 {% for expense in expenses %}
                 <tr>
-                    <td>{{ expense.car.plate_number }}</td>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ expense.car.plate_number if expense.car else '-' }}</td>
                     <td>{{ expense.date }}</td>
-                    <td>{{ expense.expense_type }}</td>
-                    <td>{{ expense.description }}</td>
-                    <td>{{ "{:,}".format(expense.amount) }}</td>
+                    <td>{{ expense.expense_type or '-' }}</td>
+                    <td>{{ expense.description or '-' }}</td>
+                    <td>{{ "{:,.2f}".format(expense.amount or 0) }}</td>
                 </tr>
                 {% endfor %}
             {% else %}
-                <tr>
-                    <td colspan="5" class="no-data">No records found</td>
-                </tr>
+                <tr><td colspan="6">No records found for selected filters</td></tr>
             {% endif %}
         </tbody>
     </table>
 
-</div>
-
+    <div class="footer">My Farm — Vehicle Expenditure Report</div>
 </body>
 </html>

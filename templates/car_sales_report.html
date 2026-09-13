@@ -159,7 +159,17 @@ tr:nth-child(even){
 <!-- ================= FILTER ================= -->
 
 <form class="filter-bar" method="GET">
-    <input type="date" name="date" value="{{ selected_date }}">
+    <select name="car_id" style="padding:10px;border-radius:8px;border:1px solid #ccc;">
+        <option value="">-- All Vehicles --</option>
+        {% for car in cars %}
+        <option value="{{ car.id }}" {% if car_id and car.id|string == car_id|string %}selected{% endif %}>
+            {{ car.plate_number }} ({{ car.driver or 'No driver' }})
+        </option>
+        {% endfor %}
+    </select>
+    <input type="date" name="start_date" value="{{ start_date or '' }}" title="From date">
+    <input type="date" name="end_date" value="{{ end_date or '' }}" title="To date">
+    <input type="date" name="date" value="{{ selected_date or '' }}" title="Single date (legacy)">
     <button type="submit">Filter</button>
 </form>
 
@@ -176,9 +186,12 @@ tr:nth-child(even){
      <a href="/car_expense_report" class="action-btn">
         EXPENSES
     </a>
-    <button type="submit" class="btn btn-send">📄 Download PDF</button>
+    <button type="submit" class="btn btn-send">📄 Download PDF (uses filters)</button>
 
-    <input type="hidden" name="date" value="{{ selected_date }}">
+    <input type="hidden" name="car_id" value="{{ car_id or '' }}">
+    <input type="hidden" name="start_date" value="{{ start_date or '' }}">
+    <input type="hidden" name="end_date" value="{{ end_date or '' }}">
+    <input type="hidden" name="date" value="{{ selected_date or '' }}">
 
 </form>
 
