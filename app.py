@@ -3878,13 +3878,20 @@ def _reportlab_fallback_vehicle_pdf(data, filename, title="Vehicle Report"):
     for m in meta:
         story.append(Paragraph(m, styles["Normal"]))
     story.append(Spacer(1, 8))
-    story.append(Paragraph(
-        f"Totals — Sales: KES {data.get('total_sales', 0):,.2f} | "
-        f"Expenses: KES {data.get('total_expense', 0):,.2f} | "
-        f"Profit: KES {data.get('profit', 0):,.2f}", styles["Normal"]))
+    rt = (data.get("report_type") or "both").lower()
+    if rt in ("expenditure", "expenses"):
+        story.append(Paragraph(
+            f"Total Expenditure: KES {float(data.get('total_expense', 0) or 0):,.2f}", styles["Normal"]))
+    elif rt == "sales":
+        story.append(Paragraph(
+            f"Total Sales: KES {float(data.get('total_sales', 0) or 0):,.2f}", styles["Normal"]))
+    else:
+        story.append(Paragraph(
+            f"Totals — Sales: KES {float(data.get('total_sales', 0) or 0):,.2f} | "
+            f"Expenses: KES {float(data.get('total_expense', 0) or 0):,.2f} | "
+            f"Profit: KES {float(data.get('profit', 0) or 0):,.2f}", styles["Normal"]))
     story.append(Spacer(1, 12))
 
-    rt = (data.get("report_type") or "both").lower()
     if rt in ("sales", "both"):
         story.append(Paragraph("Sales breakdown", styles["Heading2"]))
         rows = [["Date", "Vehicle", "Type", "Amount (KES)"]]

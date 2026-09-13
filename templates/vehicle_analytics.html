@@ -68,24 +68,30 @@
 
 <!-- ============ OVERALL MONTH TOTALS ============ -->
 <div class="cards-grid">
+    {% if (report_type or 'both') in ['sales', 'both'] %}
     <div class="stat-card green">
         <i class="fa-solid fa-money-bill icon"></i>
         <div class="label">Month Sales</div>
         <div class="value">KSh {{ "{:,}".format(overall.sales) }}</div>
         <div class="sub">{{ month_name }}</div>
     </div>
+    {% endif %}
+    {% if (report_type or 'both') in ['expenditure', 'both'] %}
     <div class="stat-card red">
         <i class="fa-solid fa-wrench icon"></i>
         <div class="label">Month Expenses</div>
         <div class="value">KSh {{ "{:,}".format(overall.expenses) }}</div>
         <div class="sub">{{ month_name }}</div>
     </div>
+    {% endif %}
+    {% if (report_type or 'both') == 'both' %}
     <div class="stat-card {% if overall.profit >= 0 %}blue{% else %}red{% endif %}">
         <i class="fa-solid fa-scale-balanced icon"></i>
         <div class="label">Month Profit</div>
         <div class="value">KSh {{ "{:,}".format(overall.profit) }}</div>
         <div class="sub">All Vehicles</div>
     </div>
+    {% endif %}
 </div>
 
 <!-- ============ PER-VEHICLE TABLE ============ -->
@@ -98,9 +104,9 @@
                     <th>Plate</th>
                     <th>Driver</th>
                     <th>Status</th>
-                    <th>Sales</th>
-                    <th>Expenses</th>
-                    <th>Profit</th>
+                    {% if (report_type or 'both') in ['sales', 'both'] %}<th>Sales</th>{% endif %}
+                    {% if (report_type or 'both') in ['expenditure', 'both'] %}<th>Expenses</th>{% endif %}
+                    {% if (report_type or 'both') == 'both' %}<th>Profit</th>{% endif %}
                     <th>Entries</th>
                 </tr>
             </thead>
@@ -116,8 +122,9 @@
                         <span class="badge badge-red">Inactive</span>
                         {% endif %}
                     </td>
-                    <td>KSh {{ "{:,}".format(row.sales) }}</td>
-                    <td>KSh {{ "{:,}".format(row.expenses) }}</td>
+                    {% if (report_type or 'both') in ['sales', 'both'] %}<td>KSh {{ "{:,}".format(row.sales) }}</td>{% endif %}
+                    {% if (report_type or 'both') in ['expenditure', 'both'] %}<td>KSh {{ "{:,}".format(row.expenses) }}</td>{% endif %}
+                    {% if (report_type or 'both') == 'both' %}
                     <td>
                         {% if row.profit >= 0 %}
                         <span class="badge badge-green">KSh {{ "{:,}".format(row.profit) }}</span>
@@ -125,7 +132,12 @@
                         <span class="badge badge-red">KSh {{ "{:,}".format(row.profit) }}</span>
                         {% endif %}
                     </td>
-                    <td>{{ row.sales_count }} sales / {{ row.expenses_count }} expenses</td>
+                    {% endif %}
+                    <td>
+                        {% if (report_type or 'both') in ['sales', 'both'] %}{{ row.sales_count }} sales{% endif %}
+                        {% if (report_type or 'both') == 'both' %} / {% endif %}
+                        {% if (report_type or 'both') in ['expenditure', 'both'] %}{{ row.expenses_count }} expenses{% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

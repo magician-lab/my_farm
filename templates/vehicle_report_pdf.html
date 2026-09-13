@@ -38,6 +38,31 @@
 </div>
 
 <table class="totals">
+    {% if report_type == 'expenditure' %}
+    <tr>
+        <th>Total Expenditure (KES)</th>
+    </tr>
+    <tr>
+        <td>{{ "{:,.2f}".format(total_expense or 0) }}</td>
+    </tr>
+    <tr>
+        <td style="font-weight:normal;font-size:10px;">
+            {{ expenses_count or 0 }} expenses
+        </td>
+    </tr>
+    {% elif report_type == 'sales' %}
+    <tr>
+        <th>Total Sales (KES)</th>
+    </tr>
+    <tr>
+        <td>{{ "{:,.2f}".format(total_sales or 0) }}</td>
+    </tr>
+    <tr>
+        <td style="font-weight:normal;font-size:10px;">
+            {{ sales_count or 0 }} sales ({{ full_days or 0 }} Full · {{ half_days or 0 }} Half)
+        </td>
+    </tr>
+    {% else %}
     <tr>
         <th>Total Sales (KES)</th>
         <th>Total Expenditure (KES)</th>
@@ -53,6 +78,7 @@
             {{ sales_count or 0 }} sales ({{ full_days or 0 }} Full · {{ half_days or 0 }} Half) · {{ expenses_count or 0 }} expenses
         </td>
     </tr>
+    {% endif %}
 </table>
 
 {% if sales_by_vehicle and (report_type == 'sales' or report_type == 'both') %}
