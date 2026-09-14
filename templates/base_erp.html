@@ -132,7 +132,15 @@ a{text-decoration:none;color:inherit;}
     transition:.2s;
 }
 .logout-btn:hover{opacity:.85;}
-.menu-btn{display:none;background:none;border:none;font-size:22px;color:var(--sidebar);cursor:pointer;}
+.menu-btn{background:none;border:none;font-size:22px;color:var(--sidebar);cursor:pointer;
+    width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;transition:.2s;}
+.menu-btn:hover{background:#e8f5e9;}
+body.dark .menu-btn:hover{background:var(--flash-bg);}
+
+/* ============ SIDEBAR TOGGLE (desktop collapse) ============ */
+body.side-hidden .sidebar{transform:translateX(-100%);}
+body.side-hidden .main{margin-left:0;}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;}
 
 /* ============ FARM SWITCHER ============ */
 .farm-switcher{
@@ -250,10 +258,13 @@ body.dark .theme-toggle{background:var(--flash-bg);color:var(--flash-text);}
 img{max-width:100%;height:auto;}
 input,select,textarea,button{max-width:100%;}
 @media(max-width:900px){
-    .sidebar{transform:translateX(-100%);}
+    .sidebar{transform:translateX(-100%);width:260px;box-shadow:8px 0 30px rgba(0,0,0,.25);}
     .sidebar.open{transform:translateX(0);}
+    body.side-hidden .sidebar{transform:translateX(-100%);}
+    body.side-hidden .sidebar.open{transform:translateX(0);}
+    body.side-open{overflow:hidden;}
+    .sidebar-backdrop.show{display:block;}
     .main{margin-left:0;}
-    .menu-btn{display:block;}
     .content{padding:16px;}
     .page-header{flex-direction:column;align-items:stretch;}
     .page-header h1{font-size:20px;}
@@ -274,7 +285,7 @@ input,select,textarea,button{max-width:100%;}
     .content{padding:12px;}
     .card{padding:14px;border-radius:10px;}
     .page-header h1{font-size:18px;}
-    .cards-grid{grid-template-columns:1fr 1fr;gap:10px;}
+    .cards-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
     .stat-card{padding:12px;}
     .stat-card .value{font-size:18px;}
     .stat-card .label{font-size:10.5px;}
@@ -361,12 +372,14 @@ input,select,textarea,button{max-width:100%;}
     </div>
 </aside>
 
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
 <!-- ============ MAIN ============ -->
 <div class="main">
 
     <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px;">
-            <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">
+            <button class="menu-btn" onclick="toggleSidebar()" title="Show / hide menu">
                 <i class="fa-solid fa-bars"></i>
             </button>
             <div class="page-title">{% block page_title %}Dashboard{% endblock %}</div>
@@ -425,6 +438,42 @@ input,select,textarea,button{max-width:100%;}
 </div>
 
 <script>
+    // ===== SIDEBAR TOGGLE (show / hide, all screens) =====
+    function isMobile(){ return window.innerWidth <= 900; }
+    function toggleSidebar(){
+        var sb = document.getElementById('sidebar');
+        var bd = document.getElementById('sidebarBackdrop');
+        if (isMobile()){
+            var open = sb.classList.toggle('open');
+            document.body.classList.toggle('side-open', open);
+            if (bd) bd.classList.toggle('show', open);
+        } else {
+            var hidden = document.body.classList.toggle('side-hidden');
+            try{ localStorage.setItem('aerp_side', hidden ? 'hidden' : 'shown'); }catch(e){}
+        }
+    }
+    function closeSidebarMobile(){
+        var sb = document.getElementById('sidebar');
+        var bd = document.getElementById('sidebarBackdrop');
+        if (isMobile() && sb.classList.contains('open')){
+            sb.classList.remove('open');
+            document.body.classList.remove('side-open');
+            if (bd) bd.classList.remove('show');
+        }
+    }
+    (function(){
+        try{
+            if (localStorage.getItem('aerp_side') === 'hidden' && !isMobile()){
+                document.body.classList.add('side-hidden');
+            }
+        }catch(e){}
+        document.querySelectorAll('.sidebar a.nav').forEach(function(a){
+            a.addEventListener('click', closeSidebarMobile);
+        });
+        document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeSidebarMobile(); });
+        window.addEventListener('resize', function(){ if (!isMobile()) closeSidebarMobile(); });
+    })();
+
     // auto-hide flash messages
     setTimeout(function(){
         document.querySelectorAll('.flash').forEach(function(el){ el.style.transition='opacity .4s'; el.style.opacity='0'; setTimeout(function(){el.remove();},400); });

@@ -4093,14 +4093,14 @@ def send_report(report_type):
         date_str = request.args.get("date")
         status = request.args.get("status")
 
-        data = get_treatment_data(date, status)
+        data = get_treatment_data(date_str, status)
 
         from datetime import datetime
         data["now"] = datetime.now()
 
         template = "treatment_pdf.html"
 
-        filename = f"treatment_{date or 'all'}_{status or 'all'}.pdf"
+        filename = f"treatment_{date_str or 'all'}_{status or 'all'}.pdf"
 
     elif report_type == "insemination":
 
