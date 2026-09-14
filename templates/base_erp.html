@@ -181,7 +181,7 @@ a{text-decoration:none;color:inherit;}
 .stat-card.purple .value{color:#6a1b9a;}
 
 /* ============ TABLES ============ */
-.table-wrap{overflow-x:auto;}
+.table-wrap,.table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:13.5px;}
 th{background:var(--sidebar);color:#fff;padding:12px 14px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.5px;}
 td{padding:11px 14px;border-bottom:1px solid #eef2ef;}
@@ -247,12 +247,47 @@ body.dark .theme-toggle{background:var(--flash-bg);color:var(--flash-text);}
 .badge-gray{background:#eceff1;color:#546e7a;}
 
 /* ============ MOBILE ============ */
+img{max-width:100%;height:auto;}
+input,select,textarea,button{max-width:100%;}
 @media(max-width:900px){
     .sidebar{transform:translateX(-100%);}
     .sidebar.open{transform:translateX(0);}
     .main{margin-left:0;}
     .menu-btn{display:block;}
     .content{padding:16px;}
+    .page-header{flex-direction:column;align-items:stretch;}
+    .page-header h1{font-size:20px;}
+    .cards-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+    .stat-card{padding:14px;}
+    .stat-card .value{font-size:20px;}
+    .stat-card .icon{font-size:22px;}
+    .form-grid{grid-template-columns:1fr;}
+    .topbar{padding:10px 14px;}
+    .topbar .page-title{font-size:16px;}
+    th,td{padding:8px 10px;font-size:12.5px;}
+    .two-col,.kpi-grid,.breakdown-grid,.sessions,.grid{grid-template-columns:1fr !important;}
+    .filter-box,.filter-bar,.filter-form{flex-direction:column;align-items:stretch !important;}
+    .filter-box .btn,.filter-bar .btn,.filter-form .btn{width:100%;}
+    .flash-wrap{left:12px;right:12px;max-width:none;}
+}
+@media(max-width:600px){
+    .content{padding:12px;}
+    .card{padding:14px;border-radius:10px;}
+    .page-header h1{font-size:18px;}
+    .cards-grid{grid-template-columns:1fr 1fr;gap:10px;}
+    .stat-card{padding:12px;}
+    .stat-card .value{font-size:18px;}
+    .stat-card .label{font-size:10.5px;}
+    .stat-card .icon{display:none;}
+    th,td{padding:7px 8px;font-size:12px;white-space:normal;}
+    table{font-size:12px;}
+    .btn{padding:10px 12px;font-size:13px;justify-content:center;}
+    .topbar .user-chip{font-size:12px;padding:6px 10px;}
+    .live-clock .clock-date{display:none;}
+    .logout-btn{padding:7px 12px;font-size:12px;}
+    .farm-switcher{width:100%;}
+    .badge{font-size:10.5px;}
+}
 }
 </style>
 </head>
@@ -272,22 +307,27 @@ body.dark .theme-toggle{background:var(--flash-bg);color:var(--flash-text);}
     <a class="nav" href="/dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
     <a class="nav" href="/select-farm"><i class="fa-solid fa-building"></i> Farms</a>
 
-    <div class="section">Production</div>
-    <a class="nav" href="/milk_dashboard"><i class="fa-solid fa-droplet"></i> Milk Dashboard</a>
-    <a class="nav" href="/milk_registry"><i class="fa-solid fa-bucket"></i> Milk Registry</a>
-    <a class="nav" href="/milk_sales_entry"><i class="fa-solid fa-store"></i> Milk Sales</a>
+    <div class="section">Entry (Data Capture)</div>
+    <a class="nav" href="/milk_registry"><i class="fa-solid fa-bucket"></i> Enter Milk (S1/S2/S3)</a>
+    <a class="nav" href="/milk_sales_entry"><i class="fa-solid fa-store"></i> Enter Milk Sales</a>
+    <a class="nav" href="/cow_registry"><i class="fa-solid fa-plus-circle"></i> Enter Animal</a>
+    <a class="nav" href="/calf_registry"><i class="fa-solid fa-baby"></i> Enter Calf</a>
+    <a class="nav" href="/insemination/add"><i class="fa-solid fa-heart-pulse"></i> Enter Insemination</a>
+    <a class="nav" href="/add_treatment"><i class="fa-solid fa-stethoscope"></i> Enter Treatment</a>
+    <a class="nav" href="/manage_milking"><i class="fa-solid fa-arrows-rotate"></i> Manage Milking</a>
+
+    <div class="section">Viewing & Reports</div>
+    <a class="nav" href="/milk_dashboard"><i class="fa-solid fa-droplet"></i> Milk Reports</a>
+    <a class="nav" href="/milk_sales_report"><i class="fa-solid fa-chart-line"></i> Sales Report</a>
+    <a class="nav" href="/cow_dashboard"><i class="fa-solid fa-cow"></i> View Animals</a>
+    <a class="nav" href="/insemination"><i class="fa-solid fa-heart-pulse"></i> View Insemination</a>
+    <a class="nav" href="/treatment"><i class="fa-solid fa-stethoscope"></i> View Treatment</a>
+    <a class="nav" href="/sheds"><i class="fa-solid fa-warehouse"></i> Sheds</a>
+    <a class="nav" href="/cow-analysis"><i class="fa-solid fa-chart-bar"></i> Cow Analysis</a>
+    <a class="nav" href="/vehicle_analytics"><i class="fa-solid fa-car"></i> Vehicle Reports</a>
     {% if session.get("role") == "admin" %}
     <a class="nav" href="/milk_prices"><i class="fa-solid fa-tags"></i> Milk Prices</a>
     {% endif %}
-    <a class="nav" href="/manage_milking"><i class="fa-solid fa-arrows-rotate"></i> Manage Milking</a>
-
-    <div class="section">Livestock</div>
-    <a class="nav" href="/cow_dashboard"><i class="fa-solid fa-cow"></i> Animals</a>
-    <a class="nav" href="/cow_registry"><i class="fa-solid fa-plus-circle"></i> Animal Registry</a>
-    <a class="nav" href="/calf_registry"><i class="fa-solid fa-baby"></i> Calves</a>
-    <a class="nav" href="/insemination"><i class="fa-solid fa-heart-pulse"></i> Insemination</a>
-    <a class="nav" href="/treatment"><i class="fa-solid fa-stethoscope"></i> Treatment</a>
-    <a class="nav" href="/sheds"><i class="fa-solid fa-warehouse"></i> Sheds</a>
 
     {% if session.get("role") == "admin" %}
     <div class="section">Feeds</div>
@@ -310,7 +350,11 @@ body.dark .theme-toggle{background:var(--flash-bg);color:var(--flash-text);}
     {% if session.get("role") == "admin" %}
     <a class="nav" href="/users"><i class="fa-solid fa-user-shield"></i> Users</a>
     <a class="nav" href="/farms"><i class="fa-solid fa-building-circle-check"></i> Manage Farms</a>
+    <a class="nav" href="/settings"><i class="fa-solid fa-gear"></i> Settings (OTP)</a>
+    <a class="nav" href="/audit_logs"><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a>
     {% endif %}
+    <div class="section">Edit Mode</div>
+    <a class="nav" href="/edit_mode"><i class="fa-solid fa-lock"></i> Edit Mode (OTP)</a>
 
     <div class="nav-bottom">
         <i class="fa-solid fa-circle-info"></i> AgriERP v1.0 &copy; 2026

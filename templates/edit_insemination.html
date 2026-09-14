@@ -7,6 +7,7 @@
 
 .container{
     width:420px;
+    max-width:100%;
     margin:auto;
     background:white;
     padding:30px;
@@ -72,6 +73,13 @@ button:hover{
 <label>Date Served</label>
 <input type="date" name="date_served"
        value="{{ record.date_served }}">
+
+<!-- 🔹 BULL -->
+<label>Bull Name (used to serve)</label>
+<input type="text" name="bull_name" value="{{ record.bull_name or '' }}" placeholder="e.g. Bull B12">
+
+<label>Bull Breed</label>
+<input type="text" name="bull_breed" value="{{ record.bull_breed or '' }}" placeholder="e.g. Friesian">
 
 <!-- 🔹 STATUS -->
 <label>Status</label>

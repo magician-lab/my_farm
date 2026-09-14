@@ -88,6 +88,7 @@ display:inline-block;
 <th>SEX</th>
 <th>MOTHER</th>
 <th>HOUSE</th>
+<th>CALVES (name/gender/DOB)</th>
 </tr>
 
 {% for animal in animals %}
@@ -116,6 +117,10 @@ display:inline-block;
     {% else %}
         Not Assigned
     {% endif %}
+</td>
+<td>
+{% set kids = calves_map[animal.id] if calves_map and animal.id in calves_map else [] %}
+{% if kids %}{% for k in kids %}{{ k.name }} ({{ k.sex or '-' }}/{{ k.dob or 'DOB?' }}){% if not loop.last %}; {% endif %}{% endfor %}{% else %}-{% endif %}
 </td>
 </tr>
 

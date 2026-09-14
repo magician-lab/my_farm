@@ -171,101 +171,38 @@ td:first-child, th:first-child{
 📅 Report Date: {{ selected_date }}
 </div>
 
-<!-- MAIN FLOW TABLE -->
+<!-- PRODUCTION + USAGE BREAKDOWN (remaining / system-flow removed) -->
 <div class="table-card">
 <table>
 
 <tr>
 <th>Metric</th>
-<th>System Flow</th>
-<th>Actual Flow</th>
-<th>Discrepancy</th>
+<th>Litres</th>
 </tr>
 
 <tr>
-<td class="metric">Previous Remaining</td>
-<td class="system">{{ previous_system_remaining }}</td>
-<td class="actual">{{ previous_actual_remaining }}</td>
-<td class="{% if prev_variance >= 0 %}pos{% else %}neg{% endif %}">
-{{ prev_variance|round(2) }}
-</td>
-</tr>
-
-<tr>
-<td class="metric">Today's Production</td>
-<td class="system">{{ total_production }}</td>
+<td class="metric">Today's Production (Session 1 / 2 / 3)</td>
 <td class="actual">{{ total_production }}</td>
-<td class="neutral">0</td>
-</tr>
-
-<tr>
-<td class="metric">Today Available</td>
-<td class="system">{{ system_available_today }}</td>
-<td class="actual">{{ actual_available_today }}</td>
-<td class="{% if avail_variance >= 0 %}pos{% else %}neg{% endif %}">
-{{ avail_variance|round(2) }}
-</td>
 </tr>
 
 <tr>
 <td class="metric">Total Sales (Shops)</td>
-<td class="system">{{ total_sold_shops }}</td>
 <td class="actual">{{ total_sold_shops }}</td>
-<td class="neutral">0</td>
 </tr>
 
 <tr>
 <td class="metric">Calf Usage</td>
-<td class="system">{{ total_calf_used }}</td>
 <td class="actual">{{ total_calf_used }}</td>
-<td class="neutral">0</td>
 </tr>
 
 <tr>
 <td class="metric">Home Usage</td>
-<td class="system">{{ total_home_used }}</td>
 <td class="actual">{{ total_home_used }}</td>
-<td class="neutral">0</td>
 </tr>
 
 <tr>
-<td class="metric">Total Used</td>
-<td class="system">{{ total_used }}</td>
+<td class="metric">Total Used (Shops + Home + Calf)</td>
 <td class="actual">{{ total_used }}</td>
-<td class="neutral">0</td>
-</tr>
-
-<tr>
-<td class="metric">Expected Remaining</td>
-<td class="system">{{ (system_available_today - total_used)|round(2) }}</td>
-<td class="actual">{{ (actual_available_today - total_used)|round(2) }}</td>
-<td class="neutral">N/A</td>
-</tr>
-
-<tr>
-<td class="metric">Remaining</td>
-<td class="system">{{ system_remaining }}</td>
-<td class="actual">{{ actual_remaining }}</td>
-<td class="{% if variance >= 0 %}pos{% else %}neg{% endif %}">
-{{ variance|round(2) }}
-</td>
-</tr>
-
-<tr>
-<td class="metric">Actual vs Expected</td>
-<td class="system">N/A</td>
-<td class="actual" style="
-    font-weight:bold;
-    color:
-    {% if (actual_remaining - (actual_available_today - total_used)) < 0 %}
-        #c62828
-    {% else %}
-        green
-    {% endif %}
-">
-    {{ (actual_remaining - (actual_available_today - total_used))|round(2) }}
-</td>
-<td class="neutral">N/A</td>
 </tr>
 
 </table>

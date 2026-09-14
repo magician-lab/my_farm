@@ -417,7 +417,7 @@ tr:hover{
                     <td>{{ loop.index }}</td>
 
                     <td>
-                        <strong>{{ animal.name }}</strong>
+                        <a href="{{ url_for('cow_profile', id=animal.id) }}"><strong>{{ animal.name }}</strong></a>
                     </td>
 
                     <td>{{ animal.breed }}</td>
@@ -442,6 +442,12 @@ tr:hover{
                     <td>
 
                         <div class="action-buttons">
+
+                            <!-- FULL PROFILE -->
+                            <a href="{{ url_for('cow_profile', id=animal.id) }}"
+                               class="edit-btn" style="background:#1565c0;">
+                                👁 Profile
+                            </a>
 
                             <!-- EDIT -->
 

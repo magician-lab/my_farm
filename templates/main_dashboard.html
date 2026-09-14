@@ -30,7 +30,7 @@
         <i class="fa-solid fa-bucket icon"></i>
         <div class="label">Today's Production</div>
         <div class="value">{{ "{:,.2f}".format(grand_total or 0) }} L</div>
-        <div class="sub">Morning {{ "{:,.1f}".format(total_morning or 0) }} · Noon {{ "{:,.1f}".format(total_noon or 0) }} · Evening {{ "{:,.1f}".format(total_evening or 0) }}</div>
+        <div class="sub">Session 1 {{ "{:,.1f}".format(total_morning or 0) }} · Session 2 {{ "{:,.1f}".format(total_noon or 0) }} · Session 3 {{ "{:,.1f}".format(total_evening or 0) }}</div>
     </div>
 
     <div class="stat-card purple">
@@ -61,27 +61,6 @@
         <div class="sub">Home {{ "{:,.1f}".format(total_home or 0) }} · Calves {{ "{:,.1f}".format(total_calf or 0) }}</div>
     </div>
 
-    <div class="stat-card blue">
-        <i class="fa-solid fa-warehouse icon"></i>
-        <div class="label">Available Running Milk</div>
-        <div class="value">{{ "{:,.2f}".format(system_available_today or 0) }} L</div>
-        <div class="sub">System Stock on Selected Date</div>
-    </div>
-
-    <div class="stat-card purple">
-        <i class="fa-solid fa-clock-rotate-left icon"></i>
-        <div class="label">Previous Remaining</div>
-        <div class="value">{{ "{:,.2f}".format(previous_actual_remaining or 0) }} L</div>
-        <div class="sub">Carried Over From Previous Day</div>
-    </div>
-
-    <div class="stat-card orange">
-        <i class="fa-solid fa-boxes-stacked icon"></i>
-        <div class="label">Actual Remaining</div>
-        <div class="value">{{ "{:,.2f}".format(actual_available_today or 0) }} L</div>
-        <div class="sub">Actual Stock This Day</div>
-    </div>
-
     <div class="stat-card green">
         <i class="fa-solid fa-calendar icon"></i>
         <div class="label">Month Total</div>
@@ -103,11 +82,11 @@
         <div class="sub">{{ selected_date.year }}</div>
     </div>
 
-    <div class="stat-card red">
-        <i class="fa-solid fa-triangle-exclamation icon"></i>
-        <div class="label">Stock Variance</div>
-        <div class="value">{{ "{:,.2f}".format(pavail_variance or 0) }} L</div>
-        <div class="sub">{{ "{:,.2f}".format(percentage_error or 0) }}% Error · {{ "{:,.2f}".format(percentage_conversion or 0) }}% Converted</div>
+    <div class="stat-card blue">
+        <i class="fa-solid fa-percent icon"></i>
+        <div class="label">Shop Conversion</div>
+        <div class="value">{{ "{:,.2f}".format(percentage_conversion or 0) }}%</div>
+        <div class="sub">Shop sales / Produced</div>
     </div>
 
 </div>

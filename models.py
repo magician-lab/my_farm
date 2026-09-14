@@ -49,6 +49,10 @@ class Insemination(db.Model):
 
     date_served = db.Column(db.Date, nullable=False)
 
+    # Bull used to serve the cow
+    bull_name = db.Column(db.String(100), nullable=True)
+    bull_breed = db.Column(db.String(100), nullable=True)
+
     confirmation_method = db.Column(db.String(50))
 
     confirmation_date = db.Column(db.Date)
@@ -119,14 +123,35 @@ class MilkRegistry(db.Model):
     cow_id = db.Column(db.Integer, db.ForeignKey('animal_registry.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
 
-    morning = db.Column(db.Numeric(10,2), nullable=False)
-    noon = db.Column(db.Numeric(10,2), nullable=False)
-    evening = db.Column(db.Numeric(10,2), nullable=False)
+    morning = db.Column(db.Numeric(10,2), nullable=False, default=0)
+    noon = db.Column(db.Numeric(10,2), nullable=False, default=0)
+    evening = db.Column(db.Numeric(10,2), nullable=False, default=0)
+    # New canonical milking sessions: Session 1 / 2 / 3
+    # Kept alongside morning/noon/evening for backwards compat; new writes use session_1/2/3.
+    session_1 = db.Column(db.Numeric(10,2), nullable=True, default=0)
+    session_2 = db.Column(db.Numeric(10,2), nullable=True, default=0)
+    session_3 = db.Column(db.Numeric(10,2), nullable=True, default=0)
     total = db.Column(db.Numeric(10,2), nullable=False)
 
     farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
 
     cow = db.relationship('AnimalRegistry', backref='milk_records')
+
+    def s1(self):
+        from decimal import Decimal as _D
+        if self.session_1 is not None:
+            return float(self.session_1)
+        return float(self.morning or 0)
+
+    def s2(self):
+        if self.session_2 is not None:
+            return float(self.session_2)
+        return float(self.noon or 0)
+
+    def s3(self):
+        if self.session_3 is not None:
+            return float(self.session_3)
+        return float(self.evening or 0)
 
 class MilkSalesRegistry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -446,5 +471,71 @@ class PaymentV2(db.Model):
 
     account = db.Column(db.String(100))
     purpose = db.Column(db.String(200))
+
+
+# =========================================================
+# EDIT-MODE OTP SETTINGS (per farm + admin global)
+# farm_id NULL = Admin/global. Otherwise Murang'a / Meru etc.
+# emails = comma-separated list, can be more than one.
+# =========================================================
+class OTPSetting(db.Model):
+    __tablename__ = "otp_setting"
+
+    id = db.Column(db.Integer, primary_key=True)
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True, unique=True)
+    emails = db.Column(db.Text, nullable=False, default="")
+
+    updated_by = db.Column(db.String(100), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    farm = db.relationship("Farm", backref="otp_setting")
+
+    def email_list(self):
+        out = []
+        for part in (self.emails or "").replace(";", ",").split(","):
+            e = part.strip()
+            if e and "@" in e and e not in out:
+                out.append(e)
+        return out
+
+
+# =========================================================
+# EDIT-MODE OTP CODES
+# =========================================================
+class EditOTP(db.Model):
+    __tablename__ = "edit_otp"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=True)
+    username = db.Column(db.String(100), nullable=True)
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
+    otp_code = db.Column(db.String(6), nullable=False)
+    purpose = db.Column(db.String(50), default="edit_mode")
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def is_valid(self):
+        return (not self.used) and datetime.utcnow() < self.expires_at
+
+
+# =========================================================
+# AUDIT LOG — track operations by various users (admin view)
+# =========================================================
+class AuditLog(db.Model):
+    __tablename__ = "audit_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, nullable=True)
+    username = db.Column(db.String(100), nullable=True)
+    role = db.Column(db.String(50), nullable=True)
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
+    farm_name = db.Column(db.String(100), nullable=True)
+    action = db.Column(db.String(50), nullable=False)  # CREATE/UPDATE/DELETE/OTP_REQUEST/OTP_VERIFY/LOGIN/EDIT_MODE
+    entity = db.Column(db.String(100), nullable=True)
+    entity_id = db.Column(db.String(50), nullable=True)
+    details = db.Column(db.Text, nullable=True)
+
 
 

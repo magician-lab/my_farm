@@ -2,7 +2,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from models import db, CalfRegistry, Insemination, AssetsRegistry, ExpensesRegistry, EmployeesRegistry, ShopRegistry, UserRegistry, FeedsRegistry, MilkRegistry, MilkSalesRegistry, CarRegistry, CarExpense, AnimalRegistry, MilkingHerd, CarSales, Treatment,Farm,Payment, MilkDailyRemaining, Admin, FeedsOrderV2, FeedsDeliveryV2, FeedsOrderItemV2, MilkPrice,CowShed,AnimalMovement
+from models import db, CalfRegistry, Insemination, AssetsRegistry, ExpensesRegistry, EmployeesRegistry, ShopRegistry, UserRegistry, FeedsRegistry, MilkRegistry, MilkSalesRegistry, CarRegistry, CarExpense, AnimalRegistry, MilkingHerd, CarSales, Treatment,Farm,Payment, MilkDailyRemaining, Admin, FeedsOrderV2, FeedsDeliveryV2, FeedsOrderItemV2, MilkPrice,CowShed,AnimalMovement, OTPSetting, EditOTP, AuditLog
 from sqlalchemy.exc import IntegrityError
 from decimal import Decimal
 
@@ -341,6 +341,105 @@ def role_required(*roles):
         return wrapper
 
     return decorator
+
+
+# =========================================================
+# AUDIT LOG + EDIT-MODE OTP HELPERS
+# =========================================================
+
+def audit_action(action, entity=None, entity_id=None, details=None, farm_id=None, farm_name=None):
+    """Write an audit log row. Never raises."""
+    try:
+        farm_id = farm_id if farm_id is not None else session.get("farm_id")
+        if farm_name is None and farm_id:
+            try:
+                f = Farm.query.get(int(farm_id))
+                farm_name = f.name if f else None
+            except Exception:
+                farm_name = None
+        log = AuditLog(
+            user_id=session.get("user_id"),
+            username=session.get("username"),
+            role=session.get("role"),
+            farm_id=farm_id,
+            farm_name=farm_name,
+            action=action,
+            entity=entity,
+            entity_id=str(entity_id) if entity_id is not None else None,
+            details=details,
+        )
+        db.session.add(log)
+        db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+
+
+def edit_mode_required(f):
+    """Require verified edit-mode OTP in session before allowing edit/delete."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login"))
+        exp = session.get("edit_mode_exp")
+        try:
+            if exp and datetime.utcnow().timestamp() < float(exp):
+                return f(*args, **kwargs)
+        except Exception:
+            pass
+        flash("Enter edit mode with OTP to edit or delete.", "error")
+        nxt = request.path
+        return redirect(url_for("edit_mode", next=nxt))
+    return wrapper
+
+
+def get_otp_emails_for_farm(farm_id):
+    """Return (to_emails, notify_admin, admin_emails).
+
+    Rules:
+    - Each farm (Murang'a, Meru) has its own unique email list from settings.
+    - Admin/global (farm_id None) has its own list.
+    - If Meru/Murang'a requests OTP: send to that farm's emails AND notify admin emails.
+    - If admin requests: send only to admin emails (do not notify farms, farms do not see each other).
+    """
+    def _load(fid):
+        try:
+            s = OTPSetting.query.filter_by(farm_id=fid).first() if fid else OTPSetting.query.filter(OTPSetting.farm_id.is_(None)).first()
+            return s.email_list() if s else []
+        except Exception:
+            return []
+    try:
+        fid = int(farm_id) if farm_id else None
+    except Exception:
+        fid = None
+    admin_emails = _load(None)
+    if fid is None:
+        return admin_emails, False, admin_emails
+    farm_emails = _load(fid)
+    to_emails = list(farm_emails)
+    notify_admin = True
+    return to_emails, notify_admin, admin_emails
+
+
+def send_otp_email(to_list, subject, body):
+    """Send OTP via Flask-Mail; on failure, log OTP to console/file for testing. Returns (sent, info)."""
+    to_list = [e for e in (to_list or []) if e and "@" in e]
+    if not to_list:
+        return False, "no recipients configured"
+    try:
+        msg = Message(subject=subject, recipients=to_list, body=body)
+        mail.send(msg)
+        return True, "emailed"
+    except Exception as e:
+        try:
+            print(f"[OTP Fallback] To {to_list}: {body}")
+            with open("otp_fallback.log", "a") as fh:
+                fh.write(f"{datetime.utcnow().isoformat()} To={to_list} {subject} {body}\n")
+        except Exception:
+            pass
+        return False, f"email failed ({e}); OTP logged to otp_fallback.log"
 
 
 # =========================================================
@@ -2840,6 +2939,24 @@ def get_price(
 
 
 
+def _milk_sessions(record):
+    """Return (s1, s2, s3) preferring session_1/2/3, falling back to morning/noon/evening."""
+    try:
+        if getattr(record, "session_1", None) is not None or getattr(record, "session_2", None) is not None or getattr(record, "session_3", None) is not None:
+            s1 = to_float(getattr(record, "session_1", 0) or 0)
+            s2 = to_float(getattr(record, "session_2", 0) or 0)
+            s3 = to_float(getattr(record, "session_3", 0) or 0)
+            # If all three are 0 but legacy has values, fall back
+            if s1 == 0 and s2 == 0 and s3 == 0:
+                lm, ln, le = to_float(record.morning), to_float(record.noon), to_float(record.evening)
+                if lm or ln or le:
+                    return lm, ln, le
+            return s1, s2, s3
+    except Exception:
+        pass
+    return to_float(getattr(record, "morning", 0)), to_float(getattr(record, "noon", 0)), to_float(getattr(record, "evening", 0))
+
+
 def calculate_production(production, selected_date):
 
     month = selected_date.month
@@ -2869,16 +2986,17 @@ def calculate_production(production, selected_date):
         record_quarter = ((record_month - 1) // 3) + 1
 
         # --------------------------------
-        # TODAY
+        # TODAY (Session 1/2/3 canonical)
         # --------------------------------
 
         if record.date == selected_date:
 
             today_records.append(record)
 
-            total_morning += to_float(record.morning)
-            total_noon += to_float(record.noon)
-            total_evening += to_float(record.evening)
+            s1, s2, s3 = _milk_sessions(record)
+            total_morning += s1
+            total_noon += s2
+            total_evening += s3
 
             grand_total += to_float(record.total)
 
@@ -2923,6 +3041,10 @@ def calculate_production(production, selected_date):
         "total_morning": round(total_morning,2),
         "total_noon": round(total_noon,2),
         "total_evening": round(total_evening,2),
+        # Canonical session names (milking). Sales still use Morning/Noon/Evening.
+        "total_session_1": round(total_morning,2),
+        "total_session_2": round(total_noon,2),
+        "total_session_3": round(total_evening,2),
 
         "grand_total": round(grand_total,2),
 
@@ -3115,235 +3237,40 @@ def calculate_stock(
     total_used
 ):
     """
-    Computes the running milk stock.
-
-    System Remaining =
-        Yesterday System
-        + Today's Production
-        - Today's Usage
-
-    Actual Remaining is read from MilkDailyRemaining.
-
-    Returns stock analytics for the selected date.
+    Simplified stock — remaining / system-flow logic removed per requirements.
+    Keeps milk usage breakdown (shops/home/calf) and returns legacy keys as 0
+    so old templates do not break. New UI must NOT display remaining/system/variance.
     """
 
-    # ==========================================
-    # BUILD DAILY PRODUCTION
-    # ==========================================
-
-    production_by_date_str = {}
-
-    for p in production:
-
-        production_by_date_str[p.date] = (
-            production_by_date_str.get(p.date, 0)
-            + to_float(p.total)
-        )
-
-    # ==========================================
-    # BUILD DAILY USAGE
-    # ==========================================
-
-    usage_by_date_str = {}
-
-    for s in sales:
-
-        used = (
-
-            to_float(s.shop1)
-
-            + to_float(s.shop2)
-
-            + to_float(s.shop3)
-
-            + to_float(s.home)
-
-            + to_float(s.calf)
-
-        )
-
-        usage_by_date_str[s.date] = (
-            usage_by_date_str.get(s.date, 0)
-            + used
-        )
-
-    # ==========================================
-    # BUILD ACTUAL REMAINING
-    # ==========================================
-
-    actual_remaining_by_date_str = {}
-
-    for r in remaining:
-
-        actual_remaining_by_date_str[r.date] = (
-            to_float(r.actual_remaining)
-        )
-    # ==========================================
-    # PREVIOUS DAY ACTUAL REMAINING
-    # ==========================================
-
-    previous_actual_remaining = 0
-
-    previous_dates = [
-        d for d in actual_remaining_by_date_str.keys()
-        if d < selected_date
-    ]
-
-    if previous_dates:
-
-        latest_previous = max(previous_dates)
-
-        previous_actual_remaining = actual_remaining_by_date_str.get(
-            latest_previous,
-            0
-        )
-    # ==========================================
-    # ALL DATES
-    # ==========================================
-
-    all_dates = sorted(
-
-        set(production_by_date_str.keys())
-
-        | set(usage_by_date_str.keys())
-
-        | set(actual_remaining_by_date_str.keys())
-
-    )
-
-    # ==========================================
-    # RUNNING SYSTEM STOCK
-    # ==========================================
-
-    running_system = 0
-
-    previous_system_remaining = 0
-
-    system_available_today = 0
-
-    actual_available_today = 0
-
-    for day in all_dates:
-
-        produced = production_by_date_str.get(day, 0)
-
-        used = usage_by_date_str.get(day, 0)
-
-        previous_system_remaining = running_system
-
-        running_system = (
-
-            running_system
-
-            + produced
-
-            - used
-
-        )
-
-        if day == selected_date:
-
-            system_available_today = running_system
-
-            actual_available_today = (
-
-                actual_remaining_by_date_str.get(
-                    day,
-                    0
-                )
-
-            )
-
-            break
-
-    # ==========================================
-    # VARIANCE
-    # ==========================================
-
-    pavail_variance = (
-
-        actual_available_today
-
-        - system_available_today
-
-    )
-
-    # ==========================================
-    # CONVERSION %
-    # ==========================================
-    total_available=grand_total +actual_available_today
-    total_system_available=system_available_today+grand_total
-    actual_remaining=total_available-total_used
-    remaining_system=total_system_available-total_used
-   
-    if total_available:
-
-        percentage_conversion = (
-
-            total_sold_shops
-
-            / total_available
-
-        ) * 100
-
+    if grand_total and total_used is not None:
+        try:
+            percentage_conversion = round((float(total_sold_shops or 0) / float(grand_total)) * 100, 2) if float(grand_total) else 0
+        except Exception:
+            percentage_conversion = 0
     else:
-
         percentage_conversion = 0
-
-    # ==========================================
-    # ERROR %
-    # ==========================================
-
-    if system_available_today:
-
-        percentage_error = (
-
-            abs(pavail_variance)
-
-            / system_available_today
-
-        ) * 100
-
-    else:
-
-        percentage_error = 0
-
-    # ==========================================
-    # RETURN
-    # ==========================================
 
     return {
 
-        "previous_system_remaining":
-            round(previous_system_remaining, 2),
+        "previous_system_remaining": 0,
 
-        "system_available_today":
-            round(system_available_today, 2),
+        "system_available_today": 0,
 
-        "total_system_available":
-            round(total_system_available, 2),
+        "total_system_available": 0,
 
-        "remaining_system":
-            round(remaining_system, 2),
+        "remaining_system": 0,
 
-        "total_available":
-            round(total_available, 2),
+        "total_available": round(float(grand_total or 0), 2),
 
-        "actual_available_today":
-            round(actual_available_today, 2),
+        "actual_available_today": 0,
 
-        "previous_actual_remaining":
-            round(previous_actual_remaining, 2),
+        "previous_actual_remaining": 0,
 
-        "pavail_variance":
-            round(pavail_variance, 2),
-        "actual_remaining":
-            round(actual_remaining, 2),
-        "percentage_conversion":
-            round(percentage_conversion, 2),
+        "pavail_variance": 0,
+        "actual_remaining": 0,
+        "percentage_conversion": percentage_conversion,
 
-        "percentage_error":
-            round(percentage_error, 2)
+        "percentage_error": 0
 
     }
 
@@ -3809,12 +3736,35 @@ CONFIRMATION_METHODS = {
 
 #     return float(price.price) if price else 0
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = 'magicdevelopers9@gmail.com'
-app.config['MAIL_PASSWORD'] = 'rhif qhmm hvnk tjhv'
-app.config['MAIL_DEFAULT_SENDER'] = 'MY FARM <magicdevelopers9@gmail.com>'
+def _env_file_values(path):
+    """Parse a simple KEY=VALUE env file. Never raises, never logs secrets."""
+    vals = {}
+    try:
+        with open(path) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                vals[k.strip()] = v.strip().strip('"').strip("'")
+    except Exception:
+        pass
+    return vals
+
+_ESYLAN_ENV = _env_file_values("/home/magician/Work/esylan_jewels/.env")
+
+def _mail_setting(key, default=""):
+    return os.environ.get(key) or _ESYLAN_ENV.get(key) or default
+
+# Same Gmail SMTP setup as esylan (.env): smtp.gmail.com:587 with TLS.
+app.config['MAIL_SERVER'] = _mail_setting('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(_mail_setting('MAIL_PORT', '587') or 587)
+_use_tls = str(_mail_setting('MAIL_USE_TLS', 'true')).lower() in ('1', 'true', 'yes')
+app.config['MAIL_USE_TLS'] = _use_tls
+app.config['MAIL_USE_SSL'] = (not _use_tls) and str(os.environ.get('MAIL_USE_SSL', '')).lower() in ('1', 'true', 'yes')
+app.config['MAIL_USERNAME'] = _mail_setting('MAIL_USERNAME', 'magicdevelopers9@gmail.com')
+app.config['MAIL_PASSWORD'] = _mail_setting('MAIL_PASSWORD', '')
+app.config['MAIL_DEFAULT_SENDER'] = _mail_setting('MAIL_DEFAULT_SENDER', 'MY FARM <magicdevelopers9@gmail.com>')
 
 mail = Mail(app)
 
@@ -3937,6 +3887,41 @@ def _reportlab_fallback_vehicle_pdf(data, filename, title="Vehicle Report"):
     return file_path
 
 
+def _reportlab_fallback_generic_pdf(data, filename, title="Report"):
+    """Generic fallback: cow profile / animals / milk summaries without WeasyPrint."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    folder = os.path.join("static", "reports")
+    os.makedirs(folder, exist_ok=True)
+    file_path = os.path.join(folder, _safe_filename(filename))
+    doc = SimpleDocTemplate(file_path, pagesize=A4, topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    story = [Paragraph(str(title), styles["Title"]), Spacer(1, 8)]
+    try:
+        if data.get("animal") is not None:
+            a = data["animal"]
+            story.append(Paragraph(f"Cow: {getattr(a, 'name', '')} | Breed: {getattr(a, 'breed', '') or '-'} | Category: {data.get('category', '') or getattr(a, 'category', '') or '-'}", styles["Normal"]))
+            story.append(Paragraph(f"Total: {data.get('total_litres', 0)} L | Avg: {data.get('avg_milk', 0)} | 30d avg: {data.get('avg_daily_30', 0)}", styles["Normal"]))
+            story.append(Paragraph(f"Formula: {data.get('formula', '')}", styles["Normal"]))
+            story.append(Spacer(1, 6))
+            story.append(Paragraph(f"Forecast total (4 months): {data.get('forecast_total', 0)} L", styles["Normal"]))
+            for f in data.get("forecast", [])[:4]:
+                story.append(Paragraph(f"M+{f.get('month')}: {f.get('litres')} L, {f.get('probability')}% ({f.get('date')})", styles["Normal"]))
+        elif data.get("animals") is not None:
+            story.append(Paragraph(f"Animals: {len(data.get('animals', []))}", styles["Normal"]))
+            for a in data.get("animals", [])[:200]:
+                story.append(Paragraph(f"{getattr(a, 'name', '')} | {getattr(a, 'breed', '') or ''} | {getattr(a, 'category', '') or ''} | DOB {getattr(a, 'dob', '') or ''} | {getattr(a, 'sex', '') or ''} | mother {getattr(a, 'mother', '') or ''}", styles["Normal"]))
+        else:
+            for k in ("grand_total", "total_sold_shops", "total_used", "total_sales", "total_expense"):
+                if k in data:
+                    story.append(Paragraph(f"{k}: {data.get(k)}", styles["Normal"]))
+    except Exception as ex:
+        story.append(Paragraph(f"Data render note: {ex}", styles["Normal"]))
+    doc.build(story)
+    return file_path
+
+
 def generate_pdf(template_name, context, filename):
     """Generate PDF from HTML template using WeasyPrint, with ReportLab fallback.
 
@@ -3962,7 +3947,7 @@ def generate_pdf(template_name, context, filename):
         HTML(string=rendered_html, base_url=os.path.abspath(".")).write_pdf(target=file_path)
         return file_path
     except Exception as e:
-        # Fallback for vehicle reports; re-raise for others with a clear message
+        # Fallback for vehicle reports; generic + cow fallbacks so PDFs never break
         is_vehicle = any(x in (template_name or "") for x in ("car_", "vehicle")) or \
             ("sales" in safe_context and "expenses" in safe_context)
         if is_vehicle:
@@ -3990,6 +3975,16 @@ def generate_pdf(template_name, context, filename):
                 return _reportlab_fallback_vehicle_pdf(fb_data, filename, title=title)
             except Exception as e2:
                 raise RuntimeError(f"PDF generation failed (weasyprint: {e}; fallback: {e2})")
+        if (template_name or "") in ("cow_profile_pdf.html", "animals_pdf.html") or "animal" in safe_context:
+            try:
+                return _reportlab_fallback_generic_pdf(safe_context, filename, title=(template_name or "report"))
+            except Exception as e2:
+                raise RuntimeError(f"PDF generation failed (weasyprint: {e}; fallback: {e2})")
+        # Last resort: generic fallback for any template so PDFs never break
+        try:
+            return _reportlab_fallback_generic_pdf(safe_context, filename, title=(template_name or "report"))
+        except Exception:
+            pass
         raise RuntimeError(f"PDF generation failed: {e}")
 
 @app.route('/send_report/<report_type>')
@@ -4062,9 +4057,26 @@ def send_report(report_type):
         label = f"{car_id or 'all'}_{start_date or 'start'}_to_{end_date or 'end'}_{data['report_type']}"
         filename = f"vehicle_report_{label}.pdf"
 
+    elif report_type == "cow_profile":
+        cow_id = request.args.get("cow_id") or request.args.get("animal_id") or request.args.get("id")
+        if not cow_id:
+            return "Missing cow_id", 400
+        data = get_cow_profile_data(int(cow_id))
+        template = "cow_profile_pdf.html"
+        filename = f"cow_{data['animal'].name or cow_id}_profile.pdf"
+
     elif report_type == "animals":
         category = request.args.get("category")
-        data = get_animals_data(category)
+        data = get_animals_data(category, session.get("farm_id"))
+        # Attach calves per animal (name/gender/mother/DOB) for cow report
+        try:
+            calves_map = {}
+            for a in data.get("animals", []):
+                kids = AnimalRegistry.query.filter(AnimalRegistry.mother == a.name).all()
+                calves_map[a.id] = kids
+            data["calves_map"] = calves_map
+        except Exception:
+            data["calves_map"] = {}
         template = "animals_pdf.html"
         filename = f"animals_{category or 'all'}.pdf"
 
@@ -4487,9 +4499,180 @@ def animals():
     )
 
 
+# =========================================================
+# COW PROFILE + 4-MONTH FORECAST (agriculture formulas)
+# =========================================================
+
+def get_cow_profile_data(animal_id):
+    """Full cow info: milk totals/average, insemination status, bull, category,
+    calves (name/gender/mother/DOB), and 4-month production forecast.
+
+    Formulas used (shown in report):
+    - Gestation G = 283 days; Dry period D = 60 days; Standard lactation L = 305 days.
+    - Wood's lactation curve (simplified): Y(t) = a * t^b * e^(-c*t),
+      implemented as monthly persistency P = 0.95 after peak (~day 60).
+    - Avg daily (30d) = sum(last 30d milk) / days recorded.
+    - Month m forecast = avg_daily * 30 * (P ** m); dry months give 0.
+    - Production probability is graduated (never 0 alongside litres > 0).
+    - REALITY CHECKS (this is what keeps it realistic):
+      (a) actual recent milk beats theory — a cow milked in the last 21 days
+          keeps a declining forecast even past the theoretical dry-off;
+      (b) stale pregnancy data never zeroes a milking cow — if the expected
+          calving date already passed but status is still confirmed/pending,
+          calving is assumed to have occurred and a fresh lactation is forecast
+          (flagged "calving overdue — verify status");
+      (c) months falling after a future calving are forecast as fresh lactation.
+    """
+    from datetime import timedelta as _td
+    animal = AnimalRegistry.query.get_or_404(animal_id)
+    today = date.today()
+
+    milk_recs = MilkRegistry.query.filter_by(cow_id=animal.id).order_by(MilkRegistry.date.desc()).all()
+    total_litres = round(sum(float(r.total or 0) for r in milk_recs), 2)
+    days_recorded = len(milk_recs)
+    avg_milk = round(total_litres / days_recorded, 2) if days_recorded else 0
+
+    last14 = [r for r in milk_recs if r.date and 0 <= (today - r.date).days <= 14]
+    last30 = [r for r in milk_recs if r.date and 0 <= (today - r.date).days <= 30]
+    if last14:
+        base_daily = round(sum(float(r.total or 0) for r in last14) / len(last14), 2)
+    elif last30:
+        base_daily = round(sum(float(r.total or 0) for r in last30) / len(last30), 2)
+    else:
+        base_daily = avg_milk
+    avg_daily_30 = base_daily
+    last_milk_days_ago = min(((today - r.date).days for r in milk_recs if r.date), default=None)
+    recently_milking = last_milk_days_ago is not None and last_milk_days_ago <= 21
+
+    insems = Insemination.query.filter_by(animal_id=animal.id).order_by(Insemination.date_served.desc()).all()
+    latest = insems[0] if insems else None
+    latest_status = ((latest.status or "").lower() if latest else "")
+    preg_days = (today - latest.date_served).days if latest and latest.date_served else None
+    if latest and latest.date_served and latest_status in ("confirmed", "pending", ""):
+        exp_calving = latest.date_served + _td(days=283)
+    elif latest:
+        exp_calving = latest.calving_date
+    else:
+        exp_calving = None
+    # Stale record: calving date passed but status never updated to delivered
+    calving_overdue = bool(exp_calving and exp_calving <= today and latest_status in ("confirmed", "pending", ""))
+    dry_off = (exp_calving - _td(days=60)) if exp_calving and not calving_overdue else None
+
+    cat = (animal.category or "").strip()
+    non_milking = cat.lower() in ("dry", "steamer", "nolonger_exist", "bull", "weaner", "calf")
+
+    forecast = []
+    P = 0.95
+    for m in range(1, 5):
+        fdate = today + _td(days=30 * m)
+        note = ""
+        if non_milking:
+            litres, prob, note = 0, 0, f"category: {cat or '-'}"
+        elif calving_overdue:
+            # Assumed freshly calved around exp_calving: new lactation rising to peak.
+            # Early-lactation factor climbs toward peak (~day 60) then eases.
+            dim = (fdate - exp_calving).days  # days in milk of new lactation
+            fresh = 1.02 if dim <= 60 else 0.98 if dim <= 120 else 0.93
+            litres = round(base_daily * 30 * fresh * (P ** max(m - 1, 0)), 2) if base_daily else 0
+            prob = 90 if litres else 0
+            note = "assumed calved %s — verify status" % exp_calving.isoformat()
+        elif exp_calving and fdate >= (exp_calving - _td(days=7)):
+            # Calved by this month: fresh lactation month.
+            litres = round(base_daily * 30 * 1.0, 2) if base_daily else 0
+            prob = 90 if litres else 0
+            note = "fresh lactation (calving %s)" % exp_calving.isoformat()
+        elif dry_off and fdate >= dry_off:
+            if recently_milking and base_daily:
+                litres = round(base_daily * 30 * (P ** m) * 0.8, 2)
+                prob = 60 if litres else 0
+                note = "milking past dry-off — dry soon"
+            else:
+                litres, prob, note = 0, 0, "dry period"
+        else:
+            litres = round(base_daily * 30 * (P ** m), 2) if base_daily else 0
+            if not litres:
+                prob, note = 0, "no milk history"
+            elif latest is None or latest_status not in ("confirmed", "pending"):
+                prob, note = 95, ""
+            elif dry_off:
+                days_to_dry = (dry_off - fdate).days
+                if days_to_dry < 30:
+                    prob, note = 70, "drying off soon"
+                elif days_to_dry < 60:
+                    prob, note = 80, ""
+                else:
+                    prob, note = 90, ""
+            else:
+                prob, note = 90, ""
+        forecast.append({"month": m, "date": fdate.isoformat(), "litres": litres,
+                         "probability": prob, "note": note})
+
+    # Calves given birth by this animal (mother name match)
+    calves = []
+    try:
+        calves = AnimalRegistry.query.filter(AnimalRegistry.mother == animal.name).order_by(AnimalRegistry.dob.desc()).all()
+    except Exception:
+        calves = []
+
+    formula_text = (
+        "G=283d gestation; D=60d dry period; L=305d lactation. "
+        "Wood Y(t)=a*t^b*e^(-c*t) simplified to monthly persistency P=0.95 after peak d60. "
+        "Base daily = last-14d avg, else last-30d avg, else lifetime avg. "
+        "Month m = base*30*(P^m); fresh-lactation months (after calving) use base*30; "
+        "dry-period months = 0. Reality checks: recent milk overrides dry-off theory; "
+        "overdue calving assumes a fresh lactation (flagged for verification); "
+        "post-calving months forecast as fresh lactation."
+    )
+
+    return {
+        "animal": animal,
+        "milk_records": milk_recs[:60],
+        "total_litres": total_litres,
+        "days_recorded": days_recorded,
+        "avg_milk": avg_milk,
+        "avg_daily_30": avg_daily_30,
+        "base_daily": base_daily,
+        "last_milk_days_ago": last_milk_days_ago,
+        "recently_milking": recently_milking,
+        "inseminations": insems,
+        "latest_insemination": latest,
+        "preg_days": preg_days,
+        "expected_calving": exp_calving.isoformat() if exp_calving else None,
+        "dry_off": dry_off.isoformat() if dry_off else None,
+        "calving_overdue": calving_overdue,
+        "category": cat,
+        "calves": calves,
+        "forecast": forecast,
+        "forecast_total": round(sum(f["litres"] for f in forecast), 2),
+        "formula": formula_text,
+    }
+
+
+@app.route("/cow/<int:id>")
+@login_required
+def cow_profile(id):
+    data = get_cow_profile_data(id)
+    # Farm scoping: non-admin can only view own farm animals.
+    # Legacy animals with farm_id NULL remain visible to everyone.
+    if session.get("role") != "admin" and session.get("farm_id"):
+        anim_farm = data["animal"].farm_id
+        if anim_farm is not None and anim_farm != session.get("farm_id"):
+            flash("Access denied for this farm.", "error")
+            return redirect(url_for("animals"))
+    # Milk records: last 10 days by default, all on ?all_milk=1
+    show_all = (request.args.get("all_milk") or "").strip() in ("1", "true", "yes")
+    data["show_all_milk"] = show_all
+    try:
+        data["milk_records"] = data["milk_records"] if show_all else data["milk_records"][:10]
+    except Exception:
+        pass
+    return render_template("cow_profile.html", **data)
+
+
 
 @app.route("/delete_cow/<int:id>", methods=["GET", "POST"])
 @login_required
+@edit_mode_required
 def delete_animal(id):
 
     animal = AnimalRegistry.query.get_or_404(id)
@@ -4507,6 +4690,7 @@ def delete_animal(id):
     # ================= POST =================
 @app.route("/edit_animal_record/<int:id>", methods=["GET", "POST"])
 @login_required
+@edit_mode_required
 def edit_animal_record(id):
 
     animal = AnimalRegistry.query.get_or_404(id)
@@ -4866,6 +5050,7 @@ def add_treatment():
 
 @app.route("/edit_treatment/<int:id>", methods=["GET","POST"])
 @login_required
+@edit_mode_required
 def edit_treatment(id):
 
     rec = Treatment.query.get_or_404(id)
@@ -4887,6 +5072,7 @@ def edit_treatment(id):
 
 @app.route("/delete_treatment/<int:id>")
 @login_required
+@edit_mode_required
 def delete_treatment(id):
 
     rec = Treatment.query.get_or_404(id)
@@ -4912,15 +5098,15 @@ def calf_registry():
         # 🔍 VALIDATION
         if not calf_name or not breed or not birth_day or not mother:
             message = "All fields are required"
-            return render_template("calf_registry.html", message=message)
+            return render_template("calf_registry.html", message=message, calves=[], calf_rows=[], overdue=[])
         exist_records=AnimalRegistry.query.filter_by(name=calf_name).all()
         exist_mother=AnimalRegistry.query.filter_by(name=mother).all()
         if exist_records:
             message="Another livestock bears the same name"
-            return render_template("calf_registry.html", message=message)
+            return render_template("calf_registry.html", message=message, calves=[], calf_rows=[], overdue=[])
         if not exist_mother:
             message="The mother you entered does not exist"
-            return render_template("calf_registry.html", message=message)
+            return render_template("calf_registry.html", message=message, calves=[], calf_rows=[], overdue=[])
         
         
         #Convert date string to date object
@@ -4938,7 +5124,8 @@ def calf_registry():
         db.session.commit()
         message="Succesifully added"
         
-    # List calves of current farm only
+    # List calves of current farm only, with age + 6-month overdue flag.
+    # Notification scoping: admin sees all; farm users see only their farm's overdue calves.
     if farm_id:
         calves = AnimalRegistry.query.filter(
             AnimalRegistry.category.ilike("calf")
@@ -4948,11 +5135,23 @@ def calf_registry():
             AnimalRegistry.category.ilike("calf")
         ).all()
 
-    return render_template("calf_registry.html", message=message, calves=calves)
+    today = date.today()
+    calf_rows = []
+    overdue = []
+    for c in calves:
+        age_days = (today - c.dob).days if c.dob else None
+        age_months = round(age_days / 30.44, 1) if age_days is not None else None
+        is_overdue = age_days is not None and age_days > 183  # past six months
+        calf_rows.append({"calf": c, "age_days": age_days, "age_months": age_months, "overdue": is_overdue})
+        if is_overdue:
+            overdue.append(c)
+
+    return render_template("calf_registry.html", message=message, calves=calves, calf_rows=calf_rows, overdue=overdue)
 
 
 @app.route("/insemination/add", methods=["GET","POST"])
 @login_required
+@edit_mode_required
 def add_insemination():
 
     animals = AnimalRegistry.query.filter(AnimalRegistry.category != "nolonger_exist").all()
@@ -4986,9 +5185,19 @@ def add_insemination():
             calving_date=None,
             farm_id=record_farm_id
         )
+        # Bull used to serve the cow
+        try:
+            record.bull_name = (request.form.get("bull_name") or "").strip() or None
+            record.bull_breed = (request.form.get("bull_breed") or "").strip() or None
+        except Exception:
+            pass
 
         db.session.add(record)
         db.session.commit()
+        try:
+            audit_action("CREATE", "Insemination", str(record.id), f"Served animal {animal_id} bull {request.form.get('bull_name')}")
+        except Exception:
+            pass
 
         return redirect("/insemination")
 
@@ -5013,6 +5222,7 @@ def insemination():
     return render_template("insemination_list.html", **data)
 @app.route("/insemination/delete/<int:id>")
 @login_required
+@edit_mode_required
 def delete_insemination(id):
 
     record = Insemination.query.get_or_404(id)
@@ -5026,6 +5236,7 @@ from datetime import datetime, timedelta
 
 @app.route("/insemination/edit/<int:id>", methods=["GET","POST"])
 @login_required
+@edit_mode_required
 def edit_insemination(id):
 
     record = Insemination.query.get_or_404(id)
@@ -5049,6 +5260,15 @@ def edit_insemination(id):
 
         record.animal_id = animal_id
         record.status = status
+        try:
+            bull_name = (request.form.get("bull_name") or "").strip()
+            bull_breed = (request.form.get("bull_breed") or "").strip()
+            if bull_name is not None:
+                record.bull_name = bull_name or None
+            if bull_breed is not None:
+                record.bull_breed = bull_breed or None
+        except Exception:
+            pass
 
         if date_served:
             record.date_served = datetime.strptime(date_served, "%Y-%m-%d").date()
@@ -5072,6 +5292,10 @@ def edit_insemination(id):
         record.farm_id = record_farm_id
 
         db.session.commit()
+        try:
+            audit_action("UPDATE", "Insemination", str(record.id), f"Edit insemination {record.id} status {status}")
+        except Exception:
+            pass
 
         return redirect("/insemination")
 
@@ -5227,6 +5451,7 @@ def Employees():
 @app.route("/employees/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 @role_required("admin")
+@edit_mode_required
 def edit_employee(id):
 
     emp = EmployeesRegistry.query.get_or_404(id)
@@ -5341,6 +5566,154 @@ def farms():
         farms=farms,
         message=message
     )
+
+
+# =========================================================
+# SETTINGS — OTP EMAILS PER FARM (admin only, multiple emails)
+# =========================================================
+
+@app.route("/settings", methods=["GET", "POST"])
+@role_required("admin")
+@login_required
+def settings():
+    message = None
+    farms = Farm.query.order_by(Farm.name.asc()).all()
+    if request.method == "POST":
+        for f in farms:
+            key = f"emails_{f.id}"
+            emails = (request.form.get(key) or "").strip()
+            s = OTPSetting.query.filter_by(farm_id=f.id).first()
+            if not s:
+                s = OTPSetting(farm_id=f.id, emails=emails, updated_by=session.get("username"))
+                db.session.add(s)
+            else:
+                s.emails = emails
+                s.updated_by = session.get("username")
+        admin_emails = (request.form.get("emails_admin") or "").strip()
+        s0 = OTPSetting.query.filter(OTPSetting.farm_id.is_(None)).first()
+        if not s0:
+            s0 = OTPSetting(farm_id=None, emails=admin_emails, updated_by=session.get("username"))
+            db.session.add(s0)
+        else:
+            s0.emails = admin_emails
+            s0.updated_by = session.get("username")
+        db.session.commit()
+        try:
+            audit_action("UPDATE", "OTPSetting", None, "Updated edit-mode OTP emails")
+        except Exception:
+            pass
+        message = "Settings saved."
+    settings_map = {}
+    for f in farms:
+        s = OTPSetting.query.filter_by(farm_id=f.id).first()
+        settings_map[f.id] = s.emails if s else ""
+    s0 = OTPSetting.query.filter(OTPSetting.farm_id.is_(None)).first()
+    admin_emails = s0.emails if s0 else ""
+    return render_template("settings.html", farms=farms, settings_map=settings_map, admin_emails=admin_emails, message=message)
+
+
+# =========================================================
+# EDIT MODE — OTP REQUEST / VERIFY (farm-scoped)
+# =========================================================
+
+@app.route("/edit_mode", methods=["GET", "POST"])
+@login_required
+def edit_mode():
+    nxt = request.args.get("next") or request.form.get("next") or "/"
+    user_farm_id = session.get("farm_id")
+    is_admin = session.get("role") == "admin"
+    # Admin without farm context acts as global; farm users locked to own farm
+    eff_farm_id = user_farm_id if not is_admin else (user_farm_id or None)
+    farms = Farm.query.order_by(Farm.name.asc()).all()
+    if request.method == "POST":
+        step = request.form.get("step") or "request"
+        if step == "request":
+            target_farm = request.form.get("farm_id") or eff_farm_id
+            try:
+                target_farm = int(target_farm) if target_farm else None
+            except Exception:
+                target_farm = None
+            if not is_admin:
+                target_farm = user_farm_id
+            import random as _rand
+            code = f"{_rand.randint(100000, 999999)}"
+            rec = EditOTP(user_id=session.get("user_id"), username=session.get("username"),
+                          farm_id=target_farm, otp_code=code, purpose="edit_mode",
+                          expires_at=datetime.utcnow() + timedelta(minutes=10), used=False)
+            db.session.add(rec)
+            db.session.commit()
+            to_emails, notify_admin, admin_emails = get_otp_emails_for_farm(target_farm)
+            farm_name = None
+            try:
+                if target_farm:
+                    farm_name = Farm.query.get(target_farm).name
+            except Exception:
+                pass
+            body = f"Edit-mode OTP: {code}. Farm: {farm_name or 'Admin'}. Requested by {session.get('username')}. Valid 10 minutes."
+            sent_to = []
+            if to_emails:
+                ok, _ = send_otp_email(to_emails, "Edit-mode OTP", body)
+                sent_to += to_emails
+            else:
+                # No emails configured — still log OTP for admin to configure; show hint in dev
+                print(f"[OTP] No farm emails configured. Code for {session.get('username')}: {code}")
+            if notify_admin and admin_emails:
+                # Admin gets notification, but farms never see each other's codes
+                try:
+                    send_otp_email(admin_emails, f"Edit-mode requested ({farm_name})",
+                                   f"{session.get('username')} requested edit mode for {farm_name}. OTP sent to farm emails.")
+                except Exception:
+                    pass
+            try:
+                audit_action("OTP_REQUEST", "EditOTP", str(rec.id), f"Edit-mode OTP requested farm={farm_name or 'Admin'}", farm_id=target_farm, farm_name=farm_name)
+            except Exception:
+                pass
+            flash("OTP sent to configured emails. Enter it below.", "info")
+            return render_template("edit_mode.html", step="verify", next=nxt, farm_id=target_farm, farms=farms, is_admin=is_admin)
+        else:
+            code = (request.form.get("otp") or "").strip()
+            target_farm = request.form.get("farm_id") or eff_farm_id
+            try:
+                target_farm = int(target_farm) if target_farm else None
+            except Exception:
+                target_farm = None
+            rec = EditOTP.query.filter_by(username=session.get("username"), otp_code=code, used=False).order_by(EditOTP.id.desc()).first()
+            if rec and rec.is_valid():
+                rec.used = True
+                db.session.commit()
+                session["edit_mode_exp"] = (datetime.utcnow() + timedelta(minutes=30)).timestamp()
+                session["edit_mode_farm"] = target_farm
+                try:
+                    audit_action("OTP_VERIFY", "EditOTP", str(rec.id), "Edit mode enabled (30 min)", farm_id=target_farm)
+                except Exception:
+                    pass
+                flash("Edit mode enabled for 30 minutes.", "success")
+                return redirect(nxt or "/")
+            flash("Invalid or expired OTP.", "error")
+            return render_template("edit_mode.html", step="verify", next=nxt, farm_id=target_farm, farms=farms, is_admin=is_admin)
+    return render_template("edit_mode.html", step="request", next=nxt, farm_id=eff_farm_id, farms=farms, is_admin=is_admin)
+
+
+@app.route("/edit_mode/exit")
+@login_required
+def edit_mode_exit():
+    session.pop("edit_mode_exp", None)
+    session.pop("edit_mode_farm", None)
+    flash("Edit mode disabled.", "info")
+    return redirect(request.referrer or "/")
+
+
+# =========================================================
+# AUDIT LOGS (admin only)
+# =========================================================
+
+@app.route("/audit_logs")
+@role_required("admin")
+@login_required
+def audit_logs():
+    q = AuditLog.query.order_by(AuditLog.id.desc()).limit(500).all()
+    return render_template("audit_logs.html", logs=q)
+
 from sqlalchemy import extract
 
 @app.route("/feeds_v2/orders")
@@ -6080,9 +6453,20 @@ def milk_registry():
         ).date()
 
         cow_ids = request.form.getlist("cow_id[]")
-        mornings = request.form.getlist("morning[]")
-        noons = request.form.getlist("noon[]")
-        evenings = request.form.getlist("evening[]")
+        # New canonical names: session_1/2/3. Fall back to morning/noon/evening for old forms.
+        mornings = request.form.getlist("morning[]") or request.form.getlist("session_1[]")
+        noons = request.form.getlist("noon[]") or request.form.getlist("session_2[]")
+        evenings = request.form.getlist("evening[]") or request.form.getlist("session_3[]")
+        # Direct new-name lists take precedence if present
+        s1_list = request.form.getlist("session_1[]")
+        s2_list = request.form.getlist("session_2[]")
+        s3_list = request.form.getlist("session_3[]")
+        if s1_list:
+            mornings = s1_list
+        if s2_list:
+            noons = s2_list
+        if s3_list:
+            evenings = s3_list
 
         for i in range(len(cow_ids)):
 
@@ -6121,12 +6505,24 @@ def milk_registry():
 
                     if morning is not None:
                         existing.morning = morning
+                        try:
+                            existing.session_1 = morning
+                        except Exception:
+                            pass
 
                     if noon is not None:
                         existing.noon = noon
+                        try:
+                            existing.session_2 = noon
+                        except Exception:
+                            pass
 
                     if evening is not None:
                         existing.evening = evening
+                        try:
+                            existing.session_3 = evening
+                        except Exception:
+                            pass
 
                     existing.total = (
                         float(existing.morning or 0) +
@@ -6153,6 +6549,13 @@ def milk_registry():
                             total=total,
                             farm_id=current_entry_farm_id()
                         )
+                        # New session columns (safe if migration not yet run)
+                        try:
+                            record.session_1 = morning or 0
+                            record.session_2 = noon or 0
+                            record.session_3 = evening or 0
+                        except Exception:
+                            pass
 
                         db.session.add(record)
 
@@ -6266,9 +6669,18 @@ def import_milk_registry():
 
             cow_id = int(row["Cow ID"])
 
-            morning = float(row["Morning"] or 0)
-            noon = float(row["Noon"] or 0)
-            evening = float(row["Evening"] or 0)
+            def _col(*names):
+                for n in names:
+                    if n in row and row[n] == row[n]:
+                        try:
+                            return float(row[n] or 0)
+                        except Exception:
+                            continue
+                return 0
+
+            morning = _col("Session 1", "Morning")
+            noon = _col("Session 2", "Noon")
+            evening = _col("Session 3", "Evening")
 
             total = morning + noon + evening
 
@@ -6408,6 +6820,7 @@ def milk():
 
 @app.route("/delete_milk/<int:id>")
 @login_required
+@edit_mode_required
 def delete_milk(id):
 
     record = MilkRegistry.query.get_or_404(id)
@@ -6421,24 +6834,36 @@ from decimal import Decimal
 
 @app.route("/edit_milk/<int:id>", methods=["GET", "POST"])
 @login_required
+@edit_mode_required
 def edit_milk(id):
 
     record = MilkRegistry.query.get_or_404(id)
     selected_date = record.date
     if request.method == "POST":
 
-        morning = Decimal(request.form.get("morning") or 0)
-        noon = Decimal(request.form.get("noon") or 0)
-        evening = Decimal(request.form.get("evening") or 0)
+        # Accept Session 1/2/3 or legacy morning/noon/evening
+        morning = Decimal(request.form.get("session_1") or request.form.get("morning") or 0)
+        noon = Decimal(request.form.get("session_2") or request.form.get("noon") or 0)
+        evening = Decimal(request.form.get("session_3") or request.form.get("evening") or 0)
 
         record.morning = morning
         record.noon = noon
         record.evening = evening
+        try:
+            record.session_1 = morning
+            record.session_2 = noon
+            record.session_3 = evening
+        except Exception:
+            pass
 
         # Recalculate total safely using Decimal
         record.total = morning + noon + evening
 
         db.session.commit()
+        try:
+            audit_action("UPDATE", "MilkRegistry", str(record.id), f"Edit milk {record.date} cow {record.cow_id}")
+        except Exception:
+            pass
 
         return redirect(url_for("milk", filter_date_str=selected_date))
 
@@ -6548,6 +6973,7 @@ def milk_sales_report():
 
 @app.route("/delete_milk_sale/<int:id>")
 @login_required
+@edit_mode_required
 def delete_milk_sale(id):
 
     sale = MilkSalesRegistry.query.get_or_404(id)
@@ -6561,6 +6987,7 @@ def delete_milk_sale(id):
 
 @app.route("/edit_milk_sale/<int:id>", methods=["GET", "POST"])
 @login_required
+@edit_mode_required
 def edit_milk_sale_record(id):   # 👈 changed function name
 
     sale = MilkSalesRegistry.query.get_or_404(id)
@@ -6585,28 +7012,13 @@ def edit_milk_sale_record(id):   # 👈 changed function name
 @app.route('/update_actual_remaining', methods=['POST'])
 @login_required
 def update_actual_remaining():
-    from datetime import datetime
-
-    selected_date = datetime.strptime(
-        request.form['date'], "%Y-%m-%d"
-    ).date()
-
-    value = float(request.form['actual_remaining'])
-
-    record = MilkDailyRemaining.query.filter_by(date=selected_date).first()
-
-    if record:
-        record.actual_remaining = value
-    else:
-        record = MilkDailyRemaining(
-            date=selected_date,
-            actual_remaining=value
-        )
-        db.session.add(record)
-
-    db.session.commit()
-
-    return redirect(url_for("milk_sales_report", date=selected_date))
+    # Deprecated: remaining logic removed. Keep route to avoid breaking old forms.
+    flash("Remaining tracking has been removed.", "info")
+    try:
+        selected_date = datetime.strptime(request.form.get('date', ''), "%Y-%m-%d").date()
+        return redirect(url_for("milk_sales_report", date=selected_date))
+    except Exception:
+        return redirect(url_for("milk_sales_report"))
 
 # =========================
 # MILK PRICE ROUTES
@@ -6681,6 +7093,7 @@ def milk_prices():
 
 @app.route("/delete_milk_price/<int:id>")
 @role_required("admin")
+@edit_mode_required
 def delete_milk_price(id):
 
     record = MilkPrice.query.get_or_404(id)
@@ -6842,6 +7255,7 @@ def car_expense_report():
 
 @app.route("/delete_car_expense/<int:id>")
 @role_required("admin")
+@edit_mode_required
 def delete_car_expense(id):
     expense = CarExpense.query.get_or_404(id)
 
@@ -6852,6 +7266,7 @@ def delete_car_expense(id):
 
 @app.route("/edit_car_expense/<int:id>", methods=["GET", "POST"])
 @role_required("admin")
+@edit_mode_required
 def edit_car_expense(id):
 
     expense = CarExpense.query.get_or_404(id)
@@ -6948,6 +7363,7 @@ def car_sales_report():
 
 @app.route("/delete_car_sale/<int:id>")
 @role_required("admin")
+@edit_mode_required
 def delete_car_sale(id):
     sale = CarSales.query.get_or_404(id)
     db.session.delete(sale)
@@ -6956,6 +7372,7 @@ def delete_car_sale(id):
 
 @app.route("/edit_car_sale/<int:id>", methods=["GET", "POST"])
 @role_required("admin")
+@edit_mode_required
 def edit_car_sale(id):
 
     sale = CarSales.query.get_or_404(id)
@@ -7238,6 +7655,7 @@ def transactions():
     )
 @app.route("/edit_transaction/<int:id>", methods=["GET", "POST"])
 @role_required("admin")
+@edit_mode_required
 def edit_transaction(id):
 
     transaction = Payment.query.get_or_404(id)
@@ -7320,6 +7738,7 @@ def edit_transaction(id):
 
 @app.route("/delete_transaction/<int:id>")
 @role_required("admin")
+@edit_mode_required
 def delete_transaction(id):
 
     transaction = Payment.query.get_or_404(id)

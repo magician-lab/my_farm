@@ -1,0 +1,17 @@
+{% extends "base_erp.html" %}
+{% block title %}Settings - OTP Emails{% endblock %}
+{% block page_title %}Settings (Admin only){% endblock %}
+{% block content %}
+<div class="card" style="max-width:800px;">
+<h2><i class="fa-solid fa-gear"></i> Edit-mode OTP Emails</h2>
+<p class="sub">Visible only to admin. Each farm has a unique email list (can be more than one, comma-separated). Both addresses receive the OTP. Murang'a and Meru never see each other's codes. If a farm user requests edit mode, admin emails also get a notification. If admin requests, only admin emails are used.</p>
+{% if message %}<div class="alert alert-success">{{ message }}</div>{% endif %}
+<form method="POST">
+  <div class="form-group"><label>Admin / Global emails (comma-separated)</label><input type="text" name="emails_admin" value="{{ admin_emails or '' }}" placeholder="admin1@mail.com, admin2@mail.com" style="width:100%;"></div>
+  {% for f in farms %}
+  <div class="form-group" style="margin-top:12px;"><label>{{ f.name }} emails</label><input type="text" name="emails_{{ f.id }}" value="{{ settings_map[f.id] or '' }}" placeholder="{{ f.name|lower }}@mail.com" style="width:100%;"></div>
+  {% endfor %}
+  <button class="btn btn-green" type="submit" style="margin-top:14px;">Save Settings</button>
+</form>
+</div>
+{% endblock %}

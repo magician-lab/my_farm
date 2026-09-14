@@ -38,6 +38,11 @@
             gap: 15px;
         }
 
+        @media(max-width:700px){
+            .grid{grid-template-columns:1fr;}
+            .container{padding:16px;}
+        }
+
         .card {
             background: #fafafa;
             padding: 12px;
@@ -184,12 +189,6 @@
             <input type="number" step="0.01" name="evening_price" placeholder="Price">
         </div>
 
-    </div>
-
-    <!-- ACTUAL REMAINING -->
-    <div class="highlight">
-        <label><strong>Actual Remaining Milk (End of Day)</strong></label>
-        <input type="number" step="0.01" name="actual_remaining" placeholder="Enter measured remaining milk">
     </div>
 
     <br>

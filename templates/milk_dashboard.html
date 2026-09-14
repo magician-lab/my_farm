@@ -99,19 +99,19 @@
 <div class="kpi-grid">
     <div class="kpi">
         <i class="fa-solid fa-bucket icon" style="color:#2e7d32;"></i>
-        <div class="label">Morning Production</div>
+        <div class="label">Session 1 Production</div>
         <div class="value">{{ "{:,.2f}".format(total_morning) }} L</div>
         <div class="sub">Selected Date</div>
     </div>
     <div class="kpi blue">
         <i class="fa-solid fa-sun icon" style="color:#1565c0;"></i>
-        <div class="label">Noon Production</div>
+        <div class="label">Session 2 Production</div>
         <div class="value">{{ "{:,.2f}".format(total_noon) }} L</div>
         <div class="sub">Selected Date</div>
     </div>
     <div class="kpi amber">
         <i class="fa-solid fa-moon icon" style="color:#ef6c00;"></i>
-        <div class="label">Evening Production</div>
+        <div class="label">Session 3 Production</div>
         <div class="value">{{ "{:,.2f}".format(total_evening) }} L</div>
         <div class="sub">Selected Date</div>
     </div>
@@ -145,29 +145,11 @@
         <div class="value">{{ "{:,.2f}".format(total_sold_shops) }} L</div>
         <div class="sub">Revenue generating</div>
     </div>
-    <div class="kpi">
-        <i class="fa-solid fa-warehouse icon" style="color:#2e7d32;"></i>
-        <div class="label">System Stock</div>
-        <div class="value">{{ "{:,.2f}".format(system_available_today) }} L</div>
-        <div class="sub">Running Balance</div>
-    </div>
-    <div class="kpi purple">
-        <i class="fa-solid fa-box-open icon" style="color:#6a1b9a;"></i>
-        <div class="label">Actual Remaining</div>
-        <div class="value">{{ "{:,.2f}".format(actual_available_today) }} L</div>
-        <div class="sub">Physical Count</div>
-    </div>
-    <div class="kpi red">
-        <i class="fa-solid fa-triangle-exclamation icon" style="color:#c62828;"></i>
-        <div class="label">Stock Variance</div>
-        <div class="value">{{ "{:,.2f}".format(pavail_variance) }} L</div>
-        <div class="sub">{{ "{:,.2f}".format(percentage_error) }}% Error</div>
-    </div>
     <div class="kpi blue">
         <i class="fa-solid fa-percent icon" style="color:#1565c0;"></i>
         <div class="label">Conversion Rate</div>
         <div class="value">{{ "{:,.2f}".format(percentage_conversion) }}%</div>
-        <div class="sub">Shop Sales / Available</div>
+        <div class="sub">Shop Sales / Produced</div>
     </div>
 </div>
 
@@ -248,10 +230,6 @@
             <div class="period-item">
                 <div class="period-label">Yearly Total</div>
                 <div class="period-val">{{ "{:,.2f}".format(yearly_total) }} L</div>
-            </div>
-            <div class="period-item">
-                <div class="period-label">Previous Remaining</div>
-                <div class="period-val">{{ "{:,.2f}".format(previous_actual_remaining) }} L</div>
             </div>
         </div>
 

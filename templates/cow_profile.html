@@ -1,0 +1,88 @@
+{% extends "base_erp.html" %}
+{% block title %}Cow Profile - {{ animal.name }}{% endblock %}
+{% block page_title %}Cow Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1><i class="fa-solid fa-cow"></i> {{ animal.name }}</h1>
+    <p class="sub">{{ animal.breed or '-' }} · {{ category or '-' }} · {{ animal.sex or '-' }} · Farm {{ animal.farm_id or '-' }}</p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a class="btn btn-blue" href="/animals"><i class="fa-solid fa-list"></i> All Animals</a>
+    <a class="btn btn-green" style="text-decoration:none;" href="{{ url_for('send_report', report_type='cow_profile') }}?cow_id={{ animal.id }}"><i class="fa-solid fa-file-pdf"></i> Download PDF</a>
+  </div>
+</div>
+
+<div class="cards-grid">
+  <div class="stat-card green"><div class="label">Total Milk</div><div class="value">{{ "{:,.1f}".format(total_litres) }} L</div><div class="sub">{{ days_recorded }} records</div></div>
+  <div class="stat-card blue"><div class="label">Average / Record</div><div class="value">{{ "{:,.2f}".format(avg_milk) }} L</div><div class="sub">30d avg {{ "{:,.2f}".format(avg_daily_30) }} L/day</div></div>
+  <div class="stat-card {% if latest_insemination and latest_insemination.status == 'confirmed' %}amber{% else %}blue{% endif %}"><div class="label">Insemination Status</div><div class="value" style="font-size:18px;">{{ latest_insemination.status if latest_insemination else 'Not served' }}</div><div class="sub">{% if latest_insemination %}Served {{ latest_insemination.date_served }} · Bull {{ latest_insemination.bull_name or '-' }}{% if preg_days is not none %} · {{ preg_days }}d pregnant{% endif %}{% else %}No records{% endif %}</div></div>
+</div>
+
+<div class="card">
+  <h2><i class="fa-solid fa-circle-info"></i> Whole Information</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Name</th><td><a href="{{ url_for('cow_profile', id=animal.id) }}"><strong>{{ animal.name }}</strong></a></td><th>Breed</th><td>{{ animal.breed or '-' }}</td></tr>
+    <tr><th>DOB</th><td>{{ animal.dob or '-' }}</td><th>Mother</th><td>{{ animal.mother or '-' }}</td></tr>
+    <tr><th>Gender</th><td>{{ animal.sex or '-' }}</td><th>Category</th><td><span class="badge badge-green">{{ category or '-' }}</span></td></tr>
+    <tr><th>Expected Calving</th><td>{{ expected_calving or '-' }}</td><th>Dry-off</th><td>{{ dry_off or '-' }}</td></tr>
+  </table></div>
+</div>
+
+<div class="card">
+  <h2><i class="fa-solid fa-chart-line"></i> 4-Month Production Forecast</h2>
+  {% if calving_overdue %}
+  <div class="flash" style="position:static;background:#ef6c00;margin-bottom:12px;">
+    <i class="fa-solid fa-triangle-exclamation"></i> Expected calving ({{ expected_calving }}) passed but status is still “{{ latest_insemination.status }}” — assumed calved, fresh lactation forecast. Please verify and update to Delivered.
+  </div>
+  {% endif %}
+  <p class="sub">Base: <strong>{{ "{:,.2f}".format(base_daily or avg_daily_30 or 0) }} L/day</strong>{% if last_milk_days_ago is not none %} (last milked {{ last_milk_days_ago }}d ago){% endif %} · Formula: {{ formula }}</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Month</th><th>Date</th><th>Expected Litres</th><th>Probability</th><th>Note</th></tr></thead>
+    <tbody>
+      {% for f in forecast %}
+      <tr><td>M+{{ f.month }}</td><td>{{ f.date }}</td><td><strong>{{ "{:,.1f}".format(f.litres) }} L</strong></td><td>{{ f.probability }}%</td><td>{{ f.note or '-' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="sub">Forecast total: <strong>{{ "{:,.1f}".format(forecast_total) }} L</strong> over 4 months.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="breakdown-grid">
+<div class="card">
+  <h2><i class="fa-solid fa-heart-pulse"></i> Insemination History</h2>
+  {% if inseminations %}
+  <div class="table-wrap"><table><thead><tr><th>Date Served</th><th>Bull</th><th>Status</th><th>Calving</th></tr></thead><tbody>
+  {% for r in inseminations %}
+  <tr><td>{{ r.date_served }}</td><td>{{ r.bull_name or '-' }} ({{ r.bull_breed or '-' }})</td><td>{{ r.status or 'pending' }}</td><td>{{ r.calving_date or '-' }}</td></tr>
+  {% endfor %}</tbody></table></div>
+  {% else %}<p class="sub">No insemination records.</p>{% endif %}
+</div>
+<div class="card">
+  <h2><i class="fa-solid fa-baby"></i> Calves ({{ calves|length }})</h2>
+  {% if calves %}
+  <div class="table-wrap"><table><thead><tr><th>Name</th><th>Gender</th><th>Mother</th><th>DOB</th></tr></thead><tbody>
+  {% for c in calves %}
+  <tr><td><strong>{{ c.name }}</strong></td><td>{{ c.sex or '-' }}</td><td>{{ c.mother or '-' }}</td><td>{{ c.dob or '-' }}</td></tr>
+  {% endfor %}</tbody></table></div>
+  {% else %}<p class="sub">No calves recorded for {{ animal.name }}.</p>{% endif %}
+</div>
+</div>
+
+<div class="card">
+  <h2><i class="fa-solid fa-bucket"></i> Recent Milk ({% if show_all_milk %}All shown{% else %}Last 10 days{% endif %})</h2>
+  <div style="margin-bottom:10px;">
+    {% if show_all_milk %}
+    <a class="btn btn-blue" style="text-decoration:none;" href="{{ url_for('cow_profile', id=animal.id) }}">Show last 10 days</a>
+    {% else %}
+    <a class="btn btn-blue" style="text-decoration:none;" href="{{ url_for('cow_profile', id=animal.id) }}?all_milk=1">View all records</a>
+    {% endif %}
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>Date</th><th>Session 1</th><th>Session 2</th><th>Session 3</th><th>Total</th></tr></thead><tbody>
+  {% for r in milk_records %}
+  <tr><td>{{ r.date }}</td><td>{{ r.session_1 if r.session_1 is not none else r.morning }}</td><td>{{ r.session_2 if r.session_2 is not none else r.noon }}</td><td>{{ r.session_3 if r.session_3 is not none else r.evening }}</td><td><strong>{{ r.total }}</strong></td></tr>
+  {% endfor %}</tbody></table></div>
+</div>
+
+<style>@media(max-width:900px){.breakdown-grid{grid-template-columns:1fr !important;}}</style>
+{% endblock %}

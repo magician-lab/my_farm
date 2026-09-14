@@ -1,0 +1,32 @@
+{% extends "base_erp.html" %}
+{% block title %}Edit Mode{% endblock %}
+{% block page_title %}Edit Mode (OTP){% endblock %}
+{% block content %}
+<div class="card" style="max-width:560px;margin:auto;">
+<h2><i class="fa-solid fa-lock"></i> Enable Editing / Deleting</h2>
+<p class="sub">To edit or delete, enter edit mode. An OTP is sent to the configured emails for your farm. Admin is notified of farm requests. Codes expire in 10 minutes; edit mode lasts 30 minutes.</p>
+{% if step == 'request' %}
+<form method="POST">
+  <input type="hidden" name="step" value="request">
+  <input type="hidden" name="next" value="{{ next or '/' }}">
+  {% if is_admin %}
+  <div class="form-group"><label>Farm scope</label>
+    <select name="farm_id"><option value="">Admin / Global</option>
+    {% for f in farms %}<option value="{{ f.id }}" {% if farm_id and farm_id|string == f.id|string %}selected{% endif %}>{{ f.name }}</option>{% endfor %}
+    </select></div>
+  {% else %}
+  <input type="hidden" name="farm_id" value="{{ farm_id or '' }}">
+  {% endif %}
+  <button class="btn btn-green" type="submit">Send OTP</button>
+</form>
+{% else %}
+<form method="POST">
+  <input type="hidden" name="step" value="verify">
+  <input type="hidden" name="next" value="{{ next or '/' }}">
+  <input type="hidden" name="farm_id" value="{{ farm_id or '' }}">
+  <div class="form-group"><label>Enter OTP</label><input type="text" name="otp" maxlength="6" required placeholder="6-digit code"></div>
+  <button class="btn btn-green" type="submit">Verify & Enable</button>
+</form>
+{% endif %}
+</div>
+{% endblock %}

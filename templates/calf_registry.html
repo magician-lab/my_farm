@@ -62,7 +62,14 @@
 
 <div class="card">
     <h2><i class="fa-solid fa-list"></i> Calves ({{ calves|length }})</h2>
-    {% if calves %}
+    {% if overdue %}
+    <div class="flash" style="position:static;background:#c62828;margin-bottom:12px;">
+        <i class="fa-solid fa-bell"></i> {{ overdue|length }} calf/calf(ies) past 6 months — due for review:
+        {% for c in overdue %}<strong>{{ c.name }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}
+        (visible to admin{% if current_farm %} + {{ current_farm.name }}{% endif %} only).
+    </div>
+    {% endif %}
+    {% if calf_rows or calves %}
     <div class="table-wrap">
         <table>
             <thead>
@@ -72,18 +79,21 @@
                     <th>Breed</th>
                     <th>Level</th>
                     <th>Birth Date</th>
+                    <th>Age</th>
                     <th>Mother</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for c in calves %}
-                <tr>
+                {% for row in calf_rows or [] %}
+                {% set c = row.calf %}
+                <tr {% if row.overdue %}style="background:#fdecea;color:#7f1d1d;font-weight:600;"{% endif %}>
                     <td>{{ c.id }}</td>
-                    <td><strong>{{ c.name }}</strong></td>
+                    <td><strong>{{ c.name }}</strong>{% if row.overdue %} <span class="badge badge-red">6M+ OVERDUE</span>{% endif %}</td>
                     <td>{{ c.breed }}</td>
                     <td><span class="badge badge-blue">{{ c.category }}</span></td>
                     <td>{{ c.dob or '-' }}</td>
+                    <td>{% if row.age_months is not none %}{{ row.age_months }} mo{% else %}-{% endif %}</td>
                     <td>{{ c.mother or '-' }}</td>
                     <td>
                         <div style="display:flex;gap:6px;">

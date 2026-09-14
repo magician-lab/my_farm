@@ -25,3 +25,5 @@ test_output.txt
 test_output2.txt
 final_check.py
 simple_template.html
+# edit-mode OTP fallback log (contains live codes - never push)
+otp_fallback.log

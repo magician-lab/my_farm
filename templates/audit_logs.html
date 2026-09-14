@@ -1,0 +1,17 @@
+{% extends "base_erp.html" %}
+{% block title %}Audit Logs{% endblock %}
+{% block page_title %}Audit Logs (Admin only){% endblock %}
+{% block content %}
+<div class="card">
+<h2><i class="fa-solid fa-clipboard-list"></i> Operations by Users</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Time</th><th>User</th><th>Role</th><th>Farm</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
+<tbody>
+{% for l in logs %}
+<tr><td>{{ loop.index }}</td><td>{{ l.created_at }}</td><td>{{ l.username or '-' }}</td><td>{{ l.role or '-' }}</td><td>{{ l.farm_name or l.farm_id or '-' }}</td><td><strong>{{ l.action }}</strong></td><td>{{ l.entity or '-' }} {{ l.entity_id or '' }}</td><td>{{ l.details or '-' }}</td></tr>
+{% else %}
+<tr><td colspan="8">No audit records yet.</td></tr>
+{% endfor %}
+</tbody></table></div>
+</div>
+{% endblock %}

@@ -77,7 +77,7 @@
         <i class="fa-solid fa-bucket icon" style="color:#2e7d32;"></i>
         <div class="label">Today's Production</div>
         <div class="value">{{ grand_total|round(2) }} L</div>
-        <div class="sub">Morning {{ total_morning|round(1) }} · Noon {{ total_noon|round(1) }} · Evening {{ total_evening|round(1) }}</div>
+        <div class="sub">Session 1 {{ total_morning|round(1) }} · Session 2 {{ total_noon|round(1) }} · Session 3 {{ total_evening|round(1) }}</div>
     </div>
     <div class="kpi blue">
         <i class="fa-solid fa-store icon" style="color:#1565c0;"></i>
@@ -93,28 +93,19 @@
     </div>
 </div>
 
-<!-- PREVIOUS DAY -->
-<div class="section prev">
-    <h2><i class="fa-solid fa-clock-rotate-left"></i> Previous Day</h2>
-    <div class="detail-row">
-        <span class="lbl">Carried Over Remaining</span>
-        <span class="val">{{ previous_actual_remaining|round(2) }} L</span>
-    </div>
-</div>
-
-<!-- TODAY'S PRODUCTION -->
+<!-- TODAY'S PRODUCTION (milking sessions; sales remain Morning/Noon/Evening below) -->
 <div class="section today">
     <h2><i class="fa-solid fa-calendar-day"></i> Today's Production</h2>
     <div class="detail-row">
-        <span class="lbl">Morning</span>
+        <span class="lbl">Session 1</span>
         <span class="val">{{ total_morning|round(2) }} L</span>
     </div>
     <div class="detail-row">
-        <span class="lbl">Noon</span>
+        <span class="lbl">Session 2</span>
         <span class="val">{{ total_noon|round(2) }} L</span>
     </div>
     <div class="detail-row">
-        <span class="lbl">Evening</span>
+        <span class="lbl">Session 3</span>
         <span class="val">{{ total_evening|round(2) }} L</span>
     </div>
     <div class="detail-row" style="border-top:2px solid #2e7d32;padding-top:10px;margin-top:4px;">
