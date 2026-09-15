@@ -2,6 +2,10 @@
 {% block title %}Calf Registry{% endblock %}
 {% block page_title %}Calf Registry{% endblock %}
 {% block content %}
+<style>
+.overdue-row td{background:#fdecea !important;color:#b71c1c;font-weight:600;}
+.overdue-row:hover td{background:#f8d7da !important;}
+</style>
 
 <div class="page-header">
     <div>
@@ -63,7 +67,7 @@
 <div class="card">
     <h2><i class="fa-solid fa-list"></i> Calves ({{ calves|length }})</h2>
     {% if overdue %}
-    <div class="flash" style="position:static;background:#c62828;margin-bottom:12px;">
+    <div class="flash" style="position:static;background:#c62828;color:#fff;border-left-color:#7f1d1d;margin-bottom:12px;">
         <i class="fa-solid fa-bell"></i> {{ overdue|length }} calf/calf(ies) past 6 months — due for review:
         {% for c in overdue %}<strong>{{ c.name }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}
         (visible to admin{% if current_farm %} + {{ current_farm.name }}{% endif %} only).
@@ -87,7 +91,7 @@
             <tbody>
                 {% for row in calf_rows or [] %}
                 {% set c = row.calf %}
-                <tr {% if row.overdue %}style="background:#fdecea;color:#7f1d1d;font-weight:600;"{% endif %}>
+                <tr class="{% if row.overdue %}overdue-row{% endif %}">
                     <td>{{ c.id }}</td>
                     <td><strong>{{ c.name }}</strong>{% if row.overdue %} <span class="badge badge-red">6M+ OVERDUE</span>{% endif %}</td>
                     <td>{{ c.breed }}</td>
