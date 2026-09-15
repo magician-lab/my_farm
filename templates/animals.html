@@ -304,12 +304,23 @@ tr:hover{
     }
 }
 
+.overdue-row td{background:#fdecea !important;color:#b71c1c;font-weight:600;}
+.overdue-row:hover td{background:#f8d7da !important;}
+
 
 </style>
 
 <div class="container">
 
 <!-- FLASH -->
+
+<!-- 6M+ CALVES RED SUMMARY (stays at top) -->
+{% if overdue %}
+<div class="flash" style="position:static;background:#c62828;color:#fff;border-left-color:#7f1d1d;margin-bottom:14px;">
+    <i class="fa-solid fa-bell"></i> {{ overdue|length }} calf/calves past 6 months — due for review:
+    {% for c in overdue %}<strong>{{ c.name }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}
+</div>
+{% endif %}
 
 
 
@@ -412,12 +423,12 @@ tr:hover{
 
                 {% for animal in animals %}
 
-                <tr>
+                <tr class="{% if animal.id in overdue_ids %}overdue-row{% endif %}">
 
                     <td>{{ loop.index }}</td>
 
                     <td>
-                        <a href="{{ url_for('cow_profile', id=animal.id) }}"><strong>{{ animal.name }}</strong></a>
+                        <a href="{{ url_for('cow_profile', id=animal.id) }}"><strong>{{ animal.name }}</strong></a>{% if animal.id in overdue_ids %} <span class="badge badge-red">6M+ OVERDUE</span>{% endif %}
                     </td>
 
                     <td>{{ animal.breed }}</td>

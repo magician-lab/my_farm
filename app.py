@@ -4492,6 +4492,23 @@ def animals():
 
     data = get_animals_data(category, session.get("farm_id"))
 
+    # 6M+ calf highlight — same logic as calf_registry: age from DOB > 183 days.
+    # Farm-scoped like calves (admin sees all, farm users see own farm).
+    today = date.today()
+    overdue_ids = set()
+    overdue = []
+    try:
+        for a in data.get("animals", []):
+            if (a.category or "").strip().lower() == "calf" and a.dob:
+                age_days = (today - a.dob).days
+                if age_days > 183:
+                    overdue_ids.add(a.id)
+                    overdue.append(a)
+    except Exception:
+        pass
+    data["overdue_ids"] = overdue_ids
+    data["overdue"] = overdue
+
     return render_template(
         "animals.html",
         category=category,
