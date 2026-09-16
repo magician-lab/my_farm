@@ -242,6 +242,15 @@ tfoot{
     <div class="page-title">
         📊 Monthly Milk Analysis
     </div>
+    {% if current_farm %}
+    <div style="margin-top:6px;display:inline-block;background:#e8f5e9;border:1px solid #a5d6a7;color:#1b5e20;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;">
+        <i class="fa-solid fa-building"></i> {{ current_farm.name }}
+    </div>
+    {% elif session.get("role") == "admin" %}
+    <div style="margin-top:6px;display:inline-block;background:#f1f8f1;border:1px solid #e0e7e0;color:#555;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;">
+        🌍 All Farms
+    </div>
+    {% endif %}
 </div>
 
 <!-- TOP BUTTONS -->
@@ -346,6 +355,11 @@ tfoot{
                     class="form-control"
                 >
             </div>
+
+            <!-- KEEP FARM SCOPE -->
+            {% if farm_id %}
+            <input type="hidden" name="farm_id" value="{{ farm_id }}">
+            {% endif %}
 
             <!-- SEND BUTTON -->
             <div class="form-group">

@@ -3488,9 +3488,9 @@ def get_shed_report_data():
 
 
 
-def get_milk_sales_monthly(selected_date=None):
+def get_milk_sales_monthly(selected_date=None, farm_id=None):
 
-    from datetime import datetime, date
+    from datetime import datetime
     from sqlalchemy import extract, func
 
     if selected_date:
@@ -3501,7 +3501,7 @@ def get_milk_sales_monthly(selected_date=None):
     month = selected_date.month
     year = selected_date.year
 
-    records = db.session.query(
+    q = db.session.query(
         MilkSalesRegistry.date,
         func.sum(MilkSalesRegistry.shop1).label("shop1"),
         func.sum(MilkSalesRegistry.shop2).label("shop2"),
@@ -3511,7 +3511,12 @@ def get_milk_sales_monthly(selected_date=None):
     ).filter(
         extract("month", MilkSalesRegistry.date) == month,
         extract("year", MilkSalesRegistry.date) == year
-    ).group_by(
+    )
+
+    if farm_id:
+        q = q.filter(MilkSalesRegistry.farm_id == farm_id)
+
+    records = q.group_by(
         MilkSalesRegistry.date
     ).order_by(
         MilkSalesRegistry.date
@@ -4242,8 +4247,12 @@ def send_report(report_type):
 
         selected_date = request.args.get("date")
 
+        # 🔹 Farm scoping: same context as the monthly report page.
+        farm_id = request.args.get("farm_id") or session.get("farm_id")
+
         data = get_milk_sales_monthly(
-            selected_date
+            selected_date,
+            farm_id
         )
 
         from datetime import datetime
@@ -4260,6 +4269,13 @@ def send_report(report_type):
                 month_name = selected_date
 
         data["month_name"] = month_name
+
+        # 🔹 Farm label for PDF (when scoped)
+        farm_label = ""
+        if farm_id:
+            _farm = Farm.query.get(farm_id)
+            farm_label = _farm.name if _farm else "Farm %s" % farm_id
+        data["farm_name"] = farm_label
 
         template = "milk_sales_monthly_pdf.html"
 
@@ -7129,13 +7145,18 @@ def milk_sales_monthly():
 
     selected_date = request.args.get("date")
 
-    # 🔹 use the reusable data function
-    data = get_milk_sales_monthly(selected_date)
+    # 🔹 Farm scoping: farm users see only their farm; admin sees all OR the
+    #    farm selected via the farm switcher (session["farm_id"]).
+    farm_id = session.get("farm_id")
+
+    data = get_milk_sales_monthly(selected_date, farm_id)
 
     return render_template(
         "milk_sales_monthly.html",
         monthly_data=data["monthly_data"],
         selected_date=data["selected_date"],
+        farm_id=farm_id,
+        current_farm=farm_id and Farm.query.get(farm_id) or None,
 
         total_shop1=data["total_shop1"],
         total_shop2=data["total_shop2"],

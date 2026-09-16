@@ -52,7 +52,7 @@
 
 <body>
 
-<h2> Milk Sales Monthly Report - {{ month_name }}</h2>
+<h2> Milk Sales Monthly Report - {{ month_name }}{% if farm_name %} ({{ farm_name }}){% endif %}</h2>
 
 <table>
 
